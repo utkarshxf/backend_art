@@ -8,20 +8,15 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@PreAuthorize("hasRole('ROLE_USER')")
-@RequestMapping("/artwork")
+@PreAuthorize("hasRole('USER')")
 public class ArtWorkController {
     @Autowired
     private ArtworkService artworkService;
-    @PostMapping
+    @PostMapping("/save")
     public String save(@RequestBody ArtWork artWork){
         return artworkService.save(artWork);
     }
-//    @GetMapping
-//    public List<ArtWork> getArtworkStartWith(@RequestParam("name") String name){
-//        return artworkService.getArtworkStartWith(name);
-//    }
-    @DeleteMapping
+    @DeleteMapping("/delete")
     public void delete(@PathVariable String id){
         artworkService.delete(id);
     }
