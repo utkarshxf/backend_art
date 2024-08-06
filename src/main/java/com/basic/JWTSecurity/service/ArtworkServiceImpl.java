@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class ArtworkServiceImpl implements ArtworkService {
     @Autowired
@@ -17,16 +19,15 @@ public class ArtworkServiceImpl implements ArtworkService {
         return artworkRepository.save(artWork).getArtworkId();
     }
 
-//    @Override
-//    public List<ArtWork> getArtworkStartWith(String name) {
-////        return artworkRepository.findByNameWith(name);
-//    }
-
     @Override
     public void delete(String id) {
         artworkRepository.deleteById(id);
     }
 
+    @Override
+    public List<ArtWork> getData() {
+        return artworkRepository.findAll();
+    }
 
 
 }

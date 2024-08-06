@@ -7,8 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@PreAuthorize("hasRole('USER')")
+//@PreAuthorize("hasRole('USER')")
 public class ArtWorkController {
     @Autowired
     private ArtworkService artworkService;
@@ -19,6 +21,11 @@ public class ArtWorkController {
     @DeleteMapping("/delete")
     public void delete(@PathVariable String id){
         artworkService.delete(id);
+    }
+    @GetMapping("/artwork")
+    public List<ArtWork> getArtwork()
+    {
+        return artworkService.getData();
     }
 
 }

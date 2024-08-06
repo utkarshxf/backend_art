@@ -34,7 +34,8 @@ public class SecurityConfig {
                 authorizeRequests
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/login" ,"/signup", "/check" , "/error").permitAll()
-                        .anyRequest().authenticated());
+                        .requestMatchers("/save").permitAll()
+                        .anyRequest().permitAll());
         http.sessionManagement(
                 session ->
                         session.sessionCreationPolicy(
