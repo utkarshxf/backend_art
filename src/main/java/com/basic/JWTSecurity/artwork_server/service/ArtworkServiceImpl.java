@@ -7,9 +7,11 @@ import com.basic.JWTSecurity.artwork_server.model.Status;
 import com.basic.JWTSecurity.artwork_server.repository.ArtworkRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 
 @Service
@@ -48,9 +50,6 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     public void userLikeAArtwork(String artworkId, String userId) {
-        System.out.println("artworkId ID: " + userId.toLowerCase());
-
-        System.out.println("Artwork ID: " + artworkId);
 
         repository.userLikeAArtwork(artworkId,userId, LocalDateTime.now());
 
@@ -60,5 +59,10 @@ public class ArtworkServiceImpl implements ArtworkService {
     public void userDisLikeAArtwork(String artworkId, String userId) {
         repository.userDisLikeAArtwork(artworkId,userId);
 
+    }
+
+    @Override
+    public List<Artwork> recommendArtwork(String userId, Integer skip,Integer limit) {
+        return repository.recommendArtwork(userId,skip,limit);
     }
 }

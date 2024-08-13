@@ -2,12 +2,15 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
+import com.basic.JWTSecurity.artwork_server.model.Artwork;
 import com.basic.JWTSecurity.artwork_server.service.ArtworkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @PreAuthorize("hasRole('USER')")
@@ -23,6 +26,14 @@ public class ArtworkApi {
         artworkService.create(requestRecord,artistId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    @GetMapping("/recommend/{userId}/{skip}/{limit}")
+    public ResponseEntity<?> recommendArtwork(@PathVariable String userId, @PathVariable Integer skip, @PathVariable Integer limit)
+    {
+        List<Artwork>artworks = artworkService.recommendArtwork(userId,skip,limit);
+        return new ResponseEntity<>(artworks,HttpStatus.OK);
+    }
+
 
     @PutMapping("/user/like/{artworkId}/{userId}")
     public void userLikeAArtwork(@PathVariable String artworkId, @PathVariable String userId) {
