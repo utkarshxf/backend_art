@@ -3,6 +3,8 @@ package com.basic.JWTSecurity.service;
 import com.basic.JWTSecurity.model.ArtWork;
 import com.basic.JWTSecurity.repository.ArtworkRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +29,11 @@ public class ArtworkServiceImpl implements ArtworkService {
     @Override
     public List<ArtWork> getData() {
         return artworkRepository.findAll();
+    }
+
+    @Override
+    public Page<ArtWork> getArtworkWithPagination(int offset, int pageSize) {
+        return artworkRepository.findAll(PageRequest.of(offset, pageSize));
     }
 
 
