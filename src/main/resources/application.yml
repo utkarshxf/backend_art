@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: JWTSecurity
+
+  app:
+    jwtSecret: mySecretKey123912738aopsgjnspkmndfsopkvajoirjg94gf2opfng2moknm
+    jwtExpirationMs: 3000000
+
+  data:
+    mongodb:
+      authentication-database: admin
+      database: artly
+      port: 27017
+      host: localhost
+
+    neo4j:
+      uri: bolt://localhost:7687
+      authentication:
+        username: neo4j
+        password: secret@1234
+
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
+
+  servlet:
+    multipart:
+      max-file-size: 256MB
+      max-request-size: 256MB
+      enabled: true
+
+server:
+  port: 7040
