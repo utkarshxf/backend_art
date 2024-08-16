@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.repository;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
+import com.basic.JWTSecurity.artwork_server.model.RecommendedArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
@@ -13,7 +14,7 @@ import java.util.Optional;
 
 public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
 
-    @Query("MATCH (artwork:Artwork {id: $artworkId}) RETURN artwork.id As id, artwork.name As name, artwork.description As description, artwork.status As status, artwork.duration As duration, artwork.storageId As storageId, artwork.storageType As storageType, artwork.type As type, artwork.year As year")
+    @Query("MATCH (artwork:Artwork {id: $artworkId}) RETURN artwork.id As id, artwork.name As name, artwork.description As description, artwork.status As status, artwork.duration As duration, artwork.imageUrl As imageUrl, artwork.storageType As storageType, artwork.type As type, artwork.year As year , artwork.madeWith As madeWith")
     Optional<ArtworkProjection> findByIdProjection(@Param("artworkId") String id);
 
 
@@ -45,12 +46,16 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "} " +
                     "WITH recommendArtwork, userSimilarity, priority " +
                     "OPTIONAL MATCH (recommendArtwork)<-[:LIKES]-(likeUser:User) " +
-                    "WITH recommendArtwork, userSimilarity, priority, count(likeUser) AS likes " +
-                    "RETURN recommendArtwork, userSimilarity, likes " +
+                    "WITH recommendArtwork, userSimilarity, priority, count(DISTINCT likeUser) AS likes " +
+                    "OPTIONAL MATCH (recommendArtwork)<-[:HAS_COMMENT]-(comment:Comment) " +
+                    "WITH recommendArtwork, userSimilarity, priority, likes, count(DISTINCT comment) AS noOfComments " +
+                    "OPTIONAL MATCH (recommendArtwork)<-[:CREATED]-(artist:Artist) " +
+                    "OPTIONAL MATCH (recommendArtwork)-[:BELONGS_TO_GENRE]->(artworkGenre:Genre) " +
+                    "RETURN recommendArtwork AS artwork, userSimilarity, likes, noOfComments,artworkGenre.name AS artworkGenre, artist.name AS artistName, artist.id AS artistId " +
                     "ORDER BY priority, userSimilarity DESC, likes DESC " +
                     "SKIP $skip LIMIT $limit"
     )
-    List<Artwork> recommendArtwork(
+    List<RecommendedArtwork> recommendArtwork(
             @Param("userId") String userId,
             @Param("skip") Integer skip,
             @Param("limit") Integer limit

@@ -3,6 +3,7 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
+import com.basic.JWTSecurity.artwork_server.model.RecommendedArtwork;
 import com.basic.JWTSecurity.artwork_server.service.ArtworkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,10 +28,10 @@ public class ArtworkApi {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @GetMapping("/recommend/{userId}/{skip}/{limit}")
-    public ResponseEntity<?> recommendArtwork(@PathVariable String userId, @PathVariable Integer skip, @PathVariable Integer limit)
+    @GetMapping("/recommend")
+    public ResponseEntity<?> recommendArtwork(@RequestParam String userId, @RequestParam Integer skip, @RequestParam Integer limit)
     {
-        List<Artwork>artworks = artworkService.recommendArtwork(userId,skip,limit);
+        List<RecommendedArtwork>artworks = artworkService.recommendArtwork(userId,skip,limit);
         return new ResponseEntity<>(artworks,HttpStatus.OK);
     }
 

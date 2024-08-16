@@ -3,6 +3,7 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
+import com.basic.JWTSecurity.artwork_server.model.RecommendedArtwork;
 import com.basic.JWTSecurity.artwork_server.model.Status;
 import com.basic.JWTSecurity.artwork_server.repository.ArtworkRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,10 +29,10 @@ public class ArtworkServiceImpl implements ArtworkService {
 
         Artwork artwork = Artwork.builder()
                 .name(artworkRecord.title())
-                .storageId(artworkRecord.storageId())
+                .imageUrl(artworkRecord.imageUrl())
                 .storageType(artworkRecord.storageType())
                 .type(artworkRecord.artType())
-                .duration(artworkRecord.duration())
+                .madeWith(artworkRecord.madeWith())
                 .releasedDate(artworkRecord.releasedDate())
                 .status(Status.DRAFT)
                 .build();
@@ -62,7 +63,7 @@ public class ArtworkServiceImpl implements ArtworkService {
     }
 
     @Override
-    public List<Artwork> recommendArtwork(String userId, Integer skip,Integer limit) {
+    public List<RecommendedArtwork> recommendArtwork(String userId, Integer skip, Integer limit) {
         return repository.recommendArtwork(userId,skip,limit);
     }
 }

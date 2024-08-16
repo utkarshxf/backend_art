@@ -25,8 +25,8 @@ public class Artwork {
     private String description;
     private String name;
     private Status status;
-    private Long duration;
-    private String storageId;
+    private String imageUrl;
+    private String madeWith;
     private StorageType storageType;
     private LocalDateTime releasedDate;
     private ArtType type;
