@@ -8,6 +8,7 @@ import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface ArtistRepository extends Neo4jRepository<Artist,String> {
@@ -30,4 +31,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
                                          @Param("genreId") String genreId);
 
 
+    @Query("MATCH (artist:Artist) " +
+            "RETURN artist.id AS id, artist.name AS name")
+    List<ArtistProjection> getArtist();
 }

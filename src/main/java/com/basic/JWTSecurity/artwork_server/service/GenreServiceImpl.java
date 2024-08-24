@@ -2,12 +2,14 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Genre;
+import com.basic.JWTSecurity.artwork_server.model.projection.GenreProjection;
 import com.basic.JWTSecurity.artwork_server.repository.GenreRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -45,5 +47,10 @@ public class GenreServiceImpl implements GenreService{
     @Override
     public void removeArtworkFromGenre(String genreId, String artworkId) {
         genreRepository.removeArtworkFromGenre(genreId, artworkId);
+    }
+
+    @Override
+    public List<GenreProjection> getGenres() {
+        return genreRepository.getGenres();
     }
 }

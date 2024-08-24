@@ -2,12 +2,14 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Album;
+import com.basic.JWTSecurity.artwork_server.model.projection.AlbumProjection;
 import com.basic.JWTSecurity.artwork_server.repository.AlbumRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static com.basic.JWTSecurity.artwork_server.model.Status.DRAFT;
 
@@ -50,5 +52,10 @@ public class AlbumServiceImpl implements  AlbumService{
     public void userDikeLikeAnAlbum(String albumId, String userId) {
 
         albumRepository.userDislikeAlbum(userId,albumId);
+    }
+
+    @Override
+    public List<AlbumProjection> getAllAlbum() {
+        return albumRepository.getAlbum();
     }
 }

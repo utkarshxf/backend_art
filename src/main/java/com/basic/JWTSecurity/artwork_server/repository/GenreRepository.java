@@ -2,11 +2,13 @@ package com.basic.JWTSecurity.artwork_server.repository;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Genre;
+import com.basic.JWTSecurity.artwork_server.model.projection.GenreProjection;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface GenreRepository extends Neo4jRepository<Genre,String> {
 
@@ -25,4 +27,8 @@ public interface GenreRepository extends Neo4jRepository<Genre,String> {
     @Query("MATCH (genre: Genre {id: $genreId})<-[relationship:BELONGS_TO_GENRE]-(artist: Artist {id: $artistId})" +
             " DELETE relationship")
     void removeArtistFromGenre(@Param("genreId") String genreId, @Param("artistId")String artistId);
+
+    @Query("MATCH (genre:Genre) " +
+            "RETURN genre.id AS id, genre.name AS name , genre.key AS key")
+    List<GenreProjection> getGenres();
 }

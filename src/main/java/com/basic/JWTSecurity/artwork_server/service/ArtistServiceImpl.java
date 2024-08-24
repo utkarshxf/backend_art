@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -32,6 +34,12 @@ public class ArtistServiceImpl implements  ArtistService{
                 .name(artist.getName())
                 .build();
         return artistRepository.save(artist2);
+    }
+
+    @Override
+    public List<ArtistProjection> getAllArtist() {
+        List<ArtistProjection> artists =  artistRepository.getArtist();
+        return artists;
     }
 
     @Override

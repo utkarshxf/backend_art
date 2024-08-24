@@ -2,11 +2,13 @@ package com.basic.JWTSecurity.artwork_server.repository;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Album;
+import com.basic.JWTSecurity.artwork_server.model.projection.AlbumProjection;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface AlbumRepository  extends Neo4jRepository<Album,String> {
 
@@ -31,4 +33,8 @@ public interface AlbumRepository  extends Neo4jRepository<Album,String> {
                         @Param("albumId") String albumId,
                         @Param("year") Integer year,
                         @Param("createdAt") LocalDateTime createdAt);
+
+    @Query("MATCH (album:Album) " +
+            "RETURN album.id AS id, album.name AS name")
+    List<AlbumProjection> getAlbum();
 }
