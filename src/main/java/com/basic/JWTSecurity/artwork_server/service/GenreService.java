@@ -13,5 +13,5 @@ public interface GenreService {
     void addArtworkToGenre(String genreId, String artworkId);
     void removeArtworkFromGenre(String genreId, String artworkId);
 
-    List<GenreProjection> getGenres();
+    List<GenreProjection> getGenres(String genresName);
 }

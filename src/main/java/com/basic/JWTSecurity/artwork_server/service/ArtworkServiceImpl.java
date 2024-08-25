@@ -32,6 +32,7 @@ public class ArtworkServiceImpl implements ArtworkService {
                 .imageUrl(artworkRecord.imageUrl())
                 .storageType(artworkRecord.storageType())
                 .type(artworkRecord.artType())
+                .description(artworkRecord.description())
                 .madeWith(artworkRecord.madeWith())
                 .releasedDate(artworkRecord.releasedDate())
                 .status(Status.DRAFT)

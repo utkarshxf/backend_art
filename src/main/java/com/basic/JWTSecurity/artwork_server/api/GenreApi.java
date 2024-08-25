@@ -49,8 +49,8 @@ public class GenreApi {
         genreService.removeArtworkFromGenre(genreId,artworkId);
     }
     @GetMapping
-    public List<GenreProjection> getGenres(){
-        return genreService.getGenres();
+    public List<GenreProjection> getGenres(@RequestParam String genreName){
+        return genreService.getGenres(genreName);
     }
 
 }

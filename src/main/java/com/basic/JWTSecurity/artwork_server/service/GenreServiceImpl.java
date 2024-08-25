@@ -50,7 +50,7 @@ public class GenreServiceImpl implements GenreService{
     }
 
     @Override
-    public List<GenreProjection> getGenres() {
-        return genreRepository.getGenres();
+    public List<GenreProjection> getGenres(String genreName) {
+        return genreRepository.getGenres(genreName);
     }
 }

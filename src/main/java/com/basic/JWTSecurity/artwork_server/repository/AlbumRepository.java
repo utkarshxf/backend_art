@@ -35,6 +35,8 @@ public interface AlbumRepository  extends Neo4jRepository<Album,String> {
                         @Param("createdAt") LocalDateTime createdAt);
 
     @Query("MATCH (album:Album) " +
-            "RETURN album.id AS id, album.name AS name")
-    List<AlbumProjection> getAlbum();
+            "WHERE album.name STARTS WITH $albumName " +
+            "RETURN album.id AS id, album.name AS name " +
+            "LIMIT 3")
+    List<AlbumProjection> getAlbum(String albumName);
 }

@@ -29,6 +29,8 @@ public interface GenreRepository extends Neo4jRepository<Genre,String> {
     void removeArtistFromGenre(@Param("genreId") String genreId, @Param("artistId")String artistId);
 
     @Query("MATCH (genre:Genre) " +
-            "RETURN genre.id AS id, genre.name AS name , genre.key AS key")
-    List<GenreProjection> getGenres();
+            "WHERE genre.name STARTS WITH $genreName " +
+            "RETURN genre.id AS id, genre.name AS name, genre.key AS key " +
+            "LIMIT 3")
+    List<GenreProjection> getGenres(String genreName);
 }

@@ -27,9 +27,9 @@ public class AlbumApi {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
     @GetMapping()
-    public List<AlbumProjection> getAlbum()
+    public List<AlbumProjection> getAlbum(@RequestParam String albumName)
     {
-        return albumService.getAllAlbum();
+        return albumService.getAllAlbum(albumName);
     }
 
     @PutMapping("/{albumId}/user/{userId}/like")

@@ -14,7 +14,7 @@ public record ArtworkRecord(String title,
                             ArtType artType,
                             String albumId,
                             String genreId,
-                            long duration,
+                            String description,
                             LocalDateTime releasedDate,
                             Integer releaseYear) {
 }

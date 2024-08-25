@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -37,8 +36,8 @@ public class ArtistServiceImpl implements  ArtistService{
     }
 
     @Override
-    public List<ArtistProjection> getAllArtist() {
-        List<ArtistProjection> artists =  artistRepository.getArtist();
+    public List<ArtistProjection> getAllArtist(String artistName) {
+        List<ArtistProjection> artists =  artistRepository.getArtist(artistName);
         return artists;
     }
 

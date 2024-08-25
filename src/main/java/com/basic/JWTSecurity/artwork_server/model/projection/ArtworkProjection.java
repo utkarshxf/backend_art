@@ -14,7 +14,6 @@ public interface ArtworkProjection {
     String getName();
     String getStatus();
     String getMadeWith();
-    String getDuration();
     String getImageUrl();
     String getStorageType();
     String getType();

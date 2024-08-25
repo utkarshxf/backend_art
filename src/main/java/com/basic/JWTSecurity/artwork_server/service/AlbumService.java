@@ -12,5 +12,5 @@ public interface AlbumService {
     void deleteById(String id);
     void userLikeAnAlbum(String albumId,String userId);
     void userDikeLikeAnAlbum(String albumId,String userId);
-    List<AlbumProjection> getAllAlbum();
+    List<AlbumProjection> getAllAlbum(String albumName);
 }

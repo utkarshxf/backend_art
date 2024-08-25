@@ -10,7 +10,7 @@ public interface ArtistService {
 
     Artist createNew(Artist artist);
 
-    List<ArtistProjection> getAllArtist();
+    List<ArtistProjection> getAllArtist(String artistName);
     Artist findById(String id);
     void deleteById(String id);
 

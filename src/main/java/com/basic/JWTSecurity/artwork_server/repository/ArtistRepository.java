@@ -32,6 +32,8 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 
 
     @Query("MATCH (artist:Artist) " +
-            "RETURN artist.id AS id, artist.name AS name")
-    List<ArtistProjection> getArtist();
+            "WHERE artist.name STARTS WITH $artistName " +
+            "RETURN artist.id AS id, artist.name AS name " +
+            "LIMIT 3")
+    List<ArtistProjection> getArtist(String artistName);
 }

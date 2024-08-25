@@ -55,7 +55,7 @@ public class AlbumServiceImpl implements  AlbumService{
     }
 
     @Override
-    public List<AlbumProjection> getAllAlbum() {
-        return albumRepository.getAlbum();
+    public List<AlbumProjection> getAllAlbum(String albumName) {
+        return albumRepository.getAlbum(albumName);
     }
 }
