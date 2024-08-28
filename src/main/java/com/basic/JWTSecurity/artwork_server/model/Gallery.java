@@ -23,6 +23,7 @@ public class Gallery {
     private String id;
     private String description;
     private String name;
+    private String coverUrl;
     private Status status;
 
     @Relationship(type = "IS_IN",direction = Relationship.Direction.INCOMING)

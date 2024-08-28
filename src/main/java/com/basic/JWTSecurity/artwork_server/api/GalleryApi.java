@@ -20,7 +20,7 @@ public class GalleryApi {
     private  final GalleryService galleryService;
 
     @PostMapping("/artist/{artistId}")
-    public ResponseEntity<Gallery> createNewGallery(@RequestBody Gallery requestRecord, @PathVariable String artistId, @RequestParam Integer releasedYear){
+    public ResponseEntity<Gallery> createNewGallery(@RequestBody GalleryProjection requestRecord, @PathVariable String artistId, @RequestParam Integer releasedYear){
 
         galleryService.create(requestRecord,releasedYear,artistId);
         return ResponseEntity.status(HttpStatus.CREATED).build();

@@ -22,11 +22,12 @@ public class GalleryServiceImpl implements GalleryService {
     private final GalleryRepository galleryRepository;
     private final YearService yearService;
     @Override
-    public Gallery create(Gallery gallery, Integer releasedYear, String artistId) {
+    public Gallery create(GalleryProjection gallery, Integer releasedYear, String artistId) {
 
         Gallery build = Gallery.builder()
                 .name(gallery.getName())
                 .description(gallery.getDescription())
+                .coverUrl(gallery.getCoverUrl())
                 .status(gallery.getStatus()).build();
         Gallery save = galleryRepository.save(build);
         yearService.create(releasedYear);
