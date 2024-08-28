@@ -21,6 +21,7 @@ public class User {
     @Id
     private String id;
     private String name;
+    private String profilePicture;
     private LocalDate dob;
     private String gender;
     private String language;

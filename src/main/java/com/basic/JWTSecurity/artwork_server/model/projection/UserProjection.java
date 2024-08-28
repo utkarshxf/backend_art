@@ -9,6 +9,8 @@ public interface UserProjection {
 
     String getName();
 
+    String getProfilePicture();
+
     LocalDate getDob();
 
     String getGender();

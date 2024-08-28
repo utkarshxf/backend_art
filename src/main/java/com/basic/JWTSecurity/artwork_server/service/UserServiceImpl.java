@@ -25,6 +25,7 @@ public class UserServiceImpl implements  UserService{
 
         User user1 = User.builder()
                 .name(requestRecord.name())
+                .profilePicture(requestRecord.profilePicture())
                 .dob(requestRecord.dob())
                 .id(requestRecord.id())
                 .gender(requestRecord.gender())

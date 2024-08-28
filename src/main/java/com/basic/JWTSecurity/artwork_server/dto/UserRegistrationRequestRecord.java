@@ -6,6 +6,7 @@ public record UserRegistrationRequestRecord(
         boolean artist,
         String id,
         String name,
+        String profilePicture,
         LocalDate dob,
         String gender,
         String language,

@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface UserRepository extends Neo4jRepository<User,String> {
 
 
-    @Query("MATCH (user:User {id: $userId}) RETURN user.id As id, user.name As name, user.dob As dob, user.gender As gender, user.language As language, user.countryIso2 As countryIso2")
+    @Query("MATCH (user:User {id: $userId}) RETURN user.id As id, user.name As name, user.profilePicture AS profilePicture, user.dob As dob, user.gender As gender, user.language As language, user.countryIso2 As countryIso2")
     Optional<UserProjection> findByIdProjection(@Param("userId") String id);
 
     @Query("MATCH (artist:Artist {id: $artistId})" +
