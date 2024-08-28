@@ -1,13 +1,12 @@
 package com.basic.JWTSecurity.artwork_server.api;
 
 
-import com.basic.JWTSecurity.artwork_server.model.Album;
+import com.basic.JWTSecurity.artwork_server.model.Gallery;
 import com.basic.JWTSecurity.artwork_server.model.Favorites;
 import com.basic.JWTSecurity.artwork_server.service.FavoritesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,7 +18,7 @@ public class FavoritesApi {
     private  final FavoritesService favoritesService;
 
     @PostMapping("/user/{userId}")
-    public ResponseEntity<Album> createNewAFavorites(@RequestBody Favorites requestRecord, @PathVariable String userId){
+    public ResponseEntity<Gallery> createNewAFavorites(@RequestBody Favorites requestRecord, @PathVariable String userId){
         favoritesService.create(requestRecord,userId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

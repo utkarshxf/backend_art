@@ -2,7 +2,7 @@ package com.basic.JWTSecurity.artwork_server.model.relationship;
 
 
 
-import com.basic.JWTSecurity.artwork_server.model.Album;
+import com.basic.JWTSecurity.artwork_server.model.Gallery;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
@@ -15,12 +15,12 @@ import java.time.LocalDateTime;
 @RelationshipProperties
 @Getter
 @Setter
-public class AlbumRelationship {
+public class GalleryRelationship {
 
     @Id
     @GeneratedValue
     private Long id;
     @TargetNode
-    private Album album;
+    private Gallery gallery;
     private LocalDateTime createdAt;
 }

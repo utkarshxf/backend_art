@@ -37,5 +37,5 @@ public class Artwork {
     @Relationship(value = "RELEASED_IN")
     private Year year;
     @Relationship(value = "BELONGS",direction = Relationship.Direction.INCOMING)
-    private Album album;
+    private Gallery gallery;
 }

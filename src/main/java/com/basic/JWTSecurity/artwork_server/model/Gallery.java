@@ -12,11 +12,11 @@ import org.springframework.data.neo4j.core.support.UUIDStringGenerator;
 
 import java.util.Set;
 
-@Node("Album")
+@Node("Gallery")
 @Getter
 @Setter
 @Builder
-public class Album {
+public class Gallery {
 
     @Id
     @GeneratedValue(generatorClass = UUIDStringGenerator.class)

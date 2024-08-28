@@ -32,7 +32,7 @@ public class User {
     @Relationship("CREATED")
     private List<Favorites> favorites;
     @Relationship("LIKES")
-    private List<Album> albums;
+    private List<Gallery> galleries;
     @Relationship("POSTED_COMMENT")
     private List<Comment> comments;
     @Relationship("FOLLOWS")

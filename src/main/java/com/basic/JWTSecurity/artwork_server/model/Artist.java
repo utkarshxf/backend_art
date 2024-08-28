@@ -2,8 +2,8 @@ package com.basic.JWTSecurity.artwork_server.model;
 
 
 
-import com.basic.JWTSecurity.artwork_server.model.relationship.AlbumRelationship;
 import com.basic.JWTSecurity.artwork_server.model.relationship.ArtistRelationship;
+import com.basic.JWTSecurity.artwork_server.model.relationship.GalleryRelationship;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,6 +30,6 @@ public class Artist {
     private List<ArtistRelationship> artworks;
 
     @Relationship("CREATED")
-    private List<AlbumRelationship> albums;
+    private List<GalleryRelationship> galleries;
 
 }

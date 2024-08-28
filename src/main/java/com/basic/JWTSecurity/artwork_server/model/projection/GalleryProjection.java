@@ -1,6 +1,6 @@
 package com.basic.JWTSecurity.artwork_server.model.projection;
 
-public interface AlbumProjection {
+public interface GalleryProjection {
     String getId();
     String getName();
 }
