@@ -1,5 +1,6 @@
 FROM eclipse-temurin:21.0.2_13-jdk-jammy AS builder
 WORKDIR /app
+RUN chmod +x ./mvnw
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 RUN ./mvnw dependency:go-offline
