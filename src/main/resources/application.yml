@@ -12,12 +12,15 @@ spring:
       database: artly
       port: 27017
       host: localhost
+      username: admin
+      password: secret@1234
 
     neo4j:
       uri: bolt://localhost:7687
       authentication:
         username: neo4j
         password: secret@1234
+
 
   mvc:
     pathmatch:
