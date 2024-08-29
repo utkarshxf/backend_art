@@ -30,15 +30,15 @@ services:
     networks:
       - my-network
     volumes:
-      - neo4j_data:/data
-      - neo4j_logs:/logs
+      - ./data:/data
+      - ./logs:/logs
+      - ./conf:/conf
     healthcheck:
       test: wget http://localhost:7474 || exit 1
       interval: 20s
       timeout: 20s
       retries: 10
       start_period: 60s
-
   jwtspringbootapp:
     image: jwtspringbootapp:latest
     container_name: jwtspringbootapp
