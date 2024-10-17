@@ -24,9 +24,8 @@ public class ArtistApi {
     private  final ArtistService artistService;
 
     @GetMapping()
-    public List<ArtistProjection> getAllArtist(@RequestParam String artistName)
+    public List<ArtistProjection> getAllArtist(@RequestParam String query ,@RequestParam Integer responseSize)
     {
-        return artistService.getAllArtist(artistName);
+        return artistService.getAllArtist(query,responseSize);
     }
-
 }

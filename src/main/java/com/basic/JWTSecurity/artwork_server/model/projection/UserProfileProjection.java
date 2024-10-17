@@ -1,22 +1,18 @@
 package com.basic.JWTSecurity.artwork_server.model.projection;
 
 import java.time.LocalDate;
+import java.util.List;
 
-public interface UserProjection {
-
-
+public interface UserProfileProjection {
     String getId();
 
     String getName();
 
     String getProfilePicture();
 
-    LocalDate getDob();
-
-    String getGender();
-
-    String getLanguage();
-
-    String getCountryIso2();
+    Integer numberOfFollowing();
+    Integer numberOfFollowers();
+    List<ArtworkProjection> Artworks();
 
 }
+

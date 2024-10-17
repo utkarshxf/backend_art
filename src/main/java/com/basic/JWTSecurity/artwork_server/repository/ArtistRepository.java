@@ -13,7 +13,7 @@ import java.util.Optional;
 
 public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 
-    @Query("MATCH (artist: Artist {id: $artistId}) RETURN artist.id As id, artist.name as name")
+    @Query("MATCH (artist: Artist {id: $artistId}) RETURN artist.id As id, artist.name as name , artist.profilePicture as profilePicture")
     Optional<ArtistProjection>  findByIdProjection(@Param("artistId")String id);
 
     @Query("MATCH (artist: Artist {id: $artistId}) " +
@@ -33,7 +33,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 
     @Query("MATCH (artist:Artist) " +
             "WHERE artist.name STARTS WITH $artistName " +
-            "RETURN artist.id AS id, artist.name AS name " +
-            "LIMIT 3")
-    List<ArtistProjection> getArtist(String artistName);
+            "RETURN artist.id AS id, artist.name AS name ,artist.profilePicture as profilePicture " +
+            "LIMIT $responseSize")
+    List<ArtistProjection> getArtist(String artistName, Integer responseSize);
 }

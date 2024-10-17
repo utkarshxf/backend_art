@@ -18,10 +18,10 @@ import java.util.List;
 @Setter
 @Builder
 public class Artist {
-
     @Id
     private String id;
     private String name;
+    private String profilePicture;
 
     @Relationship(value = "BELONGS_TO_GENRE")
     private Genre genre;
