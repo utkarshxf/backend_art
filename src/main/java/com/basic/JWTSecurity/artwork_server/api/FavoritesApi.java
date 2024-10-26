@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 //@PreAuthorize("hasRole('USER')")
 @RequestMapping("/favorites")
+@CrossOrigin(value = "*")
 @RequiredArgsConstructor
 public class FavoritesApi {
 

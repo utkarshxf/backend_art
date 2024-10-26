@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
+import com.basic.JWTSecurity.artwork_server.model.projection.UserProfileProjection;
 import com.basic.JWTSecurity.artwork_server.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 //@PreAuthorize("hasRole('USER')")
 @RequestMapping("/users")
+@CrossOrigin(value = "*")
 @RequiredArgsConstructor
 public class UserApi {
 
@@ -19,7 +21,6 @@ public class UserApi {
 
     @PostMapping
     public ResponseEntity<UserRegistrationRequestRecord> createNewUser(@RequestBody UserRegistrationRequestRecord requestRecord){
-
         userService.createUser(requestRecord);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -30,9 +31,15 @@ public class UserApi {
         userService.userFollowArtist(userId,artistId);
     }
 
-
     @PutMapping("/{userId}/artist/{artistId}/unfollow")
     public  void unfollowArtist(@PathVariable String userId,@PathVariable String artistId){
         userService.userUnFollowArtist(userId,artistId);
     }
+
+    @GetMapping("/UserProfile/{userId}")
+    public UserProfileProjection getUserById(@PathVariable String userId)
+    {
+        return userService.getUserById(userId);
+    }
+
 }

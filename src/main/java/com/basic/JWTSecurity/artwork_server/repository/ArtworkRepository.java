@@ -19,11 +19,12 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
 
 
 
-    @Query("MATCH (user: User {id : $userId}) " +
-            "WITH user " +
+    @Query("MATCH (user: User {id: $userId}) " +
             "MATCH (artwork: Artwork {id: $artworkId}) " +
-            "MERGE (user) -[:LIKES {createdAt: $createdAt}]-> (artwork)")
-    void userLikeAArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId, @Param("createdAt")LocalDateTime createdAt);
+            "MERGE (user)-[r:LIKES]->(artwork) " +
+            "ON CREATE SET r.createdAt = $createdAt " +
+            "RETURN r")
+    void userLikeAnArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId, @Param("createdAt")LocalDateTime createdAt);
 
     @Query("MATCH (artwork:Artwork {id: $artworkId})<-[relationship:LIKES]- (user: User {id : $userId})" +
             " DELETE relationship")

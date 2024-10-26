@@ -8,7 +8,6 @@ import com.basic.JWTSecurity.artwork_server.model.Status;
 import com.basic.JWTSecurity.artwork_server.repository.ArtworkRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -51,9 +50,9 @@ public class ArtworkServiceImpl implements ArtworkService {
     }
 
     @Override
-    public void userLikeAArtwork(String artworkId, String userId) {
+    public void userLikeAnArtwork(String artworkId, String userId) {
 
-        repository.userLikeAArtwork(artworkId,userId, LocalDateTime.now());
+        repository.userLikeAnArtwork(artworkId,userId, LocalDateTime.now());
 
     }
 

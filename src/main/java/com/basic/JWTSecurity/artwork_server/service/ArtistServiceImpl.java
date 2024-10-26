@@ -31,13 +31,14 @@ public class ArtistServiceImpl implements  ArtistService{
         Artist artist2 = Artist.builder()
                 .id(artist.getId())
                 .name(artist.getName())
+                .profilePicture(artist.getProfilePicture())
                 .build();
         return artistRepository.save(artist2);
     }
 
     @Override
-    public List<ArtistProjection> getAllArtist(String artistName) {
-        List<ArtistProjection> artists =  artistRepository.getArtist(artistName);
+    public List<ArtistProjection> getAllArtist(String artistName, Integer responseSize) {
+        List<ArtistProjection> artists =  artistRepository.getArtist(artistName , responseSize);
         return artists;
     }
 

@@ -12,7 +12,7 @@ public interface ArtworkService {
     Artwork create(ArtworkRecord artworkRecord, String artistId);
     void deleteById(String id);
 
-    void userLikeAArtwork(String artworkId, String userId);
+    void userLikeAnArtwork(String artworkId, String userId);
     void userDisLikeAArtwork(String artworkId, String userId);
 
     List<RecommendedArtwork> recommendArtwork(String userId, Integer skip, Integer limit);
