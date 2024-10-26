@@ -14,6 +14,7 @@ import java.util.List;
 @RestController
 //@PreAuthorize("hasRole('USER')")
 @RequestMapping("/artwork")
+@CrossOrigin(value = "*")
 @RequiredArgsConstructor
 public class ArtworkApi {
 

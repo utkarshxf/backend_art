@@ -15,6 +15,7 @@ import java.util.List;
 @RestController
 //@PreAuthorize("hasRole('USER')")
 @RequestMapping("/genres")
+@CrossOrigin(value = "*")
 @RequiredArgsConstructor
 public class GenreApi {
 

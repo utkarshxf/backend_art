@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 //@PreAuthorize("hasRole('USER')")
 @RequestMapping("/users")
+@CrossOrigin(value = "*")
 @RequiredArgsConstructor
 public class UserApi {
 
