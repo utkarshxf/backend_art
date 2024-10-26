@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProfileProjection;
 import com.basic.JWTSecurity.artwork_server.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -36,9 +37,8 @@ public class UserApi {
         userService.userUnFollowArtist(userId,artistId);
     }
 
-    @GetMapping("/UserProfile/{userId}")
-    public UserProfileProjection getUserById(@PathVariable String userId)
-    {
+    @GetMapping("/getUserByUserId/{userId}")
+    GetUser getUserByUserId(@PathVariable String userId){
         return userService.getUserById(userId);
     }
 
