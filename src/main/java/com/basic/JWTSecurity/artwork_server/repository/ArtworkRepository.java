@@ -2,7 +2,7 @@ package com.basic.JWTSecurity.artwork_server.repository;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
-import com.basic.JWTSecurity.artwork_server.model.RecommendedArtwork;
+import com.basic.JWTSecurity.artwork_server.model.get_models.RecommendedArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;

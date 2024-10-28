@@ -2,7 +2,7 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
-import com.basic.JWTSecurity.artwork_server.model.RecommendedArtwork;
+import com.basic.JWTSecurity.artwork_server.model.get_models.RecommendedArtwork;
 import com.basic.JWTSecurity.artwork_server.service.ArtworkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

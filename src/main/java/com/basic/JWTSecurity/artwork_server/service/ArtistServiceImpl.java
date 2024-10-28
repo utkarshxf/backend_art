@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Artist;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import com.basic.JWTSecurity.artwork_server.repository.ArtistRepository;
 import lombok.RequiredArgsConstructor;
@@ -65,5 +66,12 @@ public class ArtistServiceImpl implements  ArtistService{
         System.out.println("Artwork ID: " + artworkId);
         System.out.println("Genre ID: " + genreId);
         artistRepository.addArtistAndArtworkRelationship(artistId, releaseYear,artworkId, LocalDateTime.now(),genreId);
+    }
+
+    @Override
+    public GetArtist getArtistByUserID(String artistId) {
+        GetArtist result = artistRepository.getArtistById(artistId);
+        System.out.println("qweryty: " + result.getArtworks());
+        return result;
     }
 }

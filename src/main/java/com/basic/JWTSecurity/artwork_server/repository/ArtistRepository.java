@@ -1,7 +1,11 @@
 package com.basic.JWTSecurity.artwork_server.repository;
 
 
+import com.basic.JWTSecurity.artwork_server.model.ArtType;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
+import com.basic.JWTSecurity.artwork_server.model.Status;
+import com.basic.JWTSecurity.artwork_server.model.StorageType;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
@@ -36,4 +40,13 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
             "RETURN artist.id AS id, artist.name AS name ,artist.profilePicture as profilePicture " +
             "LIMIT $responseSize")
     List<ArtistProjection> getArtist(String artistName, Integer responseSize);
+
+
+
+    @Query("""
+        MATCH (artist:Artist {id: "string"})
+                           OPTIONAL MATCH (artist)-[created:CREATED]->(artwork:Artwork)
+                           RETURN artist.id as id,artist.name as name,artist.profilePicture as profilePicture,collect(artwork{.*}) as artworks
+    """)
+    GetArtist getArtistById(String artistId);
 }

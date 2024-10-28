@@ -1,5 +1,6 @@
-package com.basic.JWTSecurity.artwork_server.model;
+package com.basic.JWTSecurity.artwork_server.model.get_models;
 
+import com.basic.JWTSecurity.artwork_server.model.Artwork;
 import lombok.Builder;
 import lombok.Data;
 
