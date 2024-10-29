@@ -1,6 +1,7 @@
 package com.basic.JWTSecurity.artwork_server.api;
 
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import com.basic.JWTSecurity.artwork_server.service.ArtistService;
 import lombok.RequiredArgsConstructor;
@@ -16,14 +17,19 @@ import java.util.List;
 public class ArtistApi {
     private  final ArtistService artistService;
 
-    @GetMapping()
+    @GetMapping("/search")
     public List<ArtistProjection> getAllArtist(@RequestParam String query ,@RequestParam Integer responseSize)
     {
         return artistService.getAllArtist(query,responseSize);
     }
 
-    @GetMapping("/getArtist")
-    public GetArtist getArtistByUserID(@RequestParam String artistId) {
-        return artistService.getArtistByUserID(artistId);
+    @GetMapping("/getArtworkByArtistId")
+    public  List<GetArtwork> getArtworkByUserID(@RequestParam String artistId) {
+        return artistService.getArtworkByUserID(artistId);
+    }
+
+    @GetMapping("/getArtistByArtistId")
+    public  List<GetArtist> getArtistByArtistId(@RequestParam String artistId) {
+        return artistService.getArtistByArtistID(artistId);
     }
 }

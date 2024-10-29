@@ -15,4 +15,12 @@ import java.time.LocalDateTime;
 @Builder
 public class GetArtwork {
     private String id;
+    private String description;
+    private String name;
+    private Status status;
+    private String imageUrl;
+    private String madeWith;
+    private StorageType storageType;
+    private LocalDateTime releasedDate;
+    private ArtType type;
 }

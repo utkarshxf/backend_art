@@ -20,5 +20,4 @@ public class GetArtist {
     private String id;
     private String name;
     private String profilePicture;
-    private List<Artwork> artworks;
 }
