@@ -4,6 +4,7 @@ package com.basic.JWTSecurity.artwork_server.service;
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.User;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProfileProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProjection;
 import com.basic.JWTSecurity.artwork_server.repository.UserRepository;
@@ -65,7 +66,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserProfileProjection getUserById(String userId) {
+    public GetUser getUserById(String userId) {
         return userRepository.getUserById(userId);
     }
+
 }

@@ -21,4 +21,5 @@ public class Beans {
                 AuthTokens.basic("neo4j", "1jq_xIz8BppkBQxIepqRH_jgcHNKrqB5WdcBBO7PCaw")
         );
     }
+
 }

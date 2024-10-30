@@ -38,9 +38,4 @@ public class User {
     private List<Comment> comments;
     @Relationship("FOLLOWS")
     private List<FollowRelationship> artists;
-
-
-
-
-
 }
