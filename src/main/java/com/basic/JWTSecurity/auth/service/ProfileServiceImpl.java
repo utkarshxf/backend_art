@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 @Service
 public class ProfileServiceImpl implements UserDetailsService, ProfileService {
@@ -51,8 +52,11 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
         if (profileRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new RuntimeException("User already exists");
         }
+        String userPassword = user.getPassword();
         user.setPassword(passwordEncoder().encode(user.getPassword()));
-        return profileRepository.save(user);
+        Profile user1 =  profileRepository.save(user);
+        user1.setPassword(userPassword);
+        return user1;
     }
 
     @Override

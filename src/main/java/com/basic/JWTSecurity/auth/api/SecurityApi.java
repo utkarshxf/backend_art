@@ -53,7 +53,22 @@ public class SecurityApi {
     public ResponseEntity<?> registerUser(@RequestBody Profile user) {
         try {
             Profile registeredUser = profileService.registerUser(user);
-            return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
+
+            Authentication authentication;
+            authentication = authenticationManager
+                        .authenticate(new UsernamePasswordAuthenticationToken(registeredUser.getUsername(), registeredUser.getPassword()));
+
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(item -> item.getAuthority())
+                    .collect(Collectors.toList());
+
+            JwtResponse response = new JwtResponse(jwtToken , userDetails.getUsername(), roles);
+
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, Object> map = new HashMap<>();
             map.put("message", e.getMessage());
@@ -85,7 +100,7 @@ public class SecurityApi {
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
-        JwtResponse response = new JwtResponse(jwtToken , userDetails.getUsername(), roles );
+        JwtResponse response = new JwtResponse(jwtToken , userDetails.getUsername(), roles);
 
         return ResponseEntity.ok(response);
     }
