@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
+import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProfileProjection;
 import com.basic.JWTSecurity.artwork_server.service.UserService;
@@ -22,8 +23,8 @@ public class UserApi {
 
     @PostMapping
     public ResponseEntity<UserRegistrationRequestRecord> createNewUser(@RequestBody UserRegistrationRequestRecord requestRecord){
-        userService.createUser(requestRecord);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        User user = userService.createUser(requestRecord);
+        return ResponseEntity.status(HttpStatus.CREATED).body(requestRecord);
     }
 
 
