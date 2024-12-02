@@ -2,7 +2,8 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
-import com.basic.JWTSecurity.artwork_server.model.get_models.RecommendedArtwork;
+import com.basic.JWTSecurity.artwork_server.model.get_models.DetailedArtwork;
+import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import com.basic.JWTSecurity.artwork_server.service.ArtworkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 //@PreAuthorize("hasRole('USER')")
@@ -30,7 +32,14 @@ public class ArtworkApi {
     @GetMapping("/recommend")
     public ResponseEntity<?> recommendArtwork(@RequestParam String userId, @RequestParam Integer skip, @RequestParam Integer limit)
     {
-        List<RecommendedArtwork>artworks = artworkService.recommendArtwork(userId,skip,limit);
+        List<DetailedArtwork>artworks = artworkService.recommendArtwork(userId,skip,limit);
+        return new ResponseEntity<>(artworks,HttpStatus.OK);
+    }
+
+
+    @GetMapping("/{artworkId}")
+    public ResponseEntity<?> artworkByArtworkId(@PathVariable String artworkId){
+        Optional<ArtworkProjection> artworks = artworkService.getArtworkById(artworkId);
         return new ResponseEntity<>(artworks,HttpStatus.OK);
     }
 

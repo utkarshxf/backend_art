@@ -3,9 +3,11 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
-import com.basic.JWTSecurity.artwork_server.model.get_models.RecommendedArtwork;
+import com.basic.JWTSecurity.artwork_server.model.get_models.DetailedArtwork;
+import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ArtworkService {
 
@@ -15,5 +17,7 @@ public interface ArtworkService {
     void userLikeAnArtwork(String artworkId, String userId);
     void userDisLikeAArtwork(String artworkId, String userId);
 
-    List<RecommendedArtwork> recommendArtwork(String userId, Integer skip, Integer limit);
+    List<DetailedArtwork> recommendArtwork(String userId, Integer skip, Integer limit);
+
+    Optional<ArtworkProjection> getArtworkById(String artworkId);
 }

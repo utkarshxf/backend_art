@@ -3,8 +3,9 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
-import com.basic.JWTSecurity.artwork_server.model.get_models.RecommendedArtwork;
+import com.basic.JWTSecurity.artwork_server.model.get_models.DetailedArtwork;
 import com.basic.JWTSecurity.artwork_server.model.Status;
+import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import com.basic.JWTSecurity.artwork_server.repository.ArtworkRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -63,7 +65,12 @@ public class ArtworkServiceImpl implements ArtworkService {
     }
 
     @Override
-    public List<RecommendedArtwork> recommendArtwork(String userId, Integer skip, Integer limit) {
+    public List<DetailedArtwork> recommendArtwork(String userId, Integer skip, Integer limit) {
         return repository.recommendArtwork(userId,skip,limit);
+    }
+
+    @Override
+    public Optional<ArtworkProjection> getArtworkById(String artworkId) {
+        return repository.findByIdProjection(artworkId);
     }
 }
