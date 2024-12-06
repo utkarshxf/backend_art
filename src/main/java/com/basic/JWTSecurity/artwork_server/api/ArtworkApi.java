@@ -32,7 +32,7 @@ public class ArtworkApi {
     @GetMapping("/recommend")
     public ResponseEntity<?> recommendArtwork(@RequestParam String userId, @RequestParam Integer skip, @RequestParam Integer limit)
     {
-        List<DetailedArtwork>artworks = artworkService.recommendArtwork(userId,skip,limit);
+        Optional<List<ArtworkProjection>> artworks = artworkService.recommendArtwork(userId,skip,limit);
         return new ResponseEntity<>(artworks,HttpStatus.OK);
     }
 

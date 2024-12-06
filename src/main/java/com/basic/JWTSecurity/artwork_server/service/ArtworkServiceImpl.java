@@ -65,7 +65,7 @@ public class ArtworkServiceImpl implements ArtworkService {
     }
 
     @Override
-    public List<DetailedArtwork> recommendArtwork(String userId, Integer skip, Integer limit) {
+    public Optional<List<ArtworkProjection>> recommendArtwork(String userId, Integer skip, Integer limit) {
         return repository.recommendArtwork(userId,skip,limit);
     }
 

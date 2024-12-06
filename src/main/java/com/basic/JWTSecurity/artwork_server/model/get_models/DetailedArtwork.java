@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 @Builder
 public class DetailedArtwork {
-    private ArtworkProjection artwork;
+    private Artwork artwork;
     private Integer userSimilarity;
     private Integer likes;
     private Integer noOfComments;
