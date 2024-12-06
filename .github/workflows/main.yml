@@ -35,7 +35,7 @@ jobs:
           IMAGE_TAG=$(git rev-parse --short HEAD)
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
           docker build --no-cache \
-          -t utkarshxf/artly:${IMAGE_TAG} -f Dockerfile.prod .
+          -t utkarshxf/artly:${IMAGE_TAG} -f Dockerfile .
 
 
       # Push production image to Docker Hub
