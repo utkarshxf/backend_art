@@ -39,8 +39,8 @@ public class UserApi {
     }
 
     @GetMapping("/getUserByUserId/{userId}")
-    GetUser getUserByUserId(@PathVariable String userId){
-        return userService.getUserById(userId);
+    GetUser getUserByUserId(@PathVariable String userId  , @PathVariable String currentUserId){
+        return userService.getUserById(userId , currentUserId);
     }
 
 }

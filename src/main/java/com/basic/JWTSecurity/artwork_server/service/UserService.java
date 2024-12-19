@@ -14,5 +14,5 @@ public interface UserService {
     void userFollowArtist(String userId,String artistId);
     void userUnFollowArtist(String userId,String artistId);
 
-    GetUser getUserById(String userId);
+    GetUser getUserById(String userId , String currentUserId);
 }

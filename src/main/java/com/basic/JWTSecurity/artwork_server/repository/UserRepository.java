@@ -46,5 +46,5 @@ public interface UserRepository extends Neo4jRepository<User, String> {
             "user.language AS language, " +
             "user.countryIso2 AS countryIso2, " +
             "CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow")
-    GetUser getUserById(String userId);
+    GetUser getUserById(String userId , String currentUserId);
 }
