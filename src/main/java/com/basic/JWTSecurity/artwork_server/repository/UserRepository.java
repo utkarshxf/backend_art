@@ -36,8 +36,8 @@ public interface UserRepository extends Neo4jRepository<User, String> {
                             @Param("artistId") String artistId);
 
 
-    @Query("MATCH (user:Artist {id: $userId}) " +
-            "OPTIONAL MATCH (currentUser:User {id: $currentUserId})-[follow:FOLLOWS]->(user) " +
+    @Query("MATCH (user:User {id: $userId}) " +
+            "OPTIONAL MATCH (currentUser:User {id: $currentUserId})-[follow:FOLLOWS]->(artist:Artist { id:$userId }) " +
             "RETURN user.id AS id, " +
             "user.name AS name, " +
             "user.profilePicture AS profilePicture, " +
