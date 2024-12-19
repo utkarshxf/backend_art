@@ -36,7 +36,7 @@ public interface UserRepository extends Neo4jRepository<User, String> {
                             @Param("artistId") String artistId);
 
 
-    @Query("MATCH (user:User {id: $userId}) " +
+    @Query("MATCH (user:Artist {id: $userId}) " +
             "OPTIONAL MATCH (currentUser:User {id: $currentUserId})-[follow:FOLLOWS]->(user) " +
             "RETURN user.id AS id, " +
             "user.name AS name, " +
@@ -46,5 +46,6 @@ public interface UserRepository extends Neo4jRepository<User, String> {
             "user.language AS language, " +
             "user.countryIso2 AS countryIso2, " +
             "CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow")
+
     GetUser getUserById(String userId , String currentUserId);
 }
