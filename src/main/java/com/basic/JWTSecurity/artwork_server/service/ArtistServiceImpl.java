@@ -71,8 +71,8 @@ public class ArtistServiceImpl implements  ArtistService{
     }
 
     @Override
-    public List<GetArtwork> getArtworkByUserID(String artistId , String userId) {
-        List<GetArtwork> result = artistRepository.getArtworkByArtistId(artistId , userId);
+    public List<GetArtwork> getArtworkByUserID(String userId , String artistId) {
+        List<GetArtwork> result = artistRepository.getArtworkByArtistId(userId , artistId);
         return result;
     }
 

@@ -56,7 +56,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
            artwork.type AS type,
            CASE WHEN like IS NOT NULL THEN true ELSE false END AS liked
 """)
-    List<GetArtwork> getArtworkByArtistId(String artistId , String userId);
+    List<GetArtwork> getArtworkByArtistId(String userId , String artistId);
 
     @Query("""
         MATCH (artist:Artist {id: $artistId})

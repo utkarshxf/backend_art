@@ -24,8 +24,8 @@ public class ArtistApi {
     }
 
     @GetMapping("/getArtworkByArtistId")
-    public  List<GetArtwork> getArtworkByUserID(@RequestParam String artistId , @RequestParam String userId) {
-        return artistService.getArtworkByUserID(artistId , userId);
+    public  List<GetArtwork> getArtworkByUserID(@RequestParam String userId , @RequestParam String artistId) {
+        return artistService.getArtworkByUserID(userId,artistId);
     }
 
     @GetMapping("/getArtistByArtistId")
