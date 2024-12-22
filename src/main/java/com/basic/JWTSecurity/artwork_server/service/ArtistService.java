@@ -19,7 +19,7 @@ public interface ArtistService {
 
     void addArtistAndArtworkRelationship(String artistId, Integer releaseYear, String id, String genreId);
 
-    List<GetArtwork> getArtworkByUserID(String artistId);
+    List<GetArtwork> getArtworkByUserID(String artistId , String userId);
 
     List<GetArtist> getArtistByArtistID(String artistId);
 }

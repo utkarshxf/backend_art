@@ -42,19 +42,21 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 
 
     @Query("""
-        MATCH (artist:Artist {id: $artistId})
-                            OPTIONAL MATCH (artist)-[created:CREATED]->(artwork:Artwork)
-                            RETURN artwork.id AS id,
-                                 artwork.description AS description,
-                                 artwork.name AS name,
-                                 artwork.status AS status,
-                                 artwork.imageUrl AS imageUrl,
-                                 artwork.madeWith AS madeWith,
-                                artwork.storageType AS storageType,
-                                 artwork.releasedDate AS releasedDate,
-                                artwork.type AS type
-    """)
-    List<GetArtwork> getArtworkByArtistId(String artistId);
+    MATCH (artist:Artist {id: $artistId})
+    OPTIONAL MATCH (artist)-[created:CREATED]->(artwork:Artwork)
+    OPTIONAL MATCH (user:User {id: $userId})-[like:LIKES]->(artwork)
+    RETURN artwork.id AS id,
+           artwork.description AS description,
+           artwork.name AS name,
+           artwork.status AS status,
+           artwork.imageUrl AS imageUrl,
+           artwork.madeWith AS madeWith,
+           artwork.storageType AS storageType,
+           artwork.releasedDate AS releasedDate,
+           artwork.type AS type,
+           CASE WHEN like IS NOT NULL THEN true ELSE false END AS liked
+""")
+    List<GetArtwork> getArtworkByArtistId(String artistId , String userId);
 
     @Query("""
         MATCH (artist:Artist {id: $artistId})
