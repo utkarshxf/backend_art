@@ -23,5 +23,5 @@ public class GetArtwork {
     private StorageType storageType;
     private LocalDateTime releasedDate;
     private ArtType type;
-    private Boolean Liked;
+    private Boolean liked;
 }
