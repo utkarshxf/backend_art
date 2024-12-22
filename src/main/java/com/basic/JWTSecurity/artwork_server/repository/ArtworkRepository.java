@@ -129,8 +129,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "recommendArtwork.storageType AS storageType, " +
                     "recommendArtwork.type AS type, " +
                     "recommendArtwork.year AS year, " +
-                    "recommendArtwork.madeWith AS madeWith, " +
-                    "CASE WHEN like IS NOT NULL THEN true ELSE false END AS liked " +
+                    "recommendArtwork.madeWith AS madeWith " +
                     "ORDER BY priority, userSimilarity DESC, likes DESC " +
                     "SKIP $skip LIMIT $limit"
     )
