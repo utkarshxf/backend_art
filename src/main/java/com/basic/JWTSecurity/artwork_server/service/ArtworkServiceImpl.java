@@ -76,7 +76,7 @@ public class ArtworkServiceImpl implements ArtworkService {
     }
 
     @Override
-    public Optional<ArtworkProjection> getArtworkById(String artworkId) {
-        return repository.findByIdProjection(artworkId);
+    public Optional<ArtworkProjection> getArtworkById(String userId ,String artworkId) {
+        return repository.findByIdProjection(userId , artworkId);
     }
 }

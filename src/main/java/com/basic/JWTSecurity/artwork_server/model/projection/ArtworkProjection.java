@@ -18,4 +18,5 @@ public interface ArtworkProjection {
     String getStorageType();
     String getType();
     Year getYear();
+    Boolean getLiked();
 }

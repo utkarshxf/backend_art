@@ -37,8 +37,8 @@ public class ArtworkApi {
 
 
     @GetMapping("/{artworkId}")
-    public ResponseEntity<?> artworkByArtworkId(@PathVariable String artworkId){
-        Optional<ArtworkProjection> artworks = artworkService.getArtworkById(artworkId);
+    public ResponseEntity<?> artworkByArtworkId(@PathVariable String userId ,@PathVariable String artworkId){
+        Optional<ArtworkProjection> artworks = artworkService.getArtworkById(userId , artworkId);
         return new ResponseEntity<>(artworks,HttpStatus.OK);
     }
 

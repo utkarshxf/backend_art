@@ -17,7 +17,6 @@ public interface ArtworkService {
     void userUnLikeAnArtwork(String artworkId, String userId);
     void userDislikeAnArtwork(String artworkId, String userId);
     Optional<List<ArtworkProjection>> recommendArtwork(String userId, Integer skip, Integer limit);
-
-    Optional<ArtworkProjection> getArtworkById(String artworkId);
+    Optional<ArtworkProjection> getArtworkById(String userId ,String artworkId);
 
 }

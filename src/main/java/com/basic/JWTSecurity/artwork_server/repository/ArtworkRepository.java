@@ -13,8 +13,23 @@ import java.util.Optional;
 
 public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
 
-    @Query("MATCH (artwork:Artwork {id: $artworkId}) RETURN artwork.id As id, artwork.name As name, artwork.description As description, artwork.status As status, artwork.duration As duration, artwork.imageUrl As imageUrl, artwork.storageType As storageType, artwork.type As type, artwork.year As year , artwork.madeWith As madeWith")
-    Optional<ArtworkProjection> findByIdProjection(@Param("artworkId") String id);
+    @Query(
+            "MATCH (artwork:Artwork {id: $artworkId}) " +
+                    "OPTIONAL MATCH (user:User {id: $userId})-[like:LIKES]->(artwork)" +
+                    "RETURN artwork.id As id," +
+                    " artwork.name As name, " +
+                    "artwork.description As description, " +
+                    "artwork.status As status, " +
+                    "artwork.duration As duration, " +
+                    "artwork.imageUrl As imageUrl, " +
+                    "artwork.storageType As storageType, " +
+                    "artwork.type As type, " +
+                    "artwork.year As year , " +
+                    "artwork.madeWith As madeWith, " +
+                    "CASE WHEN like IS NOT NULL THEN true ELSE false END AS liked"
+
+    )
+    Optional<ArtworkProjection> findByIdProjection(@Param("userId") String userId, @Param("artworkId") String id);
 
 
 
@@ -92,7 +107,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "   RETURN artwork AS recommendArtwork, 0 AS userSimilarity, 2 AS priority " +
                     "} " +
                     "WITH recommendArtwork, userSimilarity, priority " +
-                    "OPTIONAL MATCH (recommendArtwork)<-[:LIKES]-(likeUser:User) " +
+                    "OPTIONAL MATCH (recommendArtwork)<-[like:LIKES]-(likeUser:User) " +
                     "WITH recommendArtwork, userSimilarity, priority, count(DISTINCT likeUser) AS likes " +
                     "OPTIONAL MATCH (recommendArtwork)<-[:HAS_COMMENT]-(comment:Comment) " +
                     "WITH recommendArtwork, userSimilarity, priority, likes, count(DISTINCT comment) AS noOfComments " +
@@ -107,7 +122,8 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "recommendArtwork.storageType AS storageType, " +
                     "recommendArtwork.type AS type, " +
                     "recommendArtwork.year AS year, " +
-                    "recommendArtwork.madeWith AS madeWith " +
+                    "recommendArtwork.madeWith AS madeWith, " +
+                    "CASE WHEN like IS NOT NULL THEN true ELSE false END AS liked " +
                     "ORDER BY priority, userSimilarity DESC, likes DESC " +
                     "SKIP $skip LIMIT $limit"
     )
