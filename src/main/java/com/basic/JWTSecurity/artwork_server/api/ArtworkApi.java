@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import com.basic.JWTSecurity.artwork_server.service.ArtworkService;
 import lombok.RequiredArgsConstructor;
@@ -31,14 +32,14 @@ public class ArtworkApi {
     @GetMapping("/recommend")
     public ResponseEntity<?> recommendArtwork(@RequestParam String userId, @RequestParam Integer skip, @RequestParam Integer limit)
     {
-        Optional<List<ArtworkProjection>> artworks = artworkService.recommendArtwork(userId,skip,limit);
+        Optional<List<GetArtwork>> artworks = artworkService.recommendArtwork(userId,skip,limit);
         return new ResponseEntity<>(artworks,HttpStatus.OK);
     }
 
 
     @GetMapping("/{userId}/{artworkId}")
     public ResponseEntity<?> artworkByArtworkId(@PathVariable String userId ,@PathVariable String artworkId){
-        Optional<ArtworkProjection> artworks = artworkService.getArtworkById(userId , artworkId);
+        Optional<GetArtwork> artworks = artworkService.getArtworkById(userId , artworkId);
         return new ResponseEntity<>(artworks,HttpStatus.OK);
     }
 

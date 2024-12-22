@@ -4,6 +4,7 @@ package com.basic.JWTSecurity.artwork_server.service;
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
 import com.basic.JWTSecurity.artwork_server.model.Status;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import com.basic.JWTSecurity.artwork_server.repository.ArtworkRepository;
 import lombok.RequiredArgsConstructor;
@@ -71,12 +72,12 @@ public class ArtworkServiceImpl implements ArtworkService {
     }
 
     @Override
-    public Optional<List<ArtworkProjection>> recommendArtwork(String userId, Integer skip, Integer limit) {
+    public Optional<List<GetArtwork>> recommendArtwork(String userId, Integer skip, Integer limit) {
         return repository.recommendArtwork(userId,skip,limit);
     }
 
     @Override
-    public Optional<ArtworkProjection> getArtworkById(String userId ,String artworkId) {
+    public Optional<GetArtwork> getArtworkById(String userId ,String artworkId) {
         return repository.findByIdProjection(userId , artworkId);
     }
 }

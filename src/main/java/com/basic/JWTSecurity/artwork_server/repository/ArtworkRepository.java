@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.repository;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
@@ -29,9 +30,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "CASE WHEN like IS NOT NULL THEN true ELSE false END AS liked"
 
     )
-    Optional<ArtworkProjection> findByIdProjection(@Param("userId") String userId, @Param("artworkId") String id);
-
-
+    Optional<GetArtwork> findByIdProjection(@Param("userId") String userId, @Param("artworkId") String id);
 
     @Query("MATCH (user: User {id: $userId}) " +
             "MATCH (artwork: Artwork {id: $artworkId}) " +
@@ -127,7 +126,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "ORDER BY priority, userSimilarity DESC, likes DESC " +
                     "SKIP $skip LIMIT $limit"
     )
-    Optional<List<ArtworkProjection>> recommendArtwork(
+    Optional<List<GetArtwork>> recommendArtwork(
             @Param("userId") String userId,
             @Param("skip") Integer skip,
             @Param("limit") Integer limit
