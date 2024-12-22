@@ -53,15 +53,16 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     public void userLikeAnArtwork(String artworkId, String userId) {
-        repository.userUnLikeAArtwork(artworkId,userId);
-        repository.userUnDislikeAArtwork(artworkId,userId);
-        repository.userLikeAnArtwork(artworkId,userId, LocalDateTime.now());
+        if(repository.checkDislikeExists(artworkId , userId))
+            repository.userUnDislikeAArtwork(artworkId,userId);
+        if(!repository.checkLikeExists(artworkId , userId))
+            repository.userLikeAnArtwork(artworkId,userId, LocalDateTime.now());
     }
 
     @Override
     public void userDislikeAnArtwork(String artworkId, String userId) {
-        repository.userUnLikeAArtwork(artworkId,userId);
-        repository.userUnDislikeAArtwork(artworkId,userId);
+        if(!repository.checkLikeExists(artworkId , userId) &&
+                !repository.checkDislikeExists(artworkId , userId))
         repository.userDislikeAnArtwork(artworkId , userId , LocalDateTime.now());
     }
 
@@ -69,6 +70,11 @@ public class ArtworkServiceImpl implements ArtworkService {
     public void userUnLikeAnArtwork(String artworkId, String userId) {
         repository.userUnLikeAArtwork(artworkId,userId);
 
+    }
+
+    @Override
+    public void userUnDislikeAnArtwork(String artworkId, String userId) {
+        repository.userUnDislikeAArtwork(artworkId , userId);
     }
 
     @Override

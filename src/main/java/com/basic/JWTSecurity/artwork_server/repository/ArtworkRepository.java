@@ -54,9 +54,17 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
             " DELETE relationship")
     void userUnDislikeAArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId);
 
+    @Query("""
+        MATCH (user:User {id: $userId})-[r:LIKES]->(artwork:Artwork {id: $artworkId})
+        RETURN COUNT(r) > 0
+    """)
+    boolean checkLikeExists(@Param("artworkId") String artworkId, @Param("userId") String userId);
 
-
-
+    @Query("""
+        MATCH (user:User {id: $userId})-[r:DISLIKES]->(artwork:Artwork {id: $artworkId})
+        RETURN COUNT(r) > 0
+    """)
+    boolean checkDislikeExists(@Param("artworkId") String artworkId, @Param("userId") String userId);
 
 
 //    @Query(
