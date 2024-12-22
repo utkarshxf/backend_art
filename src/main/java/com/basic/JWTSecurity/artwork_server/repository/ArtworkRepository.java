@@ -2,7 +2,6 @@ package com.basic.JWTSecurity.artwork_server.repository;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
-import com.basic.JWTSecurity.artwork_server.model.get_models.DetailedArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
@@ -26,9 +25,24 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
             "RETURN r")
     void userLikeAnArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId, @Param("createdAt")LocalDateTime createdAt);
 
+    @Query("MATCH (user: User {id: $userId}) " +
+            "MATCH (artwork: Artwork {id: $artworkId}) " +
+            "MERGE (user)-[r:DISLIKES]->(artwork) " +
+            "ON CREATE SET r.createdAt = $createdAt " +
+            "RETURN r")
+    void userDislikeAnArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId, @Param("createdAt")LocalDateTime createdAt);
+
     @Query("MATCH (artwork:Artwork {id: $artworkId})<-[relationship:LIKES]- (user: User {id : $userId})" +
             " DELETE relationship")
-    void userDisLikeAArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId);
+    void userUnLikeAArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId);
+
+    @Query("MATCH (artwork:Artwork {id: $artworkId})<-[relationship:DISLIKES]- (user: User {id : $userId})" +
+            " DELETE relationship")
+    void userUnDislikeAArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId);
+
+
+
+
 
 
 //    @Query(

@@ -2,7 +2,6 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
-import com.basic.JWTSecurity.artwork_server.model.get_models.DetailedArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import com.basic.JWTSecurity.artwork_server.service.ArtworkService;
 import lombok.RequiredArgsConstructor;
@@ -45,9 +44,19 @@ public class ArtworkApi {
 
 
     @PutMapping("/user/like/{artworkId}/{userId}")
-    public void userLikeAArtwork(@PathVariable String artworkId, @PathVariable String userId) {
+    public void userLikeAnArtwork(@PathVariable String artworkId, @PathVariable String userId) {
         System.out.println("Artist ID: " + artworkId + userId);
         artworkService.userLikeAnArtwork(artworkId, userId);
     }
 
+    @PutMapping("/user/unlike/{artworkId}/{userId}")
+    public void userUnlikeAnArtwork(@PathVariable String artworkId , @PathVariable String userId){
+        artworkService.userUnLikeAnArtwork(artworkId, userId);
+    }
+
+    @PutMapping("/user/dislike/{artworkId}/{userId}")
+    public void userDislikeAnArtwork(@PathVariable String artworkId, @PathVariable String userId) {
+        System.out.println("Artist ID: " + artworkId + userId);
+        artworkService.userDislikeAnArtwork(artworkId, userId);
+    }
 }

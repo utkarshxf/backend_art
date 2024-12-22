@@ -3,7 +3,6 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
-import com.basic.JWTSecurity.artwork_server.model.get_models.DetailedArtwork;
 import com.basic.JWTSecurity.artwork_server.model.Status;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import com.basic.JWTSecurity.artwork_server.repository.ArtworkRepository;
@@ -53,14 +52,21 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     public void userLikeAnArtwork(String artworkId, String userId) {
-
+        repository.userUnLikeAArtwork(artworkId,userId);
+        repository.userUnDislikeAArtwork(artworkId,userId);
         repository.userLikeAnArtwork(artworkId,userId, LocalDateTime.now());
-
     }
 
     @Override
-    public void userDisLikeAArtwork(String artworkId, String userId) {
-        repository.userDisLikeAArtwork(artworkId,userId);
+    public void userDislikeAnArtwork(String artworkId, String userId) {
+        repository.userUnLikeAArtwork(artworkId,userId);
+        repository.userUnDislikeAArtwork(artworkId,userId);
+        repository.userDislikeAnArtwork(artworkId , userId , LocalDateTime.now());
+    }
+
+    @Override
+    public void userUnLikeAnArtwork(String artworkId, String userId) {
+        repository.userUnLikeAArtwork(artworkId,userId);
 
     }
 
