@@ -2,12 +2,14 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Comment;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetComments;
 import com.basic.JWTSecurity.artwork_server.repository.CommentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 
 @Service
@@ -42,5 +44,10 @@ public class CommentServiceImpl implements  CommentService{
     @Override
     public void deleteById(String id) {
         commentRepository.deleteById(id);
+    }
+
+    @Override
+    public List<GetComments> getArtworkComments(String artworkId) {
+        return commentRepository.getArtworkComments(artworkId);
     }
 }

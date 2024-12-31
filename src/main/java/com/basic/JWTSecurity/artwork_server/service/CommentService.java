@@ -2,6 +2,9 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Comment;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetComments;
+
+import java.util.List;
 
 public interface CommentService {
 
@@ -9,4 +12,6 @@ public interface CommentService {
     Comment update(String id,Comment comment );
 
     void deleteById(String id);
+
+    List<GetComments> getArtworkComments(String artworkId);
 }
