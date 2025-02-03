@@ -2,12 +2,14 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Favorites;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetFavorites;
 import com.basic.JWTSecurity.artwork_server.repository.FavoritesRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -45,5 +47,10 @@ public class FavoritesServiceImpl implements FavoritesService {
 
         favoritesRepository.removeArtworkFromFavorites(favoritesId, artworkId);
 
+    }
+
+    @Override
+    public List<GetFavorites> getFavorites(String userId) {
+        return favoritesRepository.getFavoritesByUserId(userId);
     }
 }

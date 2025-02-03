@@ -3,11 +3,14 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 import com.basic.JWTSecurity.artwork_server.model.Gallery;
 import com.basic.JWTSecurity.artwork_server.model.Favorites;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetFavorites;
 import com.basic.JWTSecurity.artwork_server.service.FavoritesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 //@PreAuthorize("hasRole('USER')")
@@ -19,7 +22,7 @@ public class FavoritesApi {
     private  final FavoritesService favoritesService;
 
     @PostMapping("/user/{userId}")
-    public ResponseEntity<Gallery> createNewAFavorites(@RequestBody Favorites requestRecord, @PathVariable String userId){
+    public ResponseEntity<Favorites> createNewAFavorites(@RequestBody Favorites requestRecord, @PathVariable String userId){
         favoritesService.create(requestRecord,userId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -32,6 +35,13 @@ public class FavoritesApi {
     public  void removeArtworkFromFavorites(@PathVariable String id, @PathVariable String artworkId){
         favoritesService.removeArtworkFromFavorites(id,artworkId);
     }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<GetFavorites>> getFavoritesFromUserId(@PathVariable String userId){
+        List<GetFavorites> data =  favoritesService.getFavorites(userId);
+        return new ResponseEntity<>(data,HttpStatus.OK);
+    }
+
 
 
 

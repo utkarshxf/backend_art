@@ -2,6 +2,9 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Favorites;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetFavorites;
+
+import java.util.List;
 
 public interface FavoritesService {
 
@@ -10,4 +13,5 @@ public interface FavoritesService {
     void addSongIntoFavorites(String favoritesId, String artworkId);
     void removeArtworkFromFavorites(String favoritesId, String artworkId);
 
+    List<GetFavorites> getFavorites(String userId);
 }
