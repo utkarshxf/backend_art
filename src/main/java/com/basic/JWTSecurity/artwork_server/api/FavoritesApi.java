@@ -27,7 +27,7 @@ public class FavoritesApi {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PutMapping("/{id}/artwork/{artworkId}/add-artwork")
+    @PutMapping("/artwork/add-artwork/{id}/{artworkId}")
     public  void addArtworkIntoFavorites(@PathVariable String id, @PathVariable String artworkId){
         favoritesService.addSongIntoFavorites(id,artworkId);
     }
