@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -37,7 +38,8 @@ public class FavoritesServiceImpl implements FavoritesService {
 
     @Override
     public void addSongIntoFavorites(String favoritesId, String artworkId) {
-
+        System.out.println("favoritesId: " + favoritesId);
+        System.out.println("artworkId: " + artworkId );
         favoritesRepository.addArtworkToFavorites(favoritesId, artworkId, LocalDateTime.now());
 
     }

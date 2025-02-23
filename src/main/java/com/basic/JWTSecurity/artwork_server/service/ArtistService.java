@@ -14,7 +14,9 @@ public interface ArtistService {
     Artist createNew(Artist artist);
 
     List<ArtistProjection> getAllArtist(String artistName, Integer responseSize);
+
     Artist findById(String id);
+
     void deleteById(String id);
 
     void addArtistAndArtworkRelationship(String artistId, Integer releaseYear, String id, String genreId);
@@ -22,4 +24,7 @@ public interface ArtistService {
     List<GetArtwork> getArtworkByUserID(String userId , String artistId);
 
     List<GetArtist> getArtistByArtistID(String artistId);
+
+
+
 }

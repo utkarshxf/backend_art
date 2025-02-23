@@ -83,6 +83,26 @@ public class ArtworkServiceImpl implements ArtworkService {
     }
 
     @Override
+    public Optional<List<GetArtwork>> popularArtwork(String userId, Integer skip, Integer limit) {
+        return repository.popularArtwork(userId,skip,limit);
+    }
+
+    @Override
+    public Optional<List<GetArtwork>> newArrivalArtwork(String userId, Integer skip, Integer limit) {
+        return repository.newArrivalArtwork(userId,skip,limit);
+    }
+
+    @Override
+    public Optional<List<GetArtwork>> recommendedArtworkForToday(String userId, Integer skip, Integer limit) {
+        return repository.recommendedArtworkForToday(userId,skip,limit);
+    }
+
+    @Override
+    public GetArtwork todayBiggestHit() {
+        return repository.todayBiggestHit();
+    }
+
+    @Override
     public Optional<GetArtwork> getArtworkById(String userId ,String artworkId) {
         return repository.findByIdProjection(userId , artworkId);
     }

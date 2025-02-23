@@ -19,6 +19,14 @@ public interface ArtworkService {
     void userDislikeAnArtwork(String artworkId, String userId);
     void userUnDislikeAnArtwork(String artworkId, String userId);
     Optional<List<GetArtwork>> recommendArtwork(String userId, Integer skip, Integer limit);
+
+    Optional<List<GetArtwork>> popularArtwork(String userId, Integer skip, Integer limit);
+    Optional<List<GetArtwork>> newArrivalArtwork(String userId, Integer skip, Integer limit);
+
+    Optional<List<GetArtwork>> recommendedArtworkForToday(String userId, Integer skip, Integer limit);
+
+    GetArtwork todayBiggestHit();
+
     Optional<GetArtwork> getArtworkById(String userId , String artworkId);
 
 }

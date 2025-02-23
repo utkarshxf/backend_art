@@ -36,6 +36,39 @@ public class ArtworkApi {
         return new ResponseEntity<>(artworks,HttpStatus.OK);
     }
 
+    @GetMapping("/popular")
+    public ResponseEntity<?> popularArtwork(
+            @RequestParam String userId,
+            @RequestParam Integer skip,
+            @RequestParam Integer limit) {
+        Optional<List<GetArtwork>> artworks = artworkService.popularArtwork(userId, skip, limit);
+        return new ResponseEntity<>(artworks, HttpStatus.OK);
+    }
+
+    @GetMapping("/new-arrivals")
+    public ResponseEntity<?> newArrivalArtwork(
+            @RequestParam String userId,
+            @RequestParam Integer skip,
+            @RequestParam Integer limit) {
+        Optional<List<GetArtwork>> artworks = artworkService.newArrivalArtwork(userId, skip, limit);
+        return new ResponseEntity<>(artworks, HttpStatus.OK);
+    }
+
+    @GetMapping("/recommended-today")
+    public ResponseEntity<?> recommendedArtworkForToday(
+            @RequestParam String userId,
+            @RequestParam Integer skip,
+            @RequestParam Integer limit) {
+        Optional<List<GetArtwork>> artworks = artworkService.recommendedArtworkForToday(userId, skip, limit);
+        return new ResponseEntity<>(artworks, HttpStatus.OK);
+    }
+
+    @GetMapping("/today-biggest-hit")
+    public ResponseEntity<?> todayBiggestHit() {
+        GetArtwork artwork = artworkService.todayBiggestHit();
+        return new ResponseEntity<>(artwork, HttpStatus.OK);
+    }
+
 
     @GetMapping("/{userId}/{artworkId}")
     public ResponseEntity<?> artworkByArtworkId(@PathVariable String userId ,@PathVariable String artworkId){
@@ -60,4 +93,5 @@ public class ArtworkApi {
         System.out.println("Artist ID: " + artworkId + userId);
         artworkService.userDislikeAnArtwork(artworkId, userId);
     }
+
 }

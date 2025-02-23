@@ -3,7 +3,6 @@ package com.basic.JWTSecurity.artwork_server.repository;
 
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
-import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,16 +16,16 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
     @Query(
             "MATCH (artwork:Artwork {id: $artworkId}) " +
                     "OPTIONAL MATCH (user:User {id: $userId})-[like:LIKES]->(artwork)" +
-                    "RETURN artwork.id As id," +
-                    " artwork.name As name, " +
-                    "artwork.description As description, " +
-                    "artwork.status As status, " +
-                    "artwork.duration As duration, " +
-                    "artwork.imageUrl As imageUrl, " +
-                    "artwork.storageType As storageType, " +
-                    "artwork.type As type, " +
-                    "artwork.year As year , " +
-                    "artwork.madeWith As madeWith, " +
+                    "RETURN artwork.id AS id," +
+                    " artwork.name AS name, " +
+                    "artwork.description AS description, " +
+                    "artwork.status AS status, " +
+                    "artwork.duration AS duration, " +
+                    "artwork.imageUrl AS imageUrl, " +
+                    "artwork.storageType AS storageType, " +
+                    "artwork.type AS type, " +
+                    "artwork.year AS year , " +
+                    "artwork.madeWith AS madeWith, " +
                     "CASE WHEN like IS NOT NULL THEN true ELSE false END AS liked"
 
     )
@@ -37,14 +36,14 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
             "MERGE (user)-[r:LIKES]->(artwork) " +
             "ON CREATE SET r.createdAt = $createdAt " +
             "RETURN r")
-    void userLikeAnArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId, @Param("createdAt")LocalDateTime createdAt);
+    void userLikeAnArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId, @Param("createdAt") LocalDateTime createdAt);
 
     @Query("MATCH (user: User {id: $userId}) " +
             "MATCH (artwork: Artwork {id: $artworkId}) " +
             "MERGE (user)-[r:DISLIKES]->(artwork) " +
             "ON CREATE SET r.createdAt = $createdAt " +
             "RETURN r")
-    void userDislikeAnArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId, @Param("createdAt")LocalDateTime createdAt);
+    void userDislikeAnArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId, @Param("createdAt") LocalDateTime createdAt);
 
     @Query("MATCH (artwork:Artwork {id: $artworkId})<-[relationship:LIKES]- (user: User {id : $userId})" +
             " DELETE relationship")
@@ -55,15 +54,15 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
     void userUnDislikeAArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId);
 
     @Query("""
-        MATCH (user:User {id: $userId})-[r:LIKES]->(artwork:Artwork {id: $artworkId})
-        RETURN COUNT(r) > 0
-    """)
+                MATCH (user:User {id: $userId})-[r:LIKES]->(artwork:Artwork {id: $artworkId})
+                RETURN count(r) > 0
+            """)
     boolean checkLikeExists(@Param("artworkId") String artworkId, @Param("userId") String userId);
 
     @Query("""
-        MATCH (user:User {id: $userId})-[r:DISLIKES]->(artwork:Artwork {id: $artworkId})
-        RETURN COUNT(r) > 0
-    """)
+                MATCH (user:User {id: $userId})-[r:DISLIKES]->(artwork:Artwork {id: $artworkId})
+                RETURN count(r) > 0
+            """)
     boolean checkDislikeExists(@Param("artworkId") String artworkId, @Param("userId") String userId);
 
 
@@ -138,4 +137,105 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
             @Param("skip") Integer skip,
             @Param("limit") Integer limit
     );
+
+    @Query("""
+                MATCH (artwork:Artwork)
+                OPTIONAL MATCH (artwork)<-[like:LIKES]-(likeUser:User)
+                OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
+                WITH artwork, count(DISTINCT like) AS likes, 
+                     CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
+                OPTIONAL MATCH (artwork)<-[:HAS_COMMENT]-(comment:Comment)
+                WITH artwork, likes, liked, count(DISTINCT comment) AS comments
+                RETURN 
+                    artwork.id AS id,
+                    artwork.name AS name,
+                    artwork.description AS description,
+                    artwork.status AS status,
+                    artwork.imageUrl AS imageUrl,
+                    artwork.storageType AS storageType,
+                    artwork.type AS type,
+                    artwork.year AS year,
+                    artwork.madeWith AS madeWith,
+                    liked
+                ORDER BY likes DESC, comments DESC
+                SKIP $skip LIMIT $limit
+            """)
+    Optional<List<GetArtwork>> popularArtwork(
+            @Param("userId") String userId,
+            @Param("skip") Integer skip,
+            @Param("limit") Integer limit
+    );
+
+    @Query("""
+                MATCH (artwork:Artwork)
+                OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
+                RETURN 
+                    artwork.id AS id,
+                    artwork.name AS name,
+                    artwork.description AS description,
+                    artwork.status AS status,
+                    artwork.imageUrl AS imageUrl,
+                    artwork.storageType AS storageType,
+                    artwork.type AS type,
+                    artwork.year AS year,
+                    artwork.madeWith AS madeWith,
+                    CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
+                ORDER BY artwork.createdAt DESC
+                SKIP $skip LIMIT $limit
+            """)
+    Optional<List<GetArtwork>> newArrivalArtwork(
+            @Param("userId") String userId,
+            @Param("skip") Integer skip,
+            @Param("limit") Integer limit
+    );
+
+    @Query("""
+                MATCH (user:User {id: $userId})-[:LIKES]->(likedArtwork:Artwork)
+                MATCH (artwork:Artwork)
+                WHERE artwork <> likedArtwork
+                WITH user, artwork, likedArtwork
+                OPTIONAL MATCH (artwork)<-[:LIKES]-(otherUser:User)-[:LIKES]->(likedArtwork)
+                WITH artwork, count(DISTINCT otherUser) AS commonLikes
+                OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
+                RETURN 
+                    artwork.id AS id,
+                    artwork.name AS name,
+                    artwork.description AS description,
+                    artwork.status AS status,
+                    artwork.imageUrl AS imageUrl,
+                    artwork.storageType AS storageType,
+                    artwork.type AS type,
+                    artwork.year AS year,
+                    artwork.madeWith AS madeWith,
+                    CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
+                ORDER BY commonLikes DESC
+                SKIP $skip LIMIT $limit
+            """)
+    Optional<List<GetArtwork>> recommendedArtworkForToday(
+            @Param("userId") String userId,
+            @Param("skip") Integer skip,
+            @Param("limit") Integer limit
+    );
+
+    @Query("""
+                MATCH (artwork:Artwork)
+                OPTIONAL MATCH (artwork)<-[like:LIKES]-(user:User)
+                WHERE date(like.createdAt) = date()
+                WITH artwork, count(DISTINCT like) AS todayLikes
+                WHERE todayLikes > 0
+                RETURN 
+                    artwork.id AS id,
+                    artwork.name AS name,
+                    artwork.description AS description,
+                    artwork.status AS status,
+                    artwork.imageUrl AS imageUrl,
+                    artwork.storageType AS storageType,
+                    artwork.type AS type,
+                    artwork.year AS year,
+                    artwork.madeWith AS madeWith,
+                    false AS liked
+                ORDER BY todayLikes DESC
+                LIMIT 1
+            """)
+    GetArtwork todayBiggestHit();
 }
