@@ -3,6 +3,7 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 import com.basic.JWTSecurity.artwork_server.model.Gallery;
 import com.basic.JWTSecurity.artwork_server.model.Favorites;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetFavorites;
 import com.basic.JWTSecurity.artwork_server.service.FavoritesService;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,12 @@ public class FavoritesApi {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<GetFavorites>> getFavoritesFromUserId(@PathVariable String userId){
         List<GetFavorites> data =  favoritesService.getFavorites(userId);
+        return new ResponseEntity<>(data,HttpStatus.OK);
+    }
+
+    @GetMapping("/artworks/{favoriteId}")
+    public ResponseEntity<List<GetArtwork>> getArtworksFromFavoriteId(@PathVariable String favoriteId){
+        List<GetArtwork> data =  favoritesService.getArtworksbyID(favoriteId);
         return new ResponseEntity<>(data,HttpStatus.OK);
     }
 

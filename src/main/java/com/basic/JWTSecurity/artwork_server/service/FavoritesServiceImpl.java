@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Favorites;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetFavorites;
 import com.basic.JWTSecurity.artwork_server.repository.FavoritesRepository;
 import lombok.RequiredArgsConstructor;
@@ -54,5 +55,10 @@ public class FavoritesServiceImpl implements FavoritesService {
     @Override
     public List<GetFavorites> getFavorites(String userId) {
         return favoritesRepository.getFavoritesByUserId(userId);
+    }
+
+    @Override
+    public List<GetArtwork> getArtworksbyID(String favoriteId) {
+        return favoritesRepository.getArtworksByFavoriteId(favoriteId);
     }
 }

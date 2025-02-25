@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.repository;
 
 
 import com.basic.JWTSecurity.artwork_server.model.Favorites;
+import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetFavorites;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
@@ -37,4 +38,22 @@ public interface FavoritesRepository extends Neo4jRepository<Favorites,String> {
             "favorites.description AS description"
     )
     List<GetFavorites> getFavoritesByUserId(@Param("userId") String userId);
+
+    @Query("""
+            MATCH (favorites:Favorites {id: $favoriteId})-[:CONTAINS]->(artwork:Artwork)
+            OPTIONAL MATCH (user:User)-[userLike:LIKES]->(artwork)
+            RETURN 
+                artwork.id AS id,
+                artwork.name AS name,
+                artwork.description AS description,
+                artwork.status AS status,
+                artwork.imageUrl AS imageUrl,
+                artwork.storageType AS storageType,
+                artwork.type AS type,
+                artwork.year AS year,
+                artwork.madeWith AS madeWith,
+                CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
+            ORDER BY artwork.name ASC
+            """)
+    List<GetArtwork> getArtworksByFavoriteId(@Param("favoriteId") String favoriteId);
 }
