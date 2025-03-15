@@ -33,4 +33,10 @@ public interface GenreRepository extends Neo4jRepository<Genre,String> {
             "RETURN genre.id AS id, genre.name AS name, genre.key AS key " +
             "LIMIT 3")
     List<GenreProjection> getGenres(String genreName);
+
+    @Query("MATCH (genre:Genre) " +
+            "RETURN genre.id AS id, genre.name AS name, genre.key AS key ")
+    List<GenreProjection> getAllGenres();
+
+
 }

@@ -16,6 +16,7 @@ public class Profile {
     @Id
     private String id;
     private String username;
+    private String phone;
     private String password;
     private List<Address> userAddress = null;
     private List<CartItem> cardItems = null;

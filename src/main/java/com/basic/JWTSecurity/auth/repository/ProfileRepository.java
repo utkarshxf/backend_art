@@ -7,4 +7,8 @@ import java.util.Optional;
 
 public interface ProfileRepository extends MongoRepository<Profile, String> {
     Optional<Profile> findByUsername(String username);
+
+    Optional<Profile> findByPhone(String phone);
+
+
 }

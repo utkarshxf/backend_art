@@ -53,5 +53,9 @@ public class GenreApi {
     public List<GenreProjection> getGenres(@RequestParam String genreName){
         return genreService.getGenres(genreName);
     }
+    @GetMapping("/all")
+    public List<GenreProjection> getAllGenres(){
+        return genreService.getAllGenres();
+    }
 
 }

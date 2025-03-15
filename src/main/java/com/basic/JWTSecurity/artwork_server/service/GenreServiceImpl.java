@@ -53,4 +53,9 @@ public class GenreServiceImpl implements GenreService{
     public List<GenreProjection> getGenres(String genreName) {
         return genreRepository.getGenres(genreName);
     }
+
+    @Override
+    public List<GenreProjection> getAllGenres() {
+        return genreRepository.getAllGenres();
+    }
 }

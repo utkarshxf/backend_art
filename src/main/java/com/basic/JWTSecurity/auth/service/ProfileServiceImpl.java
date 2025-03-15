@@ -52,6 +52,9 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
         if (profileRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new RuntimeException("User already exists");
         }
+        if (profileRepository.findByPhone(user.getPhone()).isPresent()) {
+            throw new RuntimeException("Phone number already exists");
+        }
         String userPassword = user.getPassword();
         user.setPassword(passwordEncoder().encode(user.getPassword()));
         Profile user1 =  profileRepository.save(user);
