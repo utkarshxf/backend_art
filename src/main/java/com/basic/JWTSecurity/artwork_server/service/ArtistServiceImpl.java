@@ -34,7 +34,16 @@ public class ArtistServiceImpl implements  ArtistService{
         Artist artist2 = Artist.builder()
                 .id(artist.getId())
                 .name(artist.getName())
-                .profilePicture(artist.getProfilePicture())
+                .birth_date(artist.getBirth_date())
+                .death_date(artist.getDeath_date())
+                .nationality(artist.getNationality())
+                .notable_works(artist.getNotable_works())
+                .art_movement(artist.getArt_movement())
+                .education(artist.getEducation())
+                .awards(artist.getAwards())
+                .image_url(artist.getImage_url())
+                .wikipedia_url(artist.getWikipedia_url())
+                .description(artist.getDescription())
                 .build();
         return artistRepository.save(artist2);
     }
@@ -52,7 +61,7 @@ public class ArtistServiceImpl implements  ArtistService{
        if(isNull(artistProjection)){
            return null;
        }
-        return Artist.builder().id(artistProjection.getId()).name(artistProjection.getName()).build();
+        return Artist.builder().id(artistProjection.getId()).name(artistProjection.getName()).image_url(artistProjection.getImageUrl()).build();
     }
 
     @Override
@@ -77,7 +86,7 @@ public class ArtistServiceImpl implements  ArtistService{
     }
 
     @Override
-    public List<GetArtist> getArtistByArtistID(String artistId) {
-        return artistRepository.getArtistById(artistId);
+    public List<GetArtist> getArtistByArtistID(String currentUserId , String artistId) {
+        return artistRepository.getArtistById(currentUserId , artistId);
     }
 }

@@ -15,7 +15,7 @@ import java.util.Optional;
 
 public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 
-    @Query("MATCH (artist: Artist {id: $artistId}) RETURN artist.id As id, artist.name as name , artist.profilePicture as profilePicture")
+    @Query("MATCH (artist: Artist {id: $artistId}) RETURN artist.id As id, artist.name as name , artist.image_url as image_url")
     Optional<ArtistProjection>  findByIdProjection(@Param("artistId")String id);
 
     @Query("MATCH (artist: Artist {id: $artistId}) " +
@@ -35,7 +35,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 
     @Query("MATCH (artist:Artist) " +
             "WHERE artist.name STARTS WITH $artistName " +
-            "RETURN artist.id AS id, artist.name AS name ,artist.profilePicture as profilePicture " +
+            "RETURN artist.id AS id, artist.name AS name ,artist.image_url as image_url " +
             "LIMIT $responseSize")
     List<ArtistProjection> getArtist(String artistName, Integer responseSize);
 
@@ -59,10 +59,21 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
     List<GetArtwork> getArtworkByArtistId(String userId , String artistId);
 
     @Query("""
-        MATCH (artist:Artist {id: $artistId})
-                            RETURN artist.id AS id,
-                                 artist.name AS name,
-                                 artist.profilePicture AS profilePicture
-    """)
-    List<GetArtist> getArtistById(String artistId);
+    MATCH (artist:Artist {id: $artistId})
+    OPTIONAL MATCH (currentUser:User {id: $currentUserId})-[follow:FOLLOWS]->(artist)
+    RETURN artist.id AS id,
+           artist.name AS name,
+           artist.birth_date AS birth_date,
+           artist.death_date AS death_date,
+           artist.nationality AS nationality,
+           artist.notable_works AS notable_works,
+           artist.art_movement AS art_movement,
+           artist.education AS education,
+           artist.awards AS awards,
+           artist.image_url AS image_url,
+           artist.wikipedia_url AS wikipedia_url,
+           artist.description AS description,
+           CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow
+""")
+    List<GetArtist> getArtistById(String currentUserId , String artistId);
 }

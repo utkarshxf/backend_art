@@ -14,14 +14,21 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class GetArtwork {
-    private String id;
-    private String description;
-    private String name;
+    private String title;
     private Status status;
-    private String imageUrl;
-    private String madeWith;
     private StorageType storageType;
     private LocalDateTime releasedDate;
     private ArtType type;
+    private String medium;
+    private String artist;
+    private String description;
+    private String dimensions;
+    private String current_location;
+    private String period_style;
+    private String art_movement;
+    private String image_url_compressed;
+    private String image_url;
+    private String license_info;
+    private String source_url;
     private Boolean liked;
 }

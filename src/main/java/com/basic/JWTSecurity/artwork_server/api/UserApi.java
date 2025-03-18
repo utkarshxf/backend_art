@@ -38,9 +38,9 @@ public class UserApi {
         userService.userUnFollowArtist(userId,artistId);
     }
 
-    @GetMapping("/getUserByUserId/{userId}/{currentUserId}")
-    GetUser getUserByUserId(@PathVariable String userId  , @PathVariable String currentUserId){
-        return userService.getUserById(userId , currentUserId);
+    @GetMapping("/getUserByUserId/{userId}")
+    GetUser getUserByUserId(@PathVariable String userId){
+        return userService.getUserById(userId);
     }
 
 }

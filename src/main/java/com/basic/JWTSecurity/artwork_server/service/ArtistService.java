@@ -23,7 +23,7 @@ public interface ArtistService {
 
     List<GetArtwork> getArtworkByUserID(String userId , String artistId);
 
-    List<GetArtist> getArtistByArtistID(String artistId);
+    List<GetArtist> getArtistByArtistID(String currentUserId , String artistId);
 
 
 

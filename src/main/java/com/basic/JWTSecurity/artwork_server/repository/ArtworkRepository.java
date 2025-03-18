@@ -15,19 +15,25 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
 
     @Query(
             "MATCH (artwork:Artwork {id: $artworkId}) " +
-                    "OPTIONAL MATCH (user:User {id: $userId})-[like:LIKES]->(artwork)" +
-                    "RETURN artwork.id AS id," +
-                    " artwork.name AS name, " +
+                    "OPTIONAL MATCH (user:User {id: $userId})-[like:LIKES]->(artwork) " +
+                    "RETURN artwork.id AS id, " +
+                    "artwork.title AS title, " +
                     "artwork.description AS description, " +
                     "artwork.status AS status, " +
-                    "artwork.duration AS duration, " +
-                    "artwork.imageUrl AS imageUrl, " +
                     "artwork.storageType AS storageType, " +
+                    "artwork.releasedDate AS releasedDate, " +
                     "artwork.type AS type, " +
-                    "artwork.year AS year , " +
-                    "artwork.madeWith AS madeWith, " +
+                    "artwork.medium AS medium, " +
+                    "artwork.dimensions AS dimensions, " +
+                    "artwork.artist AS artist, " +
+                    "artwork.current_location AS current_location, " +
+                    "artwork.period_style AS period_style, " +
+                    "artwork.art_movement AS art_movement, " +
+                    "artwork.image_url_compressed AS image_url_compressed, " +
+                    "artwork.image_url AS image_url, " +
+                    "artwork.license_info AS license_info, " +
+                    "artwork.source_url AS source_url, " +
                     "CASE WHEN like IS NOT NULL THEN true ELSE false END AS liked"
-
     )
     Optional<GetArtwork> findByIdProjection(@Param("userId") String userId, @Param("artworkId") String id);
 
@@ -121,14 +127,23 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "OPTIONAL MATCH (recommendArtwork)-[:BELONGS_TO_GENRE]->(artworkGenre:Genre) " +
                     "RETURN " +
                     "recommendArtwork.id AS id, " +
-                    "recommendArtwork.name AS name, " +
+                    "recommendArtwork.title AS title, " +
                     "recommendArtwork.description AS description, " +
                     "recommendArtwork.status AS status, " +
-                    "recommendArtwork.imageUrl AS imageUrl, " +
                     "recommendArtwork.storageType AS storageType, " +
+                    "recommendArtwork.releasedDate AS releasedDate, " +
                     "recommendArtwork.type AS type, " +
-                    "recommendArtwork.year AS year, " +
-                    "recommendArtwork.madeWith AS madeWith " +
+                    "recommendArtwork.medium AS medium, " +
+                    "recommendArtwork.dimensions AS dimensions, " +
+                    "recommendArtwork.artist AS artist, " +
+                    "recommendArtwork.current_location AS current_location, " +
+                    "recommendArtwork.period_style AS period_style, " +
+                    "recommendArtwork.art_movement AS art_movement, " +
+                    "recommendArtwork.image_url_compressed AS image_url_compressed, " +
+                    "recommendArtwork.image_url AS image_url, " +
+                    "recommendArtwork.license_info AS license_info, " +
+                    "recommendArtwork.source_url AS source_url, " +
+                    "false AS liked " +
                     "ORDER BY priority, userSimilarity DESC, likes DESC " +
                     "SKIP $skip LIMIT $limit"
     )
@@ -148,14 +163,22 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                 WITH artwork, likes, liked, count(DISTINCT comment) AS comments
                 RETURN 
                     artwork.id AS id,
-                    artwork.name AS name,
+                    artwork.title AS title,
                     artwork.description AS description,
                     artwork.status AS status,
-                    artwork.imageUrl AS imageUrl,
+                    artwork.artist AS artist,
                     artwork.storageType AS storageType,
+                    artwork.releasedDate AS releasedDate,
                     artwork.type AS type,
-                    artwork.year AS year,
-                    artwork.madeWith AS madeWith,
+                    artwork.medium AS medium,
+                    artwork.dimensions AS dimensions,
+                    artwork.current_location AS current_location,
+                    artwork.period_style AS period_style,
+                    artwork.art_movement AS art_movement,
+                    artwork.image_url_compressed AS image_url_compressed,
+                    artwork.image_url AS image_url,
+                    artwork.license_info AS license_info,
+                    artwork.source_url AS source_url,
                     liked
                 ORDER BY likes DESC, comments DESC
                 SKIP $skip LIMIT $limit
@@ -171,16 +194,24 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                 OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
                 RETURN 
                     artwork.id AS id,
-                    artwork.name AS name,
+                    artwork.title AS title,
                     artwork.description AS description,
                     artwork.status AS status,
-                    artwork.imageUrl AS imageUrl,
                     artwork.storageType AS storageType,
+                    artwork.releasedDate AS releasedDate,
                     artwork.type AS type,
-                    artwork.year AS year,
-                    artwork.madeWith AS madeWith,
+                    artwork.medium AS medium,
+                    artwork.dimensions AS dimensions,
+                    artwork.artist AS artist,
+                    artwork.current_location AS current_location,
+                    artwork.period_style AS period_style,
+                    artwork.art_movement AS art_movement,
+                    artwork.image_url_compressed AS image_url_compressed,
+                    artwork.image_url AS image_url,
+                    artwork.license_info AS license_info,
+                    artwork.source_url AS source_url,
                     CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
-                ORDER BY artwork.createdAt DESC
+                ORDER BY artwork.releasedDate DESC
                 SKIP $skip LIMIT $limit
             """)
     Optional<List<GetArtwork>> newArrivalArtwork(
@@ -199,14 +230,22 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                 OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
                 RETURN 
                     artwork.id AS id,
-                    artwork.name AS name,
+                    artwork.title AS title,
                     artwork.description AS description,
                     artwork.status AS status,
-                    artwork.imageUrl AS imageUrl,
                     artwork.storageType AS storageType,
+                    artwork.releasedDate AS releasedDate,
                     artwork.type AS type,
-                    artwork.year AS year,
-                    artwork.madeWith AS madeWith,
+                    artwork.medium AS medium,
+                    artwork.dimensions AS dimensions,
+                     artwork.artist AS artist,
+                    artwork.current_location AS current_location,
+                    artwork.period_style AS period_style,
+                    artwork.art_movement AS art_movement,
+                    artwork.image_url_compressed AS image_url_compressed,
+                    artwork.image_url AS image_url,
+                    artwork.license_info AS license_info,
+                    artwork.source_url AS source_url,
                     CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
                 ORDER BY commonLikes DESC
                 SKIP $skip LIMIT $limit
@@ -225,17 +264,26 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                 WHERE todayLikes > 0
                 RETURN 
                     artwork.id AS id,
-                    artwork.name AS name,
+                    artwork.title AS title,
                     artwork.description AS description,
                     artwork.status AS status,
-                    artwork.imageUrl AS imageUrl,
                     artwork.storageType AS storageType,
+                    artwork.releasedDate AS releasedDate,
                     artwork.type AS type,
-                    artwork.year AS year,
-                    artwork.madeWith AS madeWith,
+                    artwork.medium AS medium,
+                    artwork.dimensions AS dimensions,
+                    artwork.artist AS artist,
+                    artwork.current_location AS current_location,
+                    artwork.period_style AS period_style,
+                    artwork.art_movement AS art_movement,
+                    artwork.image_url_compressed AS image_url_compressed,
+                    artwork.image_url AS image_url,
+                    artwork.license_info AS license_info,
+                    artwork.source_url AS source_url,
                     false AS liked
                 ORDER BY todayLikes DESC
                 LIMIT 1
             """)
     GetArtwork todayBiggestHit();
+
 }

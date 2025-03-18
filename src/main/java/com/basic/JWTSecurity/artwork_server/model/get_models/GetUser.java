@@ -18,5 +18,4 @@ public class GetUser {
     private String gender;
     private String language;
     private String countryIso2;
-    private Boolean follow;
 }
