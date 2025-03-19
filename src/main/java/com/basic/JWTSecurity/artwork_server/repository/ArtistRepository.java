@@ -46,15 +46,23 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
     OPTIONAL MATCH (artist)-[created:CREATED]->(artwork:Artwork)
     OPTIONAL MATCH (user:User {id: $userId})-[like:LIKES]->(artwork)
     RETURN artwork.id AS id,
-           artwork.description AS description,
-           artwork.name AS name,
-           artwork.status AS status,
-           artwork.imageUrl AS imageUrl,
-           artwork.madeWith AS madeWith,
-           artwork.storageType AS storageType,
-           artwork.releasedDate AS releasedDate,
-           artwork.type AS type,
-           CASE WHEN like IS NOT NULL THEN true ELSE false END AS liked
+                    artwork.title AS title,
+                    artwork.description AS description,
+                    artwork.status AS status,
+                    artwork.storageType AS storageType,
+                    artwork.releasedDate AS releasedDate,
+                    artwork.type AS type,
+                    artwork.medium AS medium,
+                    artwork.dimensions AS dimensions,
+                    artwork.artist AS artist,
+                    artwork.current_location AS current_location,
+                    artwork.period_style AS period_style,
+                    artwork.art_movement AS art_movement,
+                    artwork.image_url_compressed AS image_url_compressed,
+                    artwork.image_url AS image_url,
+                    artwork.license_info AS license_info,
+                    artwork.source_url AS source_url,
+                    CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
 """)
     List<GetArtwork> getArtworkByArtistId(String userId , String artistId);
 
