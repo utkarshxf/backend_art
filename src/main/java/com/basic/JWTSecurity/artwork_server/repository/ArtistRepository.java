@@ -62,7 +62,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
                     artwork.image_url AS image_url,
                     artwork.license_info AS license_info,
                     artwork.source_url AS source_url,
-                    CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
+                    CASE WHEN like IS NOT NULL THEN true ELSE false END AS liked
 """)
     List<GetArtwork> getArtworkByArtistId(String userId , String artistId);
 
