@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class GetArtwork {
+    private String id;
     private String title;
     private Status status;
     private StorageType storageType;
