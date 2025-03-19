@@ -75,5 +75,5 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
            artist.description AS description,
            CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow
 """)
-    List<GetArtist> getArtistById(String currentUserId , String artistId);
+    GetArtist getArtistById(String currentUserId , String artistId);
 }
