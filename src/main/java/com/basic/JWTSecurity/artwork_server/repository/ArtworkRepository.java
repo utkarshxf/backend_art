@@ -102,24 +102,26 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
 //            @Param("skip") Integer skip,
 //            @Param("limit") Integer limit
 //    );
-
     @Query("""
                 MATCH (artwork:Artwork)
-                OPTIONAL MATCH (artwork)<-[like:LIKES]-(user:User)
-                WHERE date(like.createdAt) = date()
-                WITH artwork, count(DISTINCT like) AS todayLikes
-                WHERE todayLikes > 0
+                WHERE artwork.status = 'ACTIVE'
+                OPTIONAL MATCH (artwork)<-[like:LIKES]-(likeUser:User)
+                OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
+                WITH artwork, count(DISTINCT like) AS likes, 
+                     CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
+                OPTIONAL MATCH (artwork)<-[:HAS_COMMENT]-(comment:Comment)
+                WITH artwork, likes, liked, count(DISTINCT comment) AS comments
                 RETURN 
                     artwork.id AS id,
                     artwork.title AS title,
                     artwork.description AS description,
                     artwork.status AS status,
+                    artwork.artist AS artist,
                     artwork.storageType AS storageType,
                     artwork.releasedDate AS releasedDate,
                     artwork.type AS type,
                     artwork.medium AS medium,
                     artwork.dimensions AS dimensions,
-                    artwork.artist AS artist,
                     artwork.current_location AS current_location,
                     artwork.period_style AS period_style,
                     artwork.art_movement AS art_movement,
@@ -127,13 +129,15 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     artwork.image_url AS image_url,
                     artwork.license_info AS license_info,
                     artwork.source_url AS source_url,
-                    false AS liked
-                ORDER BY todayLikes DESC
-                LIMIT 1
+                    liked
+                ORDER BY likes DESC, comments DESC
+                SKIP $skip LIMIT $limit
             """)
-    GetArtwork todayBiggestHit();
-
-
+    Optional<List<GetArtwork>> popularArtwork(
+            @Param("userId") String userId,
+            @Param("skip") Integer skip,
+            @Param("limit") Integer limit
+    );
 
     @Query("""
                 MATCH (artwork:Artwork)
@@ -198,7 +202,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                 
                 // Calculate final score with some randomness based on the daily seed
                 WITH artwork, 
-                     (genreMatchScore * 3) + (artistMatchScore * 5) + abs((artwork.id + toString(dailySeed)) % 10) AS recommendationScore
+                     (genreMatchScore * 3) + (artistMatchScore * 5) + toInteger(id(artwork) % 10) AS recommendationScore
                 
                 RETURN 
                     artwork.id AS id,
@@ -283,4 +287,34 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
             @Param("skip") Integer skip,
             @Param("limit") Integer limit
     );
+
+    @Query("""
+                MATCH (artwork:Artwork)
+                OPTIONAL MATCH (artwork)<-[like:LIKES]-(user:User)
+                WHERE date(like.createdAt) = date()
+                WITH artwork, count(DISTINCT like) AS todayLikes
+                WHERE todayLikes > 0
+                RETURN 
+                    artwork.id AS id,
+                    artwork.title AS title,
+                    artwork.description AS description,
+                    artwork.status AS status,
+                    artwork.storageType AS storageType,
+                    artwork.releasedDate AS releasedDate,
+                    artwork.type AS type,
+                    artwork.medium AS medium,
+                    artwork.dimensions AS dimensions,
+                    artwork.artist AS artist,
+                    artwork.current_location AS current_location,
+                    artwork.period_style AS period_style,
+                    artwork.art_movement AS art_movement,
+                    artwork.image_url_compressed AS image_url_compressed,
+                    artwork.image_url AS image_url,
+                    artwork.license_info AS license_info,
+                    artwork.source_url AS source_url,
+                    false AS liked
+                ORDER BY todayLikes DESC
+                LIMIT 1
+            """)
+    GetArtwork todayBiggestHit();
 }
