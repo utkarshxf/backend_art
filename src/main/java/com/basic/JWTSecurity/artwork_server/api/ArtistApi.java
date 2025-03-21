@@ -41,7 +41,7 @@ public class ArtistApi {
 
     @GetMapping("/getArtistByArtworkId")
     public GetArtist getArtistByArtworkId(@RequestParam String userId  , @RequestParam String artworkId) {
-        return artistService.getArtistByArtistID(userId , artworkId);
+        return artistService.getArtistByArtworkID(userId , artworkId);
     }
 
 
