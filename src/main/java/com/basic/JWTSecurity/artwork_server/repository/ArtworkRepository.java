@@ -291,4 +291,72 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
             """)
     GetArtwork todayBiggestHit();
 
+
+    @Query("""
+    MATCH (artist:Artist {id: $artistId})-[:CREATED]->(artwork:Artwork)
+    WHERE artwork.id <> $currentArtworkId
+    OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
+    RETURN 
+        artwork.id AS id,
+        artwork.title AS title,
+        artwork.description AS description,
+        artwork.status AS status,
+        artwork.storageType AS storageType,
+        artwork.releasedDate AS releasedDate,
+        artwork.type AS type,
+        artwork.medium AS medium,
+        artwork.dimensions AS dimensions,
+        artwork.artist AS artist,
+        artwork.current_location AS current_location,
+        artwork.period_style AS period_style,
+        artwork.art_movement AS art_movement,
+        artwork.image_url_compressed AS image_url_compressed,
+        artwork.image_url AS image_url,
+        artwork.license_info AS license_info,
+        artwork.source_url AS source_url,
+        CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
+    ORDER BY rand()
+    LIMIT 4
+""")
+    Optional<List<GetArtwork>> moreFromArtist(
+            @Param("artistId") String artistId,
+            @Param("currentArtworkId") String currentArtworkId,
+            @Param("userId") String userId
+    );
+
+    @Query("""
+    MATCH (sourceArtwork:Artwork {id: $artworkId})-[:BELONGS_TO_GENRE]->(genre:Genre)
+    MATCH (genre)<-[:BELONGS_TO_GENRE]-(similarArtwork:Artwork)
+    WHERE similarArtwork.id <> $artworkId
+    WITH DISTINCT similarArtwork, COUNT(genre) AS commonGenres
+    OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(similarArtwork)
+    OPTIONAL MATCH (user:User {id: $userId})-[userDislike:DISLIKES]->(similarArtwork)
+    WHERE userDislike IS NULL
+    RETURN 
+        similarArtwork.id AS id,
+        similarArtwork.title AS title,
+        similarArtwork.description AS description,
+        similarArtwork.status AS status,
+        similarArtwork.storageType AS storageType,
+        similarArtwork.releasedDate AS releasedDate,
+        similarArtwork.type AS type,
+        similarArtwork.medium AS medium,
+        similarArtwork.dimensions AS dimensions,
+        similarArtwork.artist AS artist,
+        similarArtwork.current_location AS current_location,
+        similarArtwork.period_style AS period_style,
+        similarArtwork.art_movement AS art_movement,
+        similarArtwork.image_url_compressed AS image_url_compressed,
+        similarArtwork.image_url AS image_url,
+        similarArtwork.license_info AS license_info,
+        similarArtwork.source_url AS source_url,
+        CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
+    ORDER BY commonGenres DESC, rand()
+    LIMIT 4
+""")
+    Optional<List<GetArtwork>> similarGenreArtworks(
+            @Param("artworkId") String artworkId,
+            @Param("userId") String userId
+    );
+
 }

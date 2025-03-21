@@ -9,6 +9,7 @@ import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import com.basic.JWTSecurity.artwork_server.repository.ArtworkRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -109,6 +110,25 @@ public class ArtworkServiceImpl implements ArtworkService {
     public GetArtwork todayBiggestHit() {
         return repository.todayBiggestHit();
     }
+
+    @Override
+    public Optional<List<GetArtwork>> moreFromArtist(
+            String artistId,
+            String currentArtworkId,
+           String userId
+    ) {
+        return repository.moreFromArtist(artistId,currentArtworkId,userId);
+    }
+
+    @Override
+    public Optional<List<GetArtwork>> similarGenreArtworks(
+            String currentArtworkId,
+            String userId
+    ) {
+        return repository.similarGenreArtworks(currentArtworkId,userId);
+    }
+
+
 
     @Override
     public Optional<GetArtwork> getArtworkById(String userId ,String artworkId) {

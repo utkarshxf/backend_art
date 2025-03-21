@@ -84,4 +84,25 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
            CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow
 """)
     GetArtist getArtistById(String currentUserId , String artistId);
+
+    @Query("""
+    MATCH (artist:Artist)-[created:CREATED]->(artwork:Artwork {id:$ArtworkId})
+    OPTIONAL MATCH (user:User {id: $userId})-[follow:FOLLOWS]->(artist)
+    RETURN artist.id AS id,
+           artist.name AS name,
+           artist.birth_date AS birth_date,
+           artist.death_date AS death_date,
+           artist.nationality AS nationality,
+           artist.notable_works AS notable_works,
+           artist.art_movement AS art_movement,
+           artist.education AS education,
+           artist.awards AS awards,
+           artist.image_url AS image_url,
+           artist.wikipedia_url AS wikipedia_url,
+           artist.description AS description,
+           CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow
+""")
+    GetArtist getArtistByArtworkId(String userId , String ArtworkId);
+
+
 }

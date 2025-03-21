@@ -39,6 +39,13 @@ public class ArtistApi {
         return artistService.getArtistByArtistID(userId , artistId);
     }
 
+    @GetMapping("/getArtistByArtworkId")
+    public GetArtist getArtistByArtworkId(@RequestParam String userId  , @RequestParam String artworkId) {
+        return artistService.getArtistByArtistID(userId , artworkId);
+    }
+
+
+
     @PostMapping()
     public ResponseEntity<ArtistRegistrationRequestRecord> createNewArtist(@RequestBody ArtistRegistrationRequestRecord requestRecord){
         Artist artist = Artist.builder()
