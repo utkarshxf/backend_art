@@ -9,6 +9,7 @@ import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import com.basic.JWTSecurity.artwork_server.repository.ArtworkRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,14 +30,22 @@ public class ArtworkServiceImpl implements ArtworkService {
 
 
         Artwork artwork = Artwork.builder()
-                .name(artworkRecord.title())
-                .imageUrl(artworkRecord.imageUrl())
+                .title(artworkRecord.title())
+                .image_url(artworkRecord.imageUrl())
+                .image_url_compressed(artworkRecord.imageUrlCompressed())
                 .storageType(artworkRecord.storageType())
                 .type(artworkRecord.artType())
                 .description(artworkRecord.description())
-                .madeWith(artworkRecord.madeWith())
+                .medium(artworkRecord.medium())  // Changed from madeWith to medium
                 .releasedDate(artworkRecord.releasedDate())
-                .status(Status.DRAFT)
+                .dimensions(artworkRecord.dimensions())
+                .artist(artworkRecord.artist())
+                .current_location(artworkRecord.currentLocation())
+                .period_style(artworkRecord.periodStyle())
+                .art_movement(artworkRecord.artMovement())
+                .license_info(artworkRecord.licenseInfo())
+                .source_url(artworkRecord.sourceUrl())
+                .status(Status.APPROVED)
                 .build();
 
         Artwork saved = repository.save(artwork);
@@ -101,6 +110,25 @@ public class ArtworkServiceImpl implements ArtworkService {
     public GetArtwork todayBiggestHit() {
         return repository.todayBiggestHit();
     }
+
+    @Override
+    public Optional<List<GetArtwork>> moreFromArtist(
+            String artistId,
+            String currentArtworkId,
+           String userId
+    ) {
+        return repository.moreFromArtist(artistId,currentArtworkId,userId);
+    }
+
+    @Override
+    public Optional<List<GetArtwork>> similarGenreArtworks(
+            String currentArtworkId,
+            String userId
+    ) {
+        return repository.similarGenreArtworks(currentArtworkId,userId);
+    }
+
+
 
     @Override
     public Optional<GetArtwork> getArtworkById(String userId ,String artworkId) {

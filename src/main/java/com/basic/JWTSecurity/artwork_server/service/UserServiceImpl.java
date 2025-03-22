@@ -44,7 +44,7 @@ public class UserServiceImpl implements UserService {
 
         User save = userRepository.save(user1);
         if (requestRecord.artist()) {
-            Artist artist = artistService.createNew(Artist.builder().id(requestRecord.id()).name(requestRecord.name()).profilePicture(requestRecord.profilePicture()).build());
+            Artist artist = artistService.createNew(Artist.builder().id(requestRecord.id()).name(requestRecord.name()).image_url(requestRecord.profilePicture()).build());
             userRepository.addArtistAndUserRelationship(save.getId(), requestRecord.id(), LocalDateTime.now());
         }
         return save;
@@ -66,8 +66,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public GetUser getUserById(String userId , String currentUserId) {
-        return userRepository.getUserById(userId , currentUserId);
+    public GetUser getUserById(String userId) {
+        return userRepository.getUserById(userId);
     }
 
 }

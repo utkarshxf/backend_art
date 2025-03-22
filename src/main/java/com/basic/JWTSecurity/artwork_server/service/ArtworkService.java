@@ -26,6 +26,15 @@ public interface ArtworkService {
     Optional<List<GetArtwork>> recommendedArtworkForToday(String userId, Integer skip, Integer limit);
 
     GetArtwork todayBiggestHit();
+    public Optional<List<GetArtwork>> moreFromArtist(
+            String artistId,
+            String currentArtworkId,
+            String userId
+    );
+    public Optional<List<GetArtwork>> similarGenreArtworks(
+            String currentArtworkId,
+            String userId
+    );
 
     Optional<GetArtwork> getArtworkById(String userId , String artworkId);
 

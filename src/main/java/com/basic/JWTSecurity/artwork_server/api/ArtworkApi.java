@@ -69,6 +69,22 @@ public class ArtworkApi {
         return new ResponseEntity<>(artwork, HttpStatus.OK);
     }
 
+    @GetMapping("/similarGenreArtworks")
+    public ResponseEntity<?> similarGenreArtworks(
+            @RequestParam String currentArtworkId,
+            @RequestParam String userId) {
+        Optional<List<GetArtwork>> artworks = artworkService.similarGenreArtworks(currentArtworkId, userId);
+        return new ResponseEntity<>(artworks, HttpStatus.OK);
+    }
+    @GetMapping("/moreFromArtist")
+    public ResponseEntity<?> moreFromArtist(
+            @RequestParam String artistId,
+            @RequestParam String currentArtworkId,
+            @RequestParam String userId) {
+        Optional<List<GetArtwork>> artworks = artworkService.moreFromArtist(artistId, currentArtworkId, userId);
+        return new ResponseEntity<>(artworks, HttpStatus.OK);
+    }
+
 
     @GetMapping("/{userId}/{artworkId}")
     public ResponseEntity<?> artworkByArtworkId(@PathVariable String userId ,@PathVariable String artworkId){
