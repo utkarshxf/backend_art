@@ -224,14 +224,12 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
             @Param("skip") Integer skip,
             @Param("limit") Integer limit
     );
-
     @Query("""
                 MATCH (user:User {id: $userId})-[:LIKES]->(likedArtwork:Artwork)
                 MATCH (artwork:Artwork)
                 WHERE artwork <> likedArtwork
                 WITH user, artwork, likedArtwork
                 OPTIONAL MATCH (artwork)<-[:LIKES]-(otherUser:User)-[:LIKES]->(likedArtwork)
-                WITH artwork, count(DISTINCT otherUser) AS commonLikes
                 OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
                 RETURN 
                     artwork.id AS id,
@@ -252,7 +250,6 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     artwork.license_info AS license_info,
                     artwork.source_url AS source_url,
                     CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
-                ORDER BY commonLikes DESC
                 SKIP $skip LIMIT $limit
             """)
     Optional<List<GetArtwork>> recommendedArtworkForToday(
