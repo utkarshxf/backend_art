@@ -228,10 +228,13 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                 MATCH (user:User {id: $userId})-[:LIKES]->(likedArtwork:Artwork)
                 MATCH (artwork:Artwork)
                 WHERE artwork <> likedArtwork
-                WITH user, artwork, likedArtwork
-                OPTIONAL MATCH (artwork)<-[:LIKES]-(otherUser:User)-[:LIKES]->(likedArtwork)
-                OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
-                RETURN 
+                  AND NOT EXISTS {
+                    MATCH (user)-[:LIKES]->(artwork)
+                  }
+                WITH DISTINCT artwork, user
+                OPTIONAL MATCH (artwork)<-[:LIKES]-(otherUser:User)-[:LIKES]->(likedArtwork:Artwork)<-[:LIKES]-(user)
+                WITH artwork, user, COUNT(otherUser) AS commonLikes
+                RETURN\s
                     artwork.id AS id,
                     artwork.title AS title,
                     artwork.description AS description,
@@ -241,7 +244,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     artwork.type AS type,
                     artwork.medium AS medium,
                     artwork.dimensions AS dimensions,
-                     artwork.artist AS artist,
+                    artwork.artist AS artist,
                     artwork.current_location AS current_location,
                     artwork.period_style AS period_style,
                     artwork.art_movement AS art_movement,
@@ -249,7 +252,8 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     artwork.image_url AS image_url,
                     artwork.license_info AS license_info,
                     artwork.source_url AS source_url,
-                    CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
+                    false AS liked
+                ORDER BY commonLikes DESC
                 SKIP $skip LIMIT $limit
             """)
     Optional<List<GetArtwork>> recommendedArtworkForToday(
