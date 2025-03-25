@@ -12,6 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 @RestController
 //@PreAuthorize("hasRole('USER')")
 @RequestMapping("/users")
@@ -25,6 +29,23 @@ public class UserApi {
     public ResponseEntity<UserRegistrationRequestRecord> createNewUser(@RequestBody UserRegistrationRequestRecord requestRecord){
         User user = userService.createUser(requestRecord);
         return ResponseEntity.status(HttpStatus.CREATED).body(requestRecord);
+    }
+
+    @PutMapping("/{userId}")
+    public ResponseEntity<?> updateUser(
+            @PathVariable String userId,
+            @RequestBody UserRegistrationRequestRecord requestRecord
+    ) {
+        if(!Objects.equals(userId, requestRecord.id()))
+        {
+            Map<String, Object> map = new HashMap<>();
+            map.put("message", "user Id does not match");
+            map.put("status", false);
+            return new ResponseEntity<>(map, HttpStatus.BAD_REQUEST);
+        }
+        User updatedUser = userService.updateUser(requestRecord);
+
+        return ResponseEntity.ok(requestRecord);
     }
 
 
@@ -42,5 +63,7 @@ public class UserApi {
     GetUser getUserByUserId(@PathVariable String userId){
         return userService.getUserById(userId);
     }
+
+
 
 }

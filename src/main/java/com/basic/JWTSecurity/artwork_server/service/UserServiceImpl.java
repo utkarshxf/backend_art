@@ -10,6 +10,7 @@ import com.basic.JWTSecurity.artwork_server.model.projection.UserProjection;
 import com.basic.JWTSecurity.artwork_server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.neo4j.exceptions.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -48,6 +49,39 @@ public class UserServiceImpl implements UserService {
             userRepository.addArtistAndUserRelationship(save.getId(), requestRecord.id(), LocalDateTime.now());
         }
         return save;
+    }
+
+    @Override
+    public User updateUser(UserRegistrationRequestRecord requestRecord) {
+        // Validate that the user exists
+        User existingUser = userRepository.findById(requestRecord.id())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("User with id %s not found", requestRecord.id())
+                ));
+
+        // Update user fields, preserving existing data if new value is null
+        existingUser.setName(
+                requestRecord.name() != null ? requestRecord.name() : existingUser.getName()
+        );
+        existingUser.setProfilePicture(
+                requestRecord.profilePicture() != null ? requestRecord.profilePicture() : existingUser.getProfilePicture()
+        );
+        existingUser.setDob(
+                requestRecord.dob() != null ? requestRecord.dob() : existingUser.getDob()
+        );
+        existingUser.setGender(
+                requestRecord.gender() != null ? requestRecord.gender() : existingUser.getGender()
+        );
+        existingUser.setLanguage(
+                requestRecord.language() != null ? requestRecord.language() : existingUser.getLanguage()
+        );
+        existingUser.setCountryIso2(
+                requestRecord.countryIso2() != null ? requestRecord.countryIso2() : existingUser.getCountryIso2()
+        );
+
+        User updatedUser = userRepository.save(existingUser);
+
+        return updatedUser;
     }
 
     @Override
