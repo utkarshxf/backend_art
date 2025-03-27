@@ -41,6 +41,7 @@ public interface FavoritesRepository extends Neo4jRepository<Favorites,String> {
 
     @Query("""
             MATCH (favorites:Favorites {id: $favoriteId})-[:CONTAINS]->(artwork:Artwork)
+//            OPTIONAL MATCH (user:User)-[userLike:LIKES]->(artwork)
             RETURN 
                 artwork.id AS id,
                     artwork.title AS title,
@@ -58,8 +59,8 @@ public interface FavoritesRepository extends Neo4jRepository<Favorites,String> {
                     artwork.image_url_compressed AS image_url_compressed,
                     artwork.image_url AS image_url,
                     artwork.license_info AS license_info,
-                    artwork.source_url AS source_url,
-                CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
+                    artwork.source_url AS source_url
+//                CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
             ORDER BY artwork.name ASC
             """)
     List<GetArtwork> getArtworksByFavoriteId(@Param("favoriteId") String favoriteId);
