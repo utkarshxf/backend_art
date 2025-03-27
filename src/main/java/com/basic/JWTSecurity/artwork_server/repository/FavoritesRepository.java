@@ -41,7 +41,6 @@ public interface FavoritesRepository extends Neo4jRepository<Favorites,String> {
 
     @Query("""
             MATCH (favorites:Favorites {id: $favoriteId})-[:CONTAINS]->(artwork:Artwork)
-            OPTIONAL MATCH (user:User)-[userLike:LIKES]->(artwork)
             RETURN 
                 artwork.id AS id,
                     artwork.title AS title,
