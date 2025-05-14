@@ -1,14 +1,18 @@
 package com.basic.JWTSecurity.artwork_server.service;
 
 
+import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
+import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import com.basic.JWTSecurity.artwork_server.repository.ArtistRepository;
+import com.basic.JWTSecurity.artwork_server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.neo4j.exceptions.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,6 +27,7 @@ import static java.util.Objects.nonNull;
 public class ArtistServiceImpl implements  ArtistService{
 
     private final ArtistRepository artistRepository;
+    private final UserRepository userRepository;
     @Override
     public Artist createNew(Artist artist) {
 
@@ -45,7 +50,12 @@ public class ArtistServiceImpl implements  ArtistService{
                 .wikipedia_url(artist.getWikipedia_url())
                 .description(artist.getDescription())
                 .build();
-        return artistRepository.save(artist2);
+
+        Artist newArtist =  artistRepository.save(artist2);
+        if(newArtist.getId()!=null) {
+            userRepository.addArtistAndUserRelationship(newArtist.getId(), newArtist.getId(), LocalDateTime.now());
+        }
+        return newArtist;
     }
 
     @Override
@@ -93,6 +103,54 @@ public class ArtistServiceImpl implements  ArtistService{
     @Override
     public GetArtist getArtistByArtworkID(String currentUserId , String artworkId) {
         return artistRepository.getArtistByArtworkId(currentUserId , artworkId);
+    }
+
+    @Override
+    public Artist updateArtist(ArtistRegistrationRequestRecord requestRecord) {
+        // Validate that the artist exists
+        Artist existingArtist = artistRepository.findById(requestRecord.id())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("Artist with id %s not found", requestRecord.id())
+                ));
+
+        // Update artist fields, preserving existing data if new value is null
+        existingArtist.setName(
+                requestRecord.name() != null ? requestRecord.name() : existingArtist.getName()
+        );
+        existingArtist.setBirth_date(
+                requestRecord.birth_date() != null ? requestRecord.birth_date() : existingArtist.getBirth_date()
+        );
+        existingArtist.setDeath_date(
+                requestRecord.death_date() != null ? requestRecord.death_date() : existingArtist.getDeath_date()
+        );
+        existingArtist.setNationality(
+                requestRecord.nationality() != null ? requestRecord.nationality() : existingArtist.getNationality()
+        );
+        existingArtist.setNotable_works(
+                requestRecord.notable_works() != null ? requestRecord.notable_works() : existingArtist.getNotable_works()
+        );
+        existingArtist.setArt_movement(
+                requestRecord.art_movement() != null ? requestRecord.art_movement() : existingArtist.getArt_movement()
+        );
+        existingArtist.setEducation(
+                requestRecord.education() != null ? requestRecord.education() : existingArtist.getEducation()
+        );
+        existingArtist.setAwards(
+                requestRecord.awards() != null ? requestRecord.awards() : existingArtist.getAwards()
+        );
+        existingArtist.setImage_url(
+                requestRecord.image_url() != null ? requestRecord.image_url() : existingArtist.getImage_url()
+        );
+        existingArtist.setWikipedia_url(
+                requestRecord.wikipedia_url() != null ? requestRecord.wikipedia_url() : existingArtist.getWikipedia_url()
+        );
+        existingArtist.setDescription(
+                requestRecord.description() != null ? requestRecord.description() : existingArtist.getDescription()
+        );
+
+        Artist updatedArtist = artistRepository.save(existingArtist);
+
+        return updatedArtist;
     }
 
 }

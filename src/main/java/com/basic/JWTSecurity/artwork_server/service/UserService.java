@@ -16,4 +16,6 @@ public interface UserService {
     void userUnFollowArtist(String userId,String artistId);
 
     GetUser getUserById(String userId);
+
+    boolean isUserIsArtistByUserId(String userId);
 }

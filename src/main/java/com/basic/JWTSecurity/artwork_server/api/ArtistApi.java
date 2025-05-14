@@ -13,7 +13,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @RestController
 //@PreAuthorize("hasRole('USER')")
@@ -45,7 +48,6 @@ public class ArtistApi {
     }
 
 
-
     @PostMapping()
     public ResponseEntity<ArtistRegistrationRequestRecord> createNewArtist(@RequestBody ArtistRegistrationRequestRecord requestRecord){
         Artist artist = Artist.builder()
@@ -63,6 +65,27 @@ public class ArtistApi {
                 .description(requestRecord.description())
                 .build();
         Artist artist1 = artistService.createNew(artist);
+
+
+
         return ResponseEntity.status(HttpStatus.CREATED).body(requestRecord);
     }
+
+    @PutMapping("/{artistId}")
+    public ResponseEntity<?> updateArtist(
+            @PathVariable String artistId,
+            @RequestBody ArtistRegistrationRequestRecord requestRecord
+    ) {
+        if(!Objects.equals(artistId, requestRecord.id()))
+        {
+            Map<String, Object> map = new HashMap<>();
+            map.put("message", "user Id does not match");
+            map.put("status", false);
+            return new ResponseEntity<>(map, HttpStatus.BAD_REQUEST);
+        }
+        Artist updatedArtist = artistService.updateArtist(requestRecord);
+
+        return ResponseEntity.ok(requestRecord);
+    }
+
 }

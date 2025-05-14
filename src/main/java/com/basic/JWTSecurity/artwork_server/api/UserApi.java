@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -30,6 +31,17 @@ public class UserApi {
         User user = userService.createUser(requestRecord);
         return ResponseEntity.status(HttpStatus.CREATED).body(requestRecord);
     }
+
+    @GetMapping("/getFollowers/{artistId}")
+    public ResponseEntity<List<GetUser>> getFollowers(@PathVariable String artistId){
+        return null;
+    }
+
+    @GetMapping("/getFollowing/{artistId}")
+    public ResponseEntity<List<GetUser>> getFollowing(@PathVariable String artistId){
+        return null;
+    }
+
 
     @PutMapping("/{userId}")
     public ResponseEntity<?> updateUser(
@@ -64,6 +76,9 @@ public class UserApi {
         return userService.getUserById(userId);
     }
 
-
-
+    @GetMapping("/isUserIsArtistByUserId/{userId}")
+    ResponseEntity<?> isUserIsArtistByUserId(@PathVariable String userId){
+        boolean result = userService.isUserIsArtistByUserId(userId);
+        return ResponseEntity.ok(result);
+    }
 }

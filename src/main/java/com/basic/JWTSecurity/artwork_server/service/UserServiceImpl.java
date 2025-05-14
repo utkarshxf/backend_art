@@ -104,4 +104,9 @@ public class UserServiceImpl implements UserService {
         return userRepository.getUserById(userId);
     }
 
+    @Override
+    public boolean isUserIsArtistByUserId(String userId) {
+        return userRepository.isUserIsArtistByUserId(userId);
+    }
+
 }

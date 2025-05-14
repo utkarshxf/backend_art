@@ -1,6 +1,7 @@
 package com.basic.JWTSecurity.artwork_server.service;
 
 
+import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
@@ -27,4 +28,5 @@ public interface ArtistService {
     GetArtist getArtistByArtworkID(String currentUserId , String artworkId);
 
 
+    Artist updateArtist(ArtistRegistrationRequestRecord requestRecord);
 }
