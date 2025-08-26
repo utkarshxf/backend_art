@@ -184,41 +184,41 @@ sequenceDiagram
     
     Note over U,M: 🔐 User Authentication Flow
     
-    U->>+W: Enter credentials
-    W->>+G: POST /login
-    G->>+A: Authenticate user
-    A->>+P: Validate credentials
-    P->>+M: Query user profile
-    M-->>-P: Return profile data
-    P-->>-A: Authentication result
+    U->>W: Enter credentials
+    W->>G: POST /login
+    G->>A: Authenticate user
+    A->>P: Validate credentials
+    P->>M: Query user profile
+    M->>P: Return profile data
+    P->>A: Authentication result
     
     alt Authentication Success
-        A->>+J: Generate JWT token
-        J-->>-A: Return signed token
-        A-->>-G: Authentication success + token
-        G-->>-W: JWT Response
-        W-->>-U: Login successful
+        A->>J: Generate JWT token
+        J->>A: Return signed token
+        A->>G: Authentication success + token
+        G->>W: JWT Response
+        W->>U: Login successful
         
         Note over U,M: 🔒 Subsequent Protected API Calls
-        U->>+W: Request protected resource
-        W->>+G: API call with Bearer token
-        G->>+J: Validate JWT token
-        J-->>-G: Token validation result
+        U->>W: Request protected resource
+        W->>G: API call with Bearer token
+        G->>J: Validate JWT token
+        J->>G: Token validation result
         
         alt Token Valid
-            G->>+A: Process request
-            A-->>-G: Return response
-            G-->>-W: API response
-            W-->>-U: Display data
+            G->>A: Process request
+            A->>G: Return response
+            G->>W: API response
+            W->>U: Display data
         else Token Invalid/Expired
-            G-->>W: 401 Unauthorized
-            W-->>U: Redirect to login
+            G->>W: 401 Unauthorized
+            W->>U: Redirect to login
         end
         
     else Authentication Failed
-        A-->>-G: Authentication failed
-        G-->>-W: 401 Unauthorized
-        W-->>-U: Invalid credentials
+        A->>G: Authentication failed
+        G->>W: 401 Unauthorized
+        W->>U: Invalid credentials
     end
 ```
 
