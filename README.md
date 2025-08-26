@@ -1,4 +1,5 @@
 # Artly - Artwork Management System
+![WhatsApp Image 2025-08-26 at 11 29 41 AM](https://github.com/user-attachments/assets/847a81f2-c4d1-484f-8986-8f6551d9b366)
 
 ## Project Overview
 
