@@ -1,5 +1,22 @@
 # Artly - Artwork Management System
-![WhatsApp Image 2025-08-26 at 11 29 41 AM](https://github.com/user-attachments/assets/847a81f2-c4d1-484f-8986-8f6551d9b366)
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/847a81f2-c4d1-484f-8986-8f6551d9b366"
+       alt="Artly Banner"
+       width="520" />
+</p>
+
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.orion.templete">
+    <img alt="Get it on Google Play"
+         src="https://img.shields.io/badge/Get%20it%20on-Google%20Play-black?logo=googleplay&logoColor=white">
+  </a>
+  &nbsp;
+  <a href="https://artwrk.studio/">
+    <img alt="Visit Website"
+         src="https://img.shields.io/badge/Visit-Website-blue">
+  </a>
+</p>
 
 ## Project Overview
 
