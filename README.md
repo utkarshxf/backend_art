@@ -1,5 +1,5 @@
 
-**# Artly - Artwork Management System
+# Artly - Artwork Management System
 
 ## Project Overview
 
