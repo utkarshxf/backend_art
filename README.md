@@ -182,41 +182,40 @@ sequenceDiagram
     participant J as 🎫 JWT Utils
     participant M as 🍃 MongoDB
     
-    %% Login Flow
     Note over U,M: 🔐 User Authentication Flow
     
     U->>+W: Enter credentials
-    W->>+G: POST /login {username, password}
+    W->>+G: POST /login
     G->>+A: Authenticate user
     A->>+P: Validate credentials
     P->>+M: Query user profile
     M-->>-P: Return profile data
     P-->>-A: Authentication result
     
-    alt ✅ Authentication Success
+    alt Authentication Success
         A->>+J: Generate JWT token
         J-->>-A: Return signed token
         A-->>-G: Authentication success + token
-        G-->>-W: JWT Response {token, username, roles}
-        W-->>-U: 🎉 Login successful
+        G-->>-W: JWT Response
+        W-->>-U: Login successful
         
-        Note over U,W: 🔒 Subsequent Protected API Calls
+        Note over U,M: 🔒 Subsequent Protected API Calls
         U->>+W: Request protected resource
         W->>+G: API call with Bearer token
         G->>+J: Validate JWT token
         J-->>-G: Token validation result
         
-        alt ✅ Token Valid
+        alt Token Valid
             G->>+A: Process request
             A-->>-G: Return response
             G-->>-W: API response
             W-->>-U: Display data
-        else ❌ Token Invalid/Expired
+        else Token Invalid/Expired
             G-->>W: 401 Unauthorized
             W-->>U: Redirect to login
         end
         
-    else ❌ Authentication Failed
+    else Authentication Failed
         A-->>-G: Authentication failed
         G-->>-W: 401 Unauthorized
         W-->>-U: Invalid credentials
