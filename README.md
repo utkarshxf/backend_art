@@ -1,4 +1,3 @@
-
 # Artly - Artwork Management System
 
 ## Project Overview
@@ -77,70 +76,281 @@ Artly is a comprehensive artwork management system built with Spring Boot, Mongo
 - **Swagger UI**: http://localhost:7040/swagger-ui/index.html
 - **Production Swagger UI**: https://hammerhead-app-zgpcv.ondigitalocean.app/swagger-ui/index.html
 
-## Flow Diagram
+## System Architecture
 
+```mermaid
+---
+title: Artly System Architecture Overview
+---
+graph TB
+    %% User Layer
+    subgraph "Client Layer"
+        Web[🌐 Web Interface]
+        Mobile[📱 Mobile App]
+        API_Client[🔧 API Client]
+    end
+    
+    %% API Gateway
+    subgraph "API Gateway"
+        Gateway[🚪 Spring Boot Gateway<br/>Port: 7040]
+        Swagger[📚 Swagger UI<br/>Documentation]
+    end
+    
+    %% Authentication Layer
+    subgraph "Authentication Services"
+        JWT[🔐 JWT Security]
+        Auth_Service[👤 Auth Service]
+        Profile_Service[👥 Profile Service]
+    end
+    
+    %% Core Services
+    subgraph "Core Services"
+        Artwork_Service[🎨 Artwork Service]
+        Artist_Service[👨‍🎨 Artist Service]
+        Comment_Service[💬 Comment Service]
+        Gallery_Service[🖼️ Gallery Service]
+        Shopping_Service[🛒 Shopping Service]
+    end
+    
+    %% Data Layer
+    subgraph "Data Layer"
+        MongoDB[(🍃 MongoDB<br/>User Profiles<br/>Shopping Data)]
+        Neo4j[(🔗 Neo4j<br/>Artwork Graph<br/>Relationships)]
+        Firebase[☁️ Firebase<br/>Media Storage]
+    end
+    
+    %% External Services
+    subgraph "External Services"
+        Python_Importer[🐍 Python Artwork Importer]
+    end
+    
+    %% Connections
+    Web --> Gateway
+    Mobile --> Gateway
+    API_Client --> Gateway
+    
+    Gateway --> JWT
+    Gateway --> Swagger
+    
+    JWT --> Auth_Service
+    Auth_Service --> Profile_Service
+    
+    Gateway --> Artwork_Service
+    Gateway --> Artist_Service
+    Gateway --> Comment_Service
+    Gateway --> Gallery_Service
+    Gateway --> Shopping_Service
+    
+    Profile_Service --> MongoDB
+    Shopping_Service --> MongoDB
+    
+    Artwork_Service --> Neo4j
+    Artist_Service --> Neo4j
+    Comment_Service --> Neo4j
+    Gallery_Service --> Neo4j
+    
+    Artwork_Service --> Firebase
+    
+    Python_Importer --> Neo4j
+    Python_Importer --> Firebase
+    
+    %% Styling
+    classDef clientStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000
+    classDef apiStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    classDef authStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    classDef serviceStyle fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#000
+    classDef dataStyle fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
+    classDef externalStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    
+    class Web,Mobile,API_Client clientStyle
+    class Gateway,Swagger apiStyle
+    class JWT,Auth_Service,Profile_Service authStyle
+    class Artwork_Service,Artist_Service,Comment_Service,Gallery_Service,Shopping_Service serviceStyle
+    class MongoDB,Neo4j,Firebase dataStyle
+    class Python_Importer externalStyle
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│             │     │             │     │             │
-│    User     │────▶│    Auth     │────▶│  Artwork    │
-│             │     │   Service   │     │   Service   │
-└─────────────┘     └─────────────┘     └─────────────┘
-                          │                    │
-                          ▼                    ▼
-                    ┌─────────────┐     ┌─────────────┐
-                    │             │     │             │
-                    │  MongoDB    │     │   Neo4j     │
-                    │  Database   │     │  Database   │
-                    │             │     │             │
-                    └─────────────┘     └─────────────┘
+
+## Authentication Flow
+
+```mermaid
+---
+title: User Authentication & Authorization Flow
+---
+sequenceDiagram
+    participant U as 🧑‍💻 User
+    participant W as 🌐 Web Client
+    participant G as 🚪 API Gateway
+    participant A as 🔐 Auth Service
+    participant P as 👥 Profile Service
+    participant J as 🎫 JWT Utils
+    participant M as 🍃 MongoDB
+    
+    %% Login Flow
+    Note over U,M: 🔐 User Authentication Flow
+    
+    U->>+W: Enter credentials
+    W->>+G: POST /login {username, password}
+    G->>+A: Authenticate user
+    A->>+P: Validate credentials
+    P->>+M: Query user profile
+    M-->>-P: Return profile data
+    P-->>-A: Authentication result
+    
+    alt ✅ Authentication Success
+        A->>+J: Generate JWT token
+        J-->>-A: Return signed token
+        A-->>-G: Authentication success + token
+        G-->>-W: JWT Response {token, username, roles}
+        W-->>-U: 🎉 Login successful
+        
+        Note over U,M: 🔒 Subsequent Protected API Calls
+        U->>+W: Request protected resource
+        W->>+G: API call with Bearer token
+        G->>+J: Validate JWT token
+        J-->>-G: Token validation result
+        
+        alt ✅ Token Valid
+            G->>+A: Process request
+            A-->>-G: Return response
+            G-->>-W: API response
+            W-->>-U: Display data
+        else ❌ Token Invalid/Expired
+            G-->>W: 401 Unauthorized
+            W-->>U: Redirect to login
+        end
+        
+    else ❌ Authentication Failed
+        A-->>-G: Authentication failed
+        G-->>-W: 401 Unauthorized
+        W-->>-U: Invalid credentials
+    end
 ```
 
-## Sequence Diagram
+## Data Model Relationships
 
-### Authentication Flow
-
+```mermaid
+---
+title: Neo4j Graph Database Relationships
+---
+graph LR
+    %% Users and Authentication
+    User[👤 User<br/>MongoDB Profile]
+    Neo4jUser[👤 Neo4j User<br/>Social Data]
+    
+    %% Core Entities
+    Artwork[🎨 Artwork<br/>Title, Artist<br/>Medium, Style]
+    Artist[👨‍🎨 Artist<br/>Biography<br/>Movement]
+    Gallery[🖼️ Gallery<br/>Curated Collection]
+    Comment[💬 Comment<br/>User Feedback]
+    
+    %% Collections
+    Favorites[⭐ Favorites<br/>Personal Collection]
+    Genre[🎭 Genre<br/>Art Category]
+    Year[📅 Year<br/>Release Date]
+    
+    %% Shopping (MongoDB)
+    CartItem[🛒 Cart Item]
+    OrderItem[📦 Order Item]
+    Address[🏠 Address]
+    
+    %% Relationships
+    User -.->|Profile Sync| Neo4jUser
+    User -->|HAS| CartItem
+    User -->|HAS| OrderItem
+    User -->|HAS| Address
+    
+    Neo4jUser -->|LIKES| Artwork
+    Neo4jUser -->|FOLLOWS| Artist
+    Neo4jUser -->|POSTED_COMMENT| Comment
+    Neo4jUser -->|CREATED| Favorites
+    Neo4jUser -->|LIKES| Gallery
+    Neo4jUser -->|LIKES| Genre
+    
+    Artist -->|CREATED| Artwork
+    Artist -->|BELONGS_TO_GENRE| Genre
+    Artist -->|CREATED| Gallery
+    
+    Artwork -->|HAS_COMMENT| Comment
+    Artwork -->|BELONGS_TO| Gallery
+    Artwork -->|RELEASED_IN| Year
+    Artwork -->|BELONGS_TO_GENRE| Genre
+    
+    Favorites -->|CONTAINS| Artwork
+    
+    %% Styling
+    classDef userStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
+    classDef contentStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef socialStyle fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef shoppingStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef metaStyle fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    
+    class User,Neo4jUser userStyle
+    class Artwork,Artist,Gallery contentStyle
+    class Comment,Favorites socialStyle
+    class CartItem,OrderItem,Address shoppingStyle
+    class Genre,Year metaStyle
 ```
-┌─────┐          ┌─────────────┐          ┌─────────────┐          ┌─────────────┐
-│User │          │SecurityApi  │          │ProfileService│          │JwtUtils     │
-└──┬──┘          └──────┬──────┘          └──────┬──────┘          └──────┬──────┘
-   │  Login Request     │                        │                        │
-   │ ─────────────────> │                        │                        │
-   │                    │                        │                        │
-   │                    │ Authenticate           │                        │
-   │                    │ ─────────────────────> │                        │
-   │                    │                        │                        │
-   │                    │                        │ Generate JWT Token     │
-   │                    │                        │ ─────────────────────> │
-   │                    │                        │                        │
-   │                    │                        │ Return Token           │
-   │                    │                        │ <───────────────────── │
-   │                    │                        │                        │
-   │  JWT Token         │                        │                        │
-   │ <───────────────── │                        │                        │
-   │                    │                        │                        │
-```
 
-### Artwork Browsing Flow
+## API Workflow
 
-```
-┌─────┐          ┌─────────────┐          ┌─────────────┐          ┌─────────────┐
-│User │          │ArtworkApi   │          │ArtworkService│          │Database     │
-└──┬──┘          └──────┬──────┘          └──────┬──────┘          └──────┬──────┘
-   │  Request Artworks  │                        │                        │
-   │ ─────────────────> │                        │                        │
-   │                    │                        │                        │
-   │                    │ Get Artworks           │                        │
-   │                    │ ─────────────────────> │                        │
-   │                    │                        │                        │
-   │                    │                        │ Query Database         │
-   │                    │                        │ ─────────────────────> │
-   │                    │                        │                        │
-   │                    │                        │ Return Data            │
-   │                    │                        │ <───────────────────── │
-   │                    │                        │                        │
-   │  Artwork Data      │                        │                        │
-   │ <───────────────── │                        │                        │
-   │                    │                        │                        │
+```mermaid
+---
+title: Artwork Browsing & Interaction Flow
+---
+sequenceDiagram
+    participant U as 🧑‍💻 User
+    participant W as 🌐 Web Client
+    participant G as 🚪 API Gateway
+    participant AS as 🎨 Artwork Service
+    participant CS as 💬 Comment Service
+    participant N as 🔗 Neo4j Database
+    participant F as ☁️ Firebase Storage
+    
+    Note over U,F: 🎨 Artwork Discovery Flow
+    
+    U->>+W: Browse artworks
+    W->>+G: GET /artwork/recommend?userId=123
+    G->>+AS: Get recommended artworks
+    AS->>+N: Query personalized recommendations
+    N-->>-AS: Return artwork data
+    AS->>+F: Get image URLs
+    F-->>-AS: Return media URLs
+    AS-->>-G: Artwork list with metadata
+    G-->>-W: JSON response
+    W-->>-U: Display artwork gallery
+    
+    Note over U,F: 👍 User Interaction Flow
+    
+    U->>+W: Like artwork
+    W->>+G: PUT /artwork/user/like/{artworkId}/{userId}
+    G->>+AS: Process like action
+    AS->>+N: Create LIKES relationship
+    N-->>-AS: Confirm relationship created
+    AS-->>-G: Success response
+    G-->>-W: Like confirmed
+    W-->>-U: Update UI (heart filled)
+    
+    Note over U,F: 💬 Comment Flow
+    
+    U->>+W: Add comment
+    W->>+G: POST /comment/add
+    G->>+CS: Create comment
+    CS->>+N: Store comment + relationships
+    N-->>-CS: Comment saved
+    CS-->>-G: Comment created
+    G-->>-W: Comment response
+    W-->>-U: Display new comment
+    
+    Note over U,F: 🔍 Artist Discovery
+    
+    U->>+W: View artist profile
+    W->>+G: GET /artist/{artistId}
+    G->>+AS: Get artist details
+    AS->>+N: Query artist + artworks
+    N-->>-AS: Artist data + portfolio
+    AS-->>-G: Complete artist profile
+    G-->>-W: Artist information
+    W-->>-U: Show artist page
 ```
 
 ## App Structure
@@ -666,7 +876,6 @@ The Artly system uses a rich graph database structure in Neo4j to model complex 
     - Comments are linked to both users (POSTED_COMMENT) and artworks (HAS_COMMENT)
     - Users can create and manage multiple FAVORITES collections
 
-
 ## API Contract
 
 ### Authentication APIs
@@ -798,11 +1007,465 @@ The application uses JWT (JSON Web Token) for authentication. All API endpoints 
 Authorization: Bearer <your-jwt-token>
 ```
 
+## Shopping & E-commerce Flow
+
+```mermaid
+---
+title: Shopping Cart & Order Processing
+---
+graph TD
+    %% User Actions
+    U[👤 User] -->|Browse| A[🎨 Artwork Gallery]
+    A -->|Add to Cart| C[🛒 Shopping Cart]
+    
+    %% Cart Management
+    subgraph "Cart Management"
+        C -->|View Items| CI[📋 Cart Items]
+        CI -->|Update Qty| UQ[🔄 Update Quantity]
+        CI -->|Remove Item| RI[❌ Remove Item]
+        UQ --> C
+        RI --> C
+    end
+    
+    %% Checkout Process
+    C -->|Proceed to Checkout| CO[💳 Checkout]
+    
+    subgraph "Checkout Flow"
+        CO -->|Select Address| SA[🏠 Shipping Address]
+        SA -->|Choose Payment| PM[💰 Payment Method]
+        PM -->|Review Order| RO[📋 Order Review]
+        RO -->|Place Order| PO[✅ Place Order]
+    end
+    
+    %% Order Processing
+    subgraph "Order Management"
+        PO -->|Create| OS[📦 Order Summary]
+        OS -->|Store| ODB[(🍃 MongoDB Orders)]
+        OS -->|Send| CN[📧 Confirmation]
+        OS -->|Update| IN[📊 Inventory]
+    end
+    
+    %% User Notifications
+    CN -->|Email/SMS| U
+    
+    %% Styling
+    classDef userStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef cartStyle fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef checkoutStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef orderStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef dataStyle fill:#ffebee,stroke:#c62828,stroke-width:2px
+    
+    class U,A userStyle
+    class C,CI,UQ,RI cartStyle
+    class CO,SA,PM,RO,PO checkoutStyle
+    class OS,CN,IN orderStyle
+    class ODB dataStyle
+```
+
+## Recommendation Engine
+
+```mermaid
+---
+title: Artwork Recommendation System
+---
+graph TB
+    %% User Input
+    subgraph "User Context"
+        UP[👤 User Profile<br/>Demographics<br/>Preferences]
+        UH[📈 User History<br/>Likes, Views<br/>Comments]
+        UB[🛒 Purchase History<br/>Cart Items<br/>Orders]
+    end
+    
+    %% Data Sources
+    subgraph "Artwork Data"
+        AM[🎨 Artwork Metadata<br/>Artist, Genre<br/>Style, Period]
+        AS[📊 Artwork Stats<br/>Views, Likes<br/>Comments]
+        AR[🔗 Artwork Relations<br/>Similar Artists<br/>Same Genre]
+    end
+    
+    %% Recommendation Algorithms
+    subgraph "Recommendation Engine"
+        CF[👥 Collaborative Filtering<br/>Users with similar taste]
+        CBF[🎯 Content-Based<br/>Similar artwork features]
+        KNN[🔍 K-Nearest Neighbors<br/>Find similar users/items]
+        ML[🤖 Machine Learning<br/>Pattern recognition]
+    end
+    
+    %% Processing
+    subgraph "Data Processing"
+        VE[🧮 Vector Embeddings<br/>Feature extraction]
+        SM[📐 Similarity Metrics<br/>Cosine similarity]
+        SC[⚖️ Scoring Algorithm<br/>Weighted rankings]
+    end
+    
+    %% Output
+    subgraph "Recommendations"
+        TR[🔥 Trending<br/>Popular now]
+        PR[⭐ Personalized<br/>For you]
+        SR[🎨 Similar<br/>Related artwork]
+        NR[🆕 New Arrivals<br/>Latest additions]
+    end
+    
+    %% Neo4j Integration
+    subgraph "Graph Database"
+        N4J[(🔗 Neo4j<br/>User-Artwork<br/>Relationships)]
+    end
+    
+    %% Connections
+    UP --> CF
+    UH --> CF
+    UB --> CBF
+    
+    AM --> CBF
+    AS --> TR
+    AR --> SR
+    
+    CF --> VE
+    CBF --> VE
+    KNN --> SM
+    ML --> SC
+    
+    VE --> SM
+    SM --> SC
+    
+    SC --> PR
+    AS --> TR
+    AR --> SR
+    AM --> NR
+    
+    %% Neo4j connections
+    UP -.->|Query| N4J
+    UH -.->|Query| N4J
+    AR -.->|Query| N4J
+    N4J -.->|Results| CF
+    N4J -.->|Results| CBF
+    
+    %% Styling
+    classDef userStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef dataStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef algoStyle fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef processStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef outputStyle fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef dbStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    
+    class UP,UH,UB userStyle
+    class AM,AS,AR dataStyle
+    class CF,CBF,KNN,ML algoStyle
+    class VE,SM,SC processStyle
+    class TR,PR,SR,NR outputStyle
+    class N4J dbStyle
+```
+
+## Deployment Architecture
+
+```mermaid
+---
+title: Production Deployment on DigitalOcean
+---
+graph TB
+    %% Internet
+    Internet[🌐 Internet<br/>Users Worldwide]
+    
+    %% Load Balancer & CDN
+    subgraph "Edge Layer"
+        LB[⚖️ Load Balancer<br/>Traffic Distribution]
+        CDN[🚀 CDN<br/>Static Assets<br/>Image Caching]
+    end
+    
+    %% Application Layer
+    subgraph "DigitalOcean App Platform"
+        APP1[🐳 Artly Instance 1<br/>Spring Boot App<br/>Port 7040]
+        APP2[🐳 Artly Instance 2<br/>Spring Boot App<br/>Port 7040]
+        APP3[🐳 Artly Instance 3<br/>Spring Boot App<br/>Port 7040]
+    end
+    
+    %% Database Layer
+    subgraph "Database Cluster"
+        MONGO_PRIMARY[(🍃 MongoDB Primary<br/>User Data<br/>Shopping Cart)]
+        MONGO_SECONDARY[(🍃 MongoDB Secondary<br/>Read Replica<br/>Backup)]
+        
+        NEO4J_PRIMARY[(🔗 Neo4j Primary<br/>Artwork Graph<br/>Relationships)]
+        NEO4J_REPLICA[(🔗 Neo4j Read Replica<br/>Query Performance)]
+    end
+    
+    %% Storage
+    subgraph "Media Storage"
+        FIREBASE[☁️ Firebase Storage<br/>Artwork Images<br/>User Avatars]
+        BACKUP[💾 Backup Storage<br/>Database Backups<br/>Disaster Recovery]
+    end
+    
+    %% Monitoring & Logging
+    subgraph "Observability"
+        METRICS[📊 Metrics<br/>Performance Monitoring]
+        LOGS[📝 Logs<br/>Application Logs<br/>Error Tracking]
+        ALERTS[🚨 Alerts<br/>System Health<br/>Error Notifications]
+    end
+    
+    %% Security
+    subgraph "Security Layer"
+        SSL[🔒 SSL/TLS<br/>HTTPS Encryption]
+        WAF[🛡️ Web Application Firewall<br/>DDoS Protection]
+        SECRETS[🔐 Secrets Management<br/>API Keys<br/>Database Credentials]
+    end
+    
+    %% External Services
+    subgraph "External APIs"
+        EMAIL[📧 Email Service<br/>Order Confirmations<br/>Notifications]
+        PAYMENT[💳 Payment Gateway<br/>Stripe/PayPal<br/>Transaction Processing]
+    end
+    
+    %% Connections
+    Internet --> SSL
+    SSL --> WAF
+    WAF --> LB
+    LB --> CDN
+    
+    LB --> APP1
+    LB --> APP2
+    LB --> APP3
+    
+    APP1 --> MONGO_PRIMARY
+    APP2 --> MONGO_PRIMARY
+    APP3 --> MONGO_PRIMARY
+    
+    APP1 --> NEO4J_PRIMARY
+    APP2 --> NEO4J_PRIMARY
+    APP3 --> NEO4J_PRIMARY
+    
+    MONGO_PRIMARY -.->|Replication| MONGO_SECONDARY
+    NEO4J_PRIMARY -.->|Replication| NEO4J_REPLICA
+    
+    APP1 --> FIREBASE
+    APP2 --> FIREBASE
+    APP3 --> FIREBASE
+    
+    APP1 --> EMAIL
+    APP2 --> PAYMENT
+    
+    %% Monitoring connections
+    APP1 -.->|Metrics| METRICS
+    APP2 -.->|Metrics| METRICS
+    APP3 -.->|Metrics| METRICS
+    
+    APP1 -.->|Logs| LOGS
+    APP2 -.->|Logs| LOGS
+    APP3 -.->|Logs| LOGS
+    
+    METRICS --> ALERTS
+    LOGS --> ALERTS
+    
+    %% Backup
+    MONGO_PRIMARY -.->|Backup| BACKUP
+    NEO4J_PRIMARY -.->|Backup| BACKUP
+    
+    %% Security
+    APP1 -.->|Secrets| SECRETS
+    APP2 -.->|Secrets| SECRETS
+    APP3 -.->|Secrets| SECRETS
+    
+    %% Styling
+    classDef internetStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:3px
+    classDef edgeStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef appStyle fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef dbStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef storageStyle fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef monitorStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef securityStyle fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    classDef externalStyle fill:#f1f8e9,stroke:#33691e,stroke-width:2px
+    
+    class Internet internetStyle
+    class LB,CDN edgeStyle
+    class APP1,APP2,APP3 appStyle
+    class MONGO_PRIMARY,MONGO_SECONDARY,NEO4J_PRIMARY,NEO4J_REPLICA dbStyle
+    class FIREBASE,BACKUP storageStyle
+    class METRICS,LOGS,ALERTS monitorStyle
+    class SSL,WAF,SECRETS securityStyle
+    class EMAIL,PAYMENT externalStyle
+```
+
+## Development Workflow
+
+```mermaid
+---
+title: Development & CI/CD Pipeline
+---
+gitGraph
+    commit id: "Initial Setup"
+    commit id: "Auth Service"
+    
+    branch feature/artwork-service
+    checkout feature/artwork-service
+    commit id: "Artwork API"
+    commit id: "Neo4j Integration"
+    commit id: "Image Upload"
+    
+    checkout main
+    merge feature/artwork-service
+    commit id: "v1.0.0 Release"
+    
+    branch feature/recommendation
+    checkout feature/recommendation
+    commit id: "ML Algorithm"
+    commit id: "User Preferences"
+    
+    branch feature/shopping-cart
+    checkout feature/shopping-cart
+    commit id: "Cart Service"
+    commit id: "Order Processing"
+    commit id: "Payment Integration"
+    
+    checkout main
+    merge feature/recommendation
+    merge feature/shopping-cart
+    commit id: "v1.1.0 Release"
+    
+    branch hotfix/security-patch
+    checkout hotfix/security-patch
+    commit id: "JWT Security Fix"
+    
+    checkout main
+    merge hotfix/security-patch
+    commit id: "v1.1.1 Hotfix"
+    
+    commit id: "Production Deploy"
+```
+
+## Performance Optimization
+
+```mermaid
+---
+title: System Performance & Caching Strategy
+---
+graph TD
+    %% Client Requests
+    CLIENT[👤 Client Request]
+    
+    %% Caching Layers
+    subgraph "Caching Strategy"
+        CDN_CACHE[🚀 CDN Cache<br/>Static Assets<br/>Images, CSS, JS]
+        REDIS[⚡ Redis Cache<br/>Session Data<br/>Frequently Accessed]
+        APP_CACHE[🔄 Application Cache<br/>Query Results<br/>Computed Data]
+    end
+    
+    %% Database Optimization
+    subgraph "Database Performance"
+        MONGO_INDEX[📊 MongoDB Indexes<br/>User Queries<br/>Shopping Data]
+        NEO4J_INDEX[🔍 Neo4j Indexes<br/>Artwork Properties<br/>Relationship Queries]
+        QUERY_OPT[🎯 Query Optimization<br/>Efficient Cypher<br/>Aggregation Pipelines]
+    end
+    
+    %% Application Optimization
+    subgraph "Application Layer"
+        CONNECTION_POOL[🏊 Connection Pooling<br/>Database Connections<br/>Resource Management]
+        ASYNC_PROC[⚡ Async Processing<br/>Non-blocking I/O<br/>Background Tasks]
+        BATCH_PROC[📦 Batch Processing<br/>Bulk Operations<br/>Data Import]
+    end
+    
+    %% Monitoring
+    subgraph "Performance Monitoring"
+        METRICS[📈 Performance Metrics<br/>Response Times<br/>Throughput]
+        APM[🔍 APM Tools<br/>Application Performance<br/>Bottleneck Detection]
+        PROFILING[🔬 Code Profiling<br/>Memory Usage<br/>CPU Optimization]
+    end
+    
+    %% Load Balancing
+    subgraph "Scalability"
+        HORIZONTAL[📏 Horizontal Scaling<br/>Multiple Instances<br/>Load Distribution]
+        VERTICAL[📐 Vertical Scaling<br/>Resource Upgrade<br/>Memory/CPU]
+        AUTO_SCALE[🔄 Auto Scaling<br/>Dynamic Scaling<br/>Traffic-based]
+    end
+    
+    %% Connections
+    CLIENT --> CDN_CACHE
+    CDN_CACHE -->|Cache Miss| REDIS
+    REDIS -->|Cache Miss| APP_CACHE
+    APP_CACHE -->|Database Query| MONGO_INDEX
+    APP_CACHE -->|Graph Query| NEO4J_INDEX
+    
+    MONGO_INDEX --> QUERY_OPT
+    NEO4J_INDEX --> QUERY_OPT
+    
+    QUERY_OPT --> CONNECTION_POOL
+    CONNECTION_POOL --> ASYNC_PROC
+    ASYNC_PROC --> BATCH_PROC
+    
+    %% Monitoring connections
+    APP_CACHE -.->|Monitor| METRICS
+    ASYNC_PROC -.->|Monitor| APM
+    BATCH_PROC -.->|Monitor| PROFILING
+    
+    %% Scaling decisions
+    METRICS --> AUTO_SCALE
+    APM --> HORIZONTAL
+    PROFILING --> VERTICAL
+    
+    %% Styling
+    classDef clientStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef cacheStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef dbStyle fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef appStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef monitorStyle fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef scaleStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    
+    class CLIENT clientStyle
+    class CDN_CACHE,REDIS,APP_CACHE cacheStyle
+    class MONGO_INDEX,NEO4J_INDEX,QUERY_OPT dbStyle
+    class CONNECTION_POOL,ASYNC_PROC,BATCH_PROC appStyle
+    class METRICS,APM,PROFILING monitorStyle
+    class HORIZONTAL,VERTICAL,AUTO_SCALE scaleStyle
+```
+
 ## Deployment
 
 The application is deployed on DigitalOcean and can be accessed at:
-https://hammerhead-app-zgpcv.ondigitalocean.app/
+**🌐 Production URL**: https://hammerhead-app-zgpcv.ondigitalocean.app/
+
+### Environment Configuration
+- **Development**: `http://localhost:7040`
+- **Staging**: `https://staging-artly.ondigitalocean.app`
+- **Production**: `https://hammerhead-app-zgpcv.ondigitalocean.app`
+
+### Health Checks
+- **API Health**: `/actuator/health`
+- **Database Status**: `/actuator/health/db`
+- **System Metrics**: `/actuator/metrics`
+
+## Technology Stack
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Backend** | Spring Boot 3.x | RESTful API framework |
+| **Security** | Spring Security + JWT | Authentication & authorization |
+| **Database (Relational)** | MongoDB | User profiles, shopping data |
+| **Database (Graph)** | Neo4j | Artwork relationships, recommendations |
+| **Storage** | Firebase Storage | Media files, images |
+| **Deployment** | DigitalOcean App Platform | Cloud hosting |
+| **Documentation** | Swagger/OpenAPI | API documentation |
+| **Build Tool** | Maven | Dependency management |
+| **Container** | Docker | Application containerization |
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/new-feature`
+3. Commit changes: `git commit -am 'Add new feature'`
+4. Push to branch: `git push origin feature/new-feature`
+5. Submit a Pull Request
+
+### Code Standards
+- Follow Java naming conventions
+- Write unit tests for new features
+- Update API documentation
+- Ensure all tests pass before submitting PR
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+**📧 Support**: For technical support or questions, please contact the development team.
+
+**🐛 Bug Reports**: Submit issues through the GitHub issue tracker.
+
+**💡 Feature Requests**: We welcome suggestions for new features and improvements.
