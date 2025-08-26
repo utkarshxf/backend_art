@@ -173,9 +173,6 @@ graph TB
 ## Authentication Flow
 
 ```mermaid
----
-title: User Authentication & Authorization Flow
----
 sequenceDiagram
     participant U as 🧑‍💻 User
     participant W as 🌐 Web Client
@@ -186,7 +183,7 @@ sequenceDiagram
     participant M as 🍃 MongoDB
     
     %% Login Flow
-    Note over U,M 🔐 User Authentication Flow
+    Note over U,M: 🔐 User Authentication Flow
     
     U->>+W: Enter credentials
     W->>+G: POST /login {username, password}
@@ -203,7 +200,7 @@ sequenceDiagram
         G-->>-W: JWT Response {token, username, roles}
         W-->>-U: 🎉 Login successful
         
-        Note over U,W 🔒 Subsequent Protected API Calls
+        Note over U,W: 🔒 Subsequent Protected API Calls
         U->>+W: Request protected resource
         W->>+G: API call with Bearer token
         G->>+J: Validate JWT token
