@@ -10,9 +10,12 @@ import org.springframework.http.ResponseEntity;
 public interface UserService {
 
     User createUser(UserRegistrationRequestRecord user);
+    User updateUser(UserRegistrationRequestRecord requestRecord);
     void deleteByUserId(String id);
     void userFollowArtist(String userId,String artistId);
     void userUnFollowArtist(String userId,String artistId);
 
-    GetUser getUserById(String userId , String currentUserId);
+    GetUser getUserById(String userId);
+
+    boolean isUserIsArtistByUserId(String userId);
 }

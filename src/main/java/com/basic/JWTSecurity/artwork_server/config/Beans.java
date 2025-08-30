@@ -17,8 +17,8 @@ public class Beans {
     @Bean
     public Driver neo4jDriver() {
         return GraphDatabase.driver(
-                "neo4j+s://dd0265ad.databases.neo4j.io:7687",
-                AuthTokens.basic("neo4j", "1jq_xIz8BppkBQxIepqRH_jgcHNKrqB5WdcBBO7PCaw")
+                "neo4j+s://eeb6bc24.databases.neo4j.io:7687",
+                AuthTokens.basic("neo4j", "cfe0IG8pV2fvQHP3cZ1IDBU_kwBKDNNzNgxNGOad8b0")
         );
     }
 

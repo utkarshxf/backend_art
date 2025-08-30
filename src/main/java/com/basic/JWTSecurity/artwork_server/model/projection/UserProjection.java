@@ -9,7 +9,9 @@ public interface UserProjection {
 
     String getName();
 
-    String getProfilePicture();
+    default String getProfilePicture() {
+        return null;
+    }
 
     LocalDate getDob();
 

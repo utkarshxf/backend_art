@@ -12,6 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 @RestController
 //@PreAuthorize("hasRole('USER')")
 @RequestMapping("/users")
@@ -27,6 +32,34 @@ public class UserApi {
         return ResponseEntity.status(HttpStatus.CREATED).body(requestRecord);
     }
 
+    @GetMapping("/getFollowers/{artistId}")
+    public ResponseEntity<List<GetUser>> getFollowers(@PathVariable String artistId){
+        return null;
+    }
+
+    @GetMapping("/getFollowing/{artistId}")
+    public ResponseEntity<List<GetUser>> getFollowing(@PathVariable String artistId){
+        return null;
+    }
+
+
+    @PutMapping("/{userId}")
+    public ResponseEntity<?> updateUser(
+            @PathVariable String userId,
+            @RequestBody UserRegistrationRequestRecord requestRecord
+    ) {
+        if(!Objects.equals(userId, requestRecord.id()))
+        {
+            Map<String, Object> map = new HashMap<>();
+            map.put("message", "user Id does not match");
+            map.put("status", false);
+            return new ResponseEntity<>(map, HttpStatus.BAD_REQUEST);
+        }
+        User updatedUser = userService.updateUser(requestRecord);
+
+        return ResponseEntity.ok(requestRecord);
+    }
+
 
     @PutMapping("/{userId}/artist/{artistId}/follow")
     public  void followArtist(@PathVariable String userId,@PathVariable String artistId){
@@ -38,9 +71,14 @@ public class UserApi {
         userService.userUnFollowArtist(userId,artistId);
     }
 
-    @GetMapping("/getUserByUserId/{userId}/{currentUserId}")
-    GetUser getUserByUserId(@PathVariable String userId  , @PathVariable String currentUserId){
-        return userService.getUserById(userId , currentUserId);
+    @GetMapping("/getUserByUserId/{userId}")
+    GetUser getUserByUserId(@PathVariable String userId){
+        return userService.getUserById(userId);
     }
 
+    @GetMapping("/isUserIsArtistByUserId/{userId}")
+    ResponseEntity<?> isUserIsArtistByUserId(@PathVariable String userId){
+        boolean result = userService.isUserIsArtistByUserId(userId);
+        return ResponseEntity.ok(result);
+    }
 }

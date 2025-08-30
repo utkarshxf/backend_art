@@ -1,13 +1,22 @@
 package com.basic.JWTSecurity.artwork_server.api;
 
+import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
+import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
+import com.basic.JWTSecurity.artwork_server.model.Artist;
+import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import com.basic.JWTSecurity.artwork_server.service.ArtistService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @RestController
 //@PreAuthorize("hasRole('USER')")
@@ -29,7 +38,54 @@ public class ArtistApi {
     }
 
     @GetMapping("/getArtistByArtistId")
-    public  List<GetArtist> getArtistByArtistId(@RequestParam String artistId) {
-        return artistService.getArtistByArtistID(artistId);
+    public GetArtist getArtistByArtistId(@RequestParam String userId  , @RequestParam String artistId) {
+        return artistService.getArtistByArtistID(userId , artistId);
     }
+
+    @GetMapping("/getArtistByArtworkId")
+    public GetArtist getArtistByArtworkId(@RequestParam String userId  , @RequestParam String artworkId) {
+        return artistService.getArtistByArtworkID(userId , artworkId);
+    }
+
+
+    @PostMapping()
+    public ResponseEntity<ArtistRegistrationRequestRecord> createNewArtist(@RequestBody ArtistRegistrationRequestRecord requestRecord){
+        Artist artist = Artist.builder()
+                .id(requestRecord.id())
+                .name(requestRecord.name())
+                .birth_date(requestRecord.birth_date())
+                .death_date(requestRecord.death_date())
+                .nationality(requestRecord.nationality())
+                .notable_works(requestRecord.notable_works())
+                .art_movement(requestRecord.art_movement())
+                .education(requestRecord.education())
+                .awards(requestRecord.awards())
+                .image_url(requestRecord.image_url())
+                .wikipedia_url(requestRecord.wikipedia_url())
+                .description(requestRecord.description())
+                .build();
+        Artist artist1 = artistService.createNew(artist);
+
+
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(requestRecord);
+    }
+
+    @PutMapping("/{artistId}")
+    public ResponseEntity<?> updateArtist(
+            @PathVariable String artistId,
+            @RequestBody ArtistRegistrationRequestRecord requestRecord
+    ) {
+        if(!Objects.equals(artistId, requestRecord.id()))
+        {
+            Map<String, Object> map = new HashMap<>();
+            map.put("message", "user Id does not match");
+            map.put("status", false);
+            return new ResponseEntity<>(map, HttpStatus.BAD_REQUEST);
+        }
+        Artist updatedArtist = artistService.updateArtist(requestRecord);
+
+        return ResponseEntity.ok(requestRecord);
+    }
+
 }
