@@ -28,7 +28,17 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
     @Autowired
     private ProfileRepository profileRepository;
 
-
+    @Override
+    public Profile changeUserPassword(String phoneNumber, String newPassword) {
+        Optional<Profile> userOpt = profileRepository.findByPhone(phoneNumber);
+        if (!userOpt.isPresent()) {
+            throw new UsernameNotFoundException("User not found");
+        }
+        Profile profile = userOpt.get();
+        profile.setPassword(passwordEncoder().encode(newPassword));
+        Profile user1 = profileRepository.save(profile);
+        return user1;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
