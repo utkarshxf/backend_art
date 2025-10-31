@@ -26,11 +26,11 @@ public class UserApi {
 
     private  final UserService userService;
 
-    @PostMapping
-    public ResponseEntity<UserRegistrationRequestRecord> createNewUser(@RequestBody UserRegistrationRequestRecord requestRecord){
-        User user = userService.createUser(requestRecord);
-        return ResponseEntity.status(HttpStatus.CREATED).body(requestRecord);
-    }
+//    @PostMapping
+//    public ResponseEntity<UserRegistrationRequestRecord> createNewUser(@RequestBody UserRegistrationRequestRecord requestRecord){
+//        User user = userService.createUser(requestRecord);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(requestRecord);
+//    }
 
     @GetMapping("/getFollowers/{artistId}")
     public ResponseEntity<List<GetUser>> getFollowers(@PathVariable String artistId){
@@ -75,6 +75,7 @@ public class UserApi {
     GetUser getUserByUserId(@PathVariable String userId){
         return userService.getUserById(userId);
     }
+
 
     @GetMapping("/isUserIsArtistByUserId/{userId}")
     ResponseEntity<?> isUserIsArtistByUserId(@PathVariable String userId){

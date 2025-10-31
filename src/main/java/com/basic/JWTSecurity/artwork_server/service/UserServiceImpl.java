@@ -8,12 +8,18 @@ import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProfileProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProjection;
 import com.basic.JWTSecurity.artwork_server.repository.UserRepository;
+import com.basic.JWTSecurity.auth.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.exceptions.EntityNotFoundException;
+import org.springdoc.core.service.SecurityService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -24,6 +30,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final ArtistService artistService;
+    private final ProfileService profileService;
 
     @Override
     public User createUser(UserRegistrationRequestRecord requestRecord) {
@@ -101,6 +108,37 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public GetUser getUserById(String userId) {
+        if (!userRepository.existsById(userId)) {
+            try {
+                UserDetails user = profileService.loadUserByUsername(userId);
+                if (user == null) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User does not exist");
+                }
+
+                User user1 = createUser(
+                        new UserRegistrationRequestRecord(
+                                false,
+                                userId,
+                                user.getUsername(),
+                                "https://ui-avatars.com/api/?name=" + user.getUsername(),
+                                LocalDate.of(2000, 1, 1),
+                                "unspecified",
+                                "en",
+                                "in"
+                        )
+                );
+                return GetUser.builder()
+                        .name(user1.getName())
+                        .id(user1.getId())
+                        .profilePicture(user1.getProfilePicture())
+                        .dob(user1.getDob())
+                        .countryIso2(user1.getCountryIso2())
+                        .language(user1.getLanguage())
+                        .build();
+            } catch (Exception e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User does not exist");
+            }
+        }
         return userRepository.getUserById(userId);
     }
 
