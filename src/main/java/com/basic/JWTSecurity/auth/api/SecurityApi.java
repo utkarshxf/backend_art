@@ -1,6 +1,9 @@
 package com.basic.JWTSecurity.auth.api;
 
 
+import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
+import com.basic.JWTSecurity.artwork_server.model.User;
+import com.basic.JWTSecurity.artwork_server.service.UserService;
 import com.basic.JWTSecurity.auth.model.*;
 import com.basic.JWTSecurity.auth.service.ProfileService;
 import com.basic.JWTSecurity.auth.security.JwtUtils;
@@ -15,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +34,9 @@ public class SecurityApi {
 
     @Autowired
     private ProfileService profileService;
+
+    @Autowired
+    private UserService userService;
 
     @PostMapping("/check")
     public Boolean isValidToken(@RequestBody TokenRequest token) {
@@ -64,6 +71,19 @@ public class SecurityApi {
                     .collect(Collectors.toList());
 
             JwtResponse response = new JwtResponse(jwtToken , userDetails.getUsername(), roles);
+
+            userService.createUser(
+                    new UserRegistrationRequestRecord(
+                            false,
+                            response.getUsername(),
+                            response.getUsername(),
+                            "https://ui-avatars.com/api/?name=" + response.getUsername(),
+                            LocalDate.of(2000, 1, 1),
+                            "unspecified",
+                            "en",
+                            "in"
+                    )
+            );
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
