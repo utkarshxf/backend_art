@@ -24,7 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@RestController("/security")
+@RestController
+@RequestMapping("/security")
 public class SecurityApi {
     @Autowired
     private JwtUtils jwtUtils;
