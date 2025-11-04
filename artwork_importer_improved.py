@@ -21,6 +21,20 @@ logging.basicConfig(
     ]
 )
 
+# Non-art professions to filter out
+NON_ART_PROFESSIONS = {
+    'actor', 'actress', 'musician', 'composer', 'singer', 'rapper', 'dj',
+    'guitarist', 'bassist', 'drummer', 'violinist', 'cellist', 'vocalist',
+    'writer', 'novelist', 'poet', 'author', 'screenwriter', 'playwright',
+    'journalist', 'director', 'producer', 'cinematographer', 'filmmaker',
+    'editor', 'photographer', 'designer', 'architect', 'fashion', 'model',
+    'teacher', 'professor', 'doctor', 'physician', 'scientist', 'engineer',
+    'lawyer', 'judge', 'politician', 'president', 'minister', 'soldier',
+    'military', 'officer', 'bishop', 'priest', 'pastor', 'monk', 'nun',
+    'chef', 'cook', 'athlete', 'player', 'cricketer', 'footballer', 'coach',
+    'dancer', 'performer', 'magician', 'comedian', 'anchor', 'host', 'presenter'
+}
+
 
 class ArtworkImporter:
     def __init__(self, base_url="http://localhost:7040", delay=1, checkpoint_file="artwork_checkpoint.pkl"):
@@ -69,9 +83,37 @@ class ArtworkImporter:
         self.save_checkpoint()
         sys.exit(0)
 
+    def should_skip_title(self, title):
+        """
+        Check if a title suggests non-artwork content.
+
+        Args:
+            title (str): Page title
+
+        Returns:
+            bool: True if should skip
+        """
+        title_lower = title.lower()
+
+        # Skip if contains non-art profession
+        if any(prof in title_lower for prof in NON_ART_PROFESSIONS):
+            return True
+
+        # Skip building/location/list pages
+        skip_terms = [
+            'museum', 'gallery building', 'art gallery', 'church', 'cathedral',
+            'monument', 'memorial', 'list of', 'timeline of', 'history of',
+            'chapel', 'basilica', 'palace', 'castle', 'exhibition',
+            'collection of', 'hall', 'center', 'centre'
+        ]
+        if any(term in title_lower for term in skip_terms):
+            return True
+
+        return False
+
     def is_artwork_page(self, soup):
         """
-        Determine if a Wikipedia page is about an artwork.
+        Determine if a Wikipedia page is about an artwork with stricter criteria.
 
         Args:
             soup (BeautifulSoup): Parsed HTML content
@@ -79,39 +121,82 @@ class ArtworkImporter:
         Returns:
             bool: True if the page appears to be about an artwork
         """
-        # Check infobox for artwork indicators
+        # First check: Must have an infobox
         infobox = soup.select_one('.infobox, .vcard')
-        if infobox:
-            # Check if the infobox has artwork-related fields
-            artwork_fields = ['artist', 'year', 'medium', 'dimensions', 'location', 'type', 'created']
-            rows = infobox.select('tr')
-            for row in rows:
-                header = row.select_one('th')
-                if header:
-                    header_text = header.get_text().strip().lower()
-                    if any(field in header_text for field in artwork_fields):
-                        return True
+        if not infobox:
+            return False
 
-        # Check if the page title or categories suggest an artwork
+        # Extract title for additional checks
         title_element = soup.select_one('h1#firstHeading')
-        if title_element:
-            title = title_element.get_text().lower()
-            artwork_keywords = ['painting', 'portrait', 'sculpture', 'artwork', 'masterpiece']
-            if any(keyword in title for keyword in artwork_keywords):
-                return True
+        title = title_element.get_text() if title_element else ''
 
-        # Check categories for artwork indicators
+        # Skip if title suggests non-artwork
+        if self.should_skip_title(title):
+            return False
+
+        # Check for artwork-specific infobox fields (must have at least 2)
+        artwork_field_count = 0
+        artwork_fields = {
+            'artist': 0, 'year': 0, 'medium': 0, 'dimensions': 0,
+            'location': 0, 'type': 0, 'created': 0, 'completion': 0,
+            'catalogue': 0, 'accession': 0
+        }
+
+        rows = infobox.select('tr')
+        for row in rows:
+            header = row.select_one('th')
+            if header:
+                header_text = header.get_text().strip().lower()
+                for field in artwork_fields.keys():
+                    if field in header_text:
+                        artwork_field_count += 1
+                        break
+
+        # Must have at least 2 artwork-specific fields
+        if artwork_field_count < 2:
+            return False
+
+        # Check categories - must have at least one artwork category
         categories = soup.select('div.mw-normal-catlinks ul li a')
+        artwork_category_found = False
         for category in categories:
             category_text = category.get_text().lower()
-            if any(term in category_text for term in ['painting', 'artwork', 'sculpture', 'portrait', 'masterpiece']):
-                return True
+            # More specific artwork category terms
+            if any(term in category_text for term in [
+                'paintings by', 'paintings of', 'sculptures by',
+                'artworks by', 'portraits by', 'works by',
+                'paintings in', 'sculptures in'
+            ]):
+                artwork_category_found = True
+                break
+            # Exclude if it's a people/person category
+            if any(term in category_text for term in [
+                'births', 'deaths', 'people from', 'alumni of',
+                'musicians', 'actors', 'writers', 'politicians'
+            ]):
+                return False
 
-        return False
+        # Additional validation: Check first paragraph for artwork indicators
+        first_para = soup.select_one('#mw-content-text p')
+        if first_para:
+            para_text = first_para.get_text().lower()
+            # Should mention it's a painting/sculpture/artwork in first paragraph
+            artwork_mentions = sum(1 for term in ['painting', 'portrait', 'sculpture',
+                                                   'artwork', 'canvas', 'oil on']
+                                   if term in para_text)
+            # Should NOT mention person-related terms prominently
+            person_mentions = sum(1 for term in ['born', 'died', 'career', 'educated',
+                                                  'married', 'elected', 'served as']
+                                  if term in para_text)
+
+            if person_mentions > artwork_mentions:
+                return False
+
+        return artwork_category_found or artwork_field_count >= 3
 
     def is_artist_page(self, soup):
         """
-        Determine if a Wikipedia page is about an artist.
+        Determine if a Wikipedia page is about an artist with stricter validation.
 
         Args:
             soup (BeautifulSoup): Parsed HTML content
@@ -119,112 +204,126 @@ class ArtworkImporter:
         Returns:
             bool: True if the page appears to be about an artist
         """
-        # Check infobox for artist indicators
         infobox = soup.select_one('.infobox, .vcard')
-        if infobox:
-            # Check if the infobox has artist-related fields
-            artist_fields = ['born', 'nationality', 'known for', 'movement', 'works', 'notable work']
-            rows = infobox.select('tr')
-            for row in rows:
-                header = row.select_one('th')
-                if header:
-                    header_text = header.get_text().strip().lower()
-                    if any(field in header_text for field in artist_fields):
-                        # Check if it mentions art-related terms in the infobox
-                        values = row.select_one('td')
-                        if values:
-                            value_text = values.get_text().lower()
-                            art_terms = ['artist', 'paint', 'sculpt', 'artwork', 'portrait', 'gallery', 'exhibition']
-                            if any(term in value_text for term in art_terms):
-                                return True
+        if not infobox:
+            return False
 
-        # Check if the page title or categories suggest an artist
+        # Extract title
         title_element = soup.select_one('h1#firstHeading')
-        if title_element:
-            title = title_element.get_text().lower()
-            if 'artist' in title or 'painter' in title or 'sculptor' in title:
-                return True
+        title = title_element.get_text().lower() if title_element else ''
 
-        # Check categories for artist indicators
+        # Exclude non-art professions
+        if any(prof in title for prof in NON_ART_PROFESSIONS):
+            return False
+
+        # Must explicitly mention being an artist/painter/sculptor
+        artist_indicators = 0
+
+        # Check infobox for artist-specific fields
+        rows = infobox.select('tr')
+        for row in rows:
+            header = row.select_one('th')
+            value = row.select_one('td')
+
+            if header and value:
+                header_text = header.get_text().strip().lower()
+                value_text = value.get_text().lower()
+
+                # Known for field should mention art
+                if 'known for' in header_text or 'occupation' in header_text:
+                    if any(term in value_text for term in [
+                        'painting', 'painter', 'sculptor', 'sculpture',
+                        'artist', 'printmaker', 'draughtsman'
+                    ]):
+                        artist_indicators += 1
+
+                # Movement should be an art movement
+                if 'movement' in header_text:
+                    art_movements = [
+                        'renaissance', 'baroque', 'impressionism', 'cubism',
+                        'surrealism', 'expressionism', 'modernism', 'realism'
+                    ]
+                    if any(mov in value_text for mov in art_movements):
+                        artist_indicators += 1
+
+        # Check categories
         categories = soup.select('div.mw-normal-catlinks ul li a')
         for category in categories:
             category_text = category.get_text().lower()
-            if any(term in category_text for term in ['artist', 'painter', 'sculptor', 'renaissance artist']):
-                return True
+            # Must be in an artist-specific category
+            if any(term in category_text for term in [
+                'painters', 'sculptors', 'artists', 'printmakers',
+                'painters by nationality', 'sculptors by nationality'
+            ]):
+                artist_indicators += 1
+                break
+            # Exclude if in non-art professional categories
+            if any(term in category_text for term in [
+                'musicians', 'actors', 'writers', 'politicians',
+                'athletes', 'scientists', 'engineers'
+            ]):
+                return False
 
-        return False
+        # Check first paragraph
+        first_para = soup.select_one('#mw-content-text p')
+        if first_para:
+            para_text = first_para.get_text().lower()
+            # Should be described as artist/painter/sculptor early on
+            if any(term in para_text[:200] for term in [
+                'painter', 'sculptor', 'artist', 'printmaker'
+            ]):
+                artist_indicators += 1
+
+        # Need at least 2 strong indicators that this is an artist
+        return artist_indicators >= 2
 
     def extract_related_links(self, soup):
         """
-        Extract links that might be related to artworks or artists.
+        Extract links with much stricter filtering to stay on topic.
 
         Args:
             soup (BeautifulSoup): Parsed HTML content
         """
-        # Look for links in the content area
         content_div = soup.select_one('#mw-content-text')
         if not content_div:
             return
 
-        # Keywords that suggest the link might point to an artwork or artist
-        art_keywords = ['painting', 'sculpture', 'portrait', 'artwork', 'artist', 'painter', 'sculptor']
+        # Very specific keywords for artworks
+        artwork_keywords = ['painting', 'portrait', 'sculpture', 'masterpiece']
 
-        # Find related articles in the "See also" section
+        # Look in "See also" section ONLY
         see_also = soup.find('span', id='See_also')
         if see_also:
             see_also_section = see_also.find_parent('h2')
             if see_also_section:
-                # Get the next UL after the "See also" heading
                 next_ul = see_also_section.find_next('ul')
                 if next_ul:
-                    for li in next_ul.find_all('li'):
+                    for li in next_ul.find_all('li', recursive=False)[:3]:  # Max 3 links
                         link = li.find('a')
                         if link and link.get('href', '').startswith('/wiki/'):
-                            # Skip certain namespaces
-                            if ':' in link.get('href') and not link.get('href').startswith('/wiki/Category:'):
+                            if ':' in link.get('href'):
                                 continue
-                            # Only add if the link text contains art-related keywords
+
                             link_text = link.get_text().lower()
-                            if any(keyword in link_text for keyword in art_keywords):
+                            # Must explicitly mention artwork-related term
+                            if any(keyword in link_text for keyword in artwork_keywords):
                                 full_url = urljoin(self.wikipedia_base_url, link['href'])
                                 if full_url not in self.processed_urls and full_url not in self.queue:
                                     self.queue.append(full_url)
 
-        # Be more selective with links from content area
-        art_related_links = []
-        for link in content_div.select('a[href^="/wiki/"]'):
-            href = link.get('href')
-
-            # Skip certain namespaces and special pages
-            if ':' in href and not href.startswith('/wiki/Category:'):
-                continue
-
-            # Only add if the link text strongly suggests art-related content
-            link_text = link.get_text().lower()
-            if any(keyword in link_text for keyword in art_keywords):
-                full_url = urljoin(self.wikipedia_base_url, link['href'])
-                if full_url not in self.processed_urls and full_url not in self.queue and full_url not in art_related_links:
-                    art_related_links.append(full_url)
-
-        # Add only a limited number of links to avoid going off-topic
-        for url in art_related_links[:5]:  # Limit to 5 links per page
-            self.queue.append(url)
-
-        # Find related categories - be more selective
+        # Only check categories that are explicitly about artworks
         category_links = soup.select('div.mw-normal-catlinks ul li a')
-        art_related_categories = []
-        for link in category_links:
+        for link in category_links[:2]:  # Max 2 categories
             if link.get('href', '').startswith('/wiki/Category:'):
                 category_text = link.get_text().lower()
-                art_category_keywords = ['painting', 'artwork', 'artist', 'painter', 'sculptor',
-                                         'renaissance', 'baroque', 'impressionism', 'art movement']
-                if any(keyword in category_text for keyword in art_category_keywords):
+                # Very specific category patterns only
+                if any(pattern in category_text for pattern in [
+                    'paintings by', 'paintings of', 'sculptures by',
+                    'works by', 'portraits by', 'artworks in'
+                ]):
                     category_url = urljoin(self.wikipedia_base_url, link['href'])
-                    art_related_categories.append(category_url)
+                    self.add_category_pages_to_queue(category_url, limit=3)
 
-        # Add only a limited number of categories
-        for category_url in art_related_categories[:3]:  # Limit to 3 categories per page
-            self.add_category_pages_to_queue(category_url, limit=5)
     def load_checkpoint(self):
         """Load checkpoint data if available"""
         if os.path.exists(self.checkpoint_file):
@@ -238,7 +337,6 @@ class ArtworkImporter:
                     f"Loaded checkpoint: {len(self.processed_urls)} processed URLs, {len(self.queue)} URLs in queue")
             except Exception as e:
                 logging.error(f"Error loading checkpoint: {str(e)}")
-                # Initialize with empty data
                 self.processed_urls = set()
                 self.queue = []
                 self.current_sources = []
@@ -293,7 +391,6 @@ class ArtworkImporter:
                 logging.warning(f"Connection issue: {str(e)}. Retrying in 5 seconds...")
                 time.sleep(5)
             except Exception as e:
-                # For non-connection errors, raise immediately
                 logging.error(f"Error fetching {url}: {str(e)}")
                 raise
 
@@ -328,7 +425,6 @@ class ArtworkImporter:
                 logging.warning(f"Connection issue: {str(e)}. Retrying in 5 seconds...")
                 time.sleep(5)
             except Exception as e:
-                # For non-connection errors, raise immediately
                 logging.error(f"Error posting to {url}: {str(e)}")
                 raise
 
@@ -364,7 +460,6 @@ class ArtworkImporter:
                     artworks = response.json()
                     for artwork in artworks:
                         self.artwork_cache.add(artwork.get('title').lower())
-                        # Add URL to processed list if available
                         if 'sourceUrl' in artwork and artwork['sourceUrl']:
                             self.processed_urls.add(artwork['sourceUrl'])
             except Exception as e:
@@ -394,7 +489,6 @@ class ArtworkImporter:
 
         # Check if genre already exists
         if name.lower() in self.genre_cache:
-            # Get id from API by name
             try:
                 response = self.fetch_with_retry(f"{self.base_url}/genres")
                 if response.status_code == 200:
@@ -404,11 +498,9 @@ class ArtworkImporter:
                             return genre.get('id')
             except Exception as e:
                 logging.error(f"Error retrieving genre {name}: {str(e)}")
-                # If we can't find it, generate a consistent ID
                 genre_id = self.generate_id(name)
                 return genre_id
 
-            # If we can't find it, generate a consistent ID
             genre_id = self.generate_id(name)
             return genre_id
 
@@ -434,11 +526,9 @@ class ArtworkImporter:
             else:
                 logging.error(
                     f"Failed to create genre: {name}. Status: {response.status_code}, Response: {response.text}")
-                # Return generated ID even on failure
                 return genre_id
         except Exception as e:
             logging.error(f"Error creating genre {name}: {str(e)}")
-            # Return generated ID even on failure
             return genre_id
 
     def create_artist(self, artist_data):
@@ -512,17 +602,26 @@ class ArtworkImporter:
         if not title or title.lower() in self.artwork_cache:
             return False
 
+        # Skip if title suggests non-artwork
+        if self.should_skip_title(title):
+            logging.info(f"Skipping non-artwork title: {title}")
+            return False
+
+        # Must have an image URL
+        if not artwork_data.get('image_url') and not artwork_data.get('image_url_compressed'):
+            logging.warning(f"Skipping artwork without image: {title}")
+            return False
+
         # Create genre if not exists
         genre_name = artwork_data.get('art_movement') or artwork_data.get('periodStyle') or "Other"
         genre_id = self.create_genre(genre_name)
 
-        # If genre creation fails, generate a consistent ID for it
         if not genre_id:
             logging.warning(f"Genre creation failed for {genre_name}, using generated ID")
             genre_id = self.generate_id(genre_name)
 
         # Determine art type
-        art_type = "IMAGE"  # Default
+        art_type = "IMAGE"
         medium = artwork_data.get('medium', '').lower()
         if medium:
             if any(term in medium for term in ['sculpture', 'statue', '3d']):
@@ -535,7 +634,6 @@ class ArtworkImporter:
         release_year = None
         year_str = artwork_data.get('year', '')
         if year_str:
-            # Try to extract a year
             year_match = re.search(r'\b(1\d{3}|20\d{2})\b', year_str)
             if year_match:
                 release_year = int(year_match.group(1))
@@ -572,7 +670,6 @@ class ArtworkImporter:
             if response.status_code in [200, 201]:
                 logging.info(f"Created artwork: {title} for artist ID: {artist_id}")
                 self.artwork_cache.add(title.lower())
-                # Add source URL to processed list
                 if artwork_data.get('source_url'):
                     self.processed_urls.add(artwork_data.get('source_url'))
                 return True
@@ -583,6 +680,7 @@ class ArtworkImporter:
         except Exception as e:
             logging.error(f"Error creating artwork {title}: {str(e)}")
             return False
+
     def extract_artist_details(self, artist_url):
         """
         Extract artist details from Wikipedia.
@@ -638,7 +736,6 @@ class ArtworkImporter:
                         header_text = header.get_text().strip().lower()
                         value_text = value.get_text().strip()
 
-                        # Map common infobox fields
                         if any(term in header_text for term in ['born']):
                             details['birth_date'] = value_text
                         elif any(term in header_text for term in ['died']):
@@ -660,12 +757,10 @@ class ArtworkImporter:
                     details['description'] = p.get_text().strip()
                     break
 
-            # Clean up text fields (remove wiki annotations, excessive spaces, etc.)
+            # Clean up text fields
             for key, value in details.items():
                 if isinstance(value, str):
-                    # Remove reference tags
                     value = re.sub(r'\[\d+\]', '', value)
-                    # Normalize whitespace
                     value = re.sub(r'\s+', ' ', value).strip()
                     details[key] = value
 
@@ -723,7 +818,6 @@ class ArtworkImporter:
                 if img_src.startswith('//'):
                     img_src = 'https:' + img_src
 
-                # Set the compressed image URL
                 details['image_url_compressed'] = img_src
 
                 # Try to find full resolution image
@@ -748,10 +842,8 @@ class ArtworkImporter:
                         header_text = header.get_text().strip().lower()
                         value_text = value.get_text().strip()
 
-                        # Map common infobox fields
                         if any(term in header_text for term in ['artist', 'author', 'creator']):
                             details['artist'] = value_text
-                            # Try to find artist link
                             artist_link = value.select_one('a')
                             if artist_link and artist_link.get('href', '').startswith('/wiki/'):
                                 details['artist_url'] = urljoin(self.wikipedia_base_url, artist_link['href'])
@@ -777,9 +869,7 @@ class ArtworkImporter:
             # Clean up text fields
             for key, value in details.items():
                 if isinstance(value, str):
-                    # Remove reference tags
                     value = re.sub(r'\[\d+\]', '', value)
-                    # Normalize whitespace
                     value = re.sub(r'\s+', ' ', value).strip()
                     details[key] = value
 
@@ -792,69 +882,9 @@ class ArtworkImporter:
             logging.error(f"Error extracting artwork details from {artwork_url}: {str(e)}")
             return details
 
-    def extract_related_links(self, soup):
+    def add_category_pages_to_queue(self, category_url, limit=3):
         """
-        Extract links that might be related to artworks or artists.
-
-        Args:
-            soup (BeautifulSoup): Parsed HTML content
-        """
-        # Look for links in the content area
-        content_div = soup.select_one('#mw-content-text')
-        if not content_div:
-            return
-
-        # Keywords that suggest the link might point to an artwork or artist
-        art_keywords = ['painting', 'sculpture', 'artwork', 'portrait',
-                        'museum', 'gallery', 'artist', 'painter']
-
-        # Find related articles in the "See also" section
-        see_also = soup.find('span', id='See_also')
-        if see_also:
-            see_also_section = see_also.find_parent('h2')
-            if see_also_section:
-                # Get the next UL after the "See also" heading
-                next_ul = see_also_section.find_next('ul')
-                if next_ul:
-                    for li in next_ul.find_all('li'):
-                        link = li.find('a')
-                        if link and link.get('href', '').startswith('/wiki/'):
-                            # Skip certain namespaces
-                            if ':' in link.get('href') and not link.get('href').startswith('/wiki/Category:'):
-                                continue
-                            full_url = urljoin(self.wikipedia_base_url, link['href'])
-                            if full_url not in self.processed_urls and full_url not in self.queue:
-                                self.queue.append(full_url)
-
-        # Find potentially related links in the content area
-        for link in content_div.select('a[href^="/wiki/"]'):
-            href = link.get('href')
-
-            # Skip certain namespaces and special pages
-            if ':' in href and not href.startswith('/wiki/Category:'):
-                continue
-
-            # Skip links that don't look like they point to artworks or artists
-            link_text = link.get_text().lower()
-            if not any(keyword in link_text for keyword in art_keywords) and not any(
-                    keyword in href.lower() for keyword in art_keywords):
-                continue
-
-            full_url = urljoin(self.wikipedia_base_url, href)
-            if full_url not in self.processed_urls and full_url not in self.queue:
-                self.queue.append(full_url)
-
-        # Find related categories
-        category_links = soup.select('div.mw-normal-catlinks ul li a')
-        for link in category_links:
-            if link.get('href', '').startswith('/wiki/Category:'):
-                category_url = urljoin(self.wikipedia_base_url, link['href'])
-                # Get pages from this category
-                self.add_category_pages_to_queue(category_url, limit=10)
-
-    def add_category_pages_to_queue(self, category_url, limit=10):
-        """
-        Add pages from a category to the queue.
+        Add pages from a category with validation.
 
         Args:
             category_url (str): URL of the category
@@ -869,6 +899,12 @@ class ArtworkImporter:
 
             if 'query' in category_data and 'categorymembers' in category_data['query']:
                 for item in category_data['query']['categorymembers'][:limit]:
+                    page_title = item['title'].lower()
+
+                    # Skip if title contains non-art profession or non-artwork terms
+                    if self.should_skip_title(page_title):
+                        continue
+
                     page_url = f"https://en.wikipedia.org/wiki/{item['title'].replace(' ', '_')}"
                     if page_url not in self.processed_urls and page_url not in self.queue:
                         self.queue.append(page_url)
@@ -876,8 +912,6 @@ class ArtworkImporter:
         except Exception as e:
             logging.error(f"Error processing category {category_url}: {str(e)}")
 
-
-    # Modified import_artwork method to handle artist creation failure
     def import_artwork(self, url):
         """
         Import artwork from Wikipedia URL.
@@ -894,14 +928,13 @@ class ArtworkImporter:
             return True
 
         try:
-            # First, fetch the page and determine if it's an artwork or artist
             response = self.fetch_with_retry(url)
             soup = BeautifulSoup(response.text, 'html.parser')
 
-            # Extract links for future processing regardless of page type
+            # Extract links for future processing
             self.extract_related_links(soup)
 
-            # Mark as processed to avoid repeated attempts
+            # Mark as processed
             self.processed_urls.add(url)
 
             if self.is_artwork_page(soup):
@@ -912,19 +945,21 @@ class ArtworkImporter:
                     logging.error(f"Could not extract title from {url}")
                     return False
 
+                # Skip if title suggests non-artwork
+                if self.should_skip_title(artwork_details['title']):
+                    logging.info(f"Skipping non-artwork: {artwork_details['title']}")
+                    return False
+
                 # Get or create artist
                 artist_id = None
                 if artwork_details['artist_url']:
-                    # Extract artist details
                     artist_details = self.extract_artist_details(artwork_details['artist_url'])
                     artist_id = self.create_artist(artist_details)
 
-                    # If artist creation fails, generate an ID based on the artist name
                     if not artist_id and artwork_details['artist']:
                         logging.warning(f"Artist creation failed for {artwork_details['artist']}, using generated ID")
                         artist_id = self.generate_id(artwork_details['artist'])
                 else:
-                    # Create a simple artist entry if we don't have a Wikipedia page
                     artist_name = artwork_details['artist']
                     if not artist_name:
                         artist_name = "Unknown Artist"
@@ -935,7 +970,6 @@ class ArtworkImporter:
                         'description': f"Artist of {artwork_details['title']}"
                     })
 
-                    # If artist creation fails, generate an ID based on the artist name
                     if not artist_id:
                         logging.warning(f"Artist creation failed for {artist_name}, using generated ID")
                         artist_id = self.generate_id(artist_name)
@@ -948,12 +982,10 @@ class ArtworkImporter:
                 return self.create_artwork(artist_id, artwork_details)
 
             elif self.is_artist_page(soup):
-                # Process as artist page
                 artist_details = self.extract_artist_details(url)
                 artist_id = self.create_artist(artist_details)
 
                 if not artist_id:
-                    # Generate an ID based on the artist name if creation fails
                     artist_name = artist_details.get('name')
                     if artist_name:
                         artist_id = self.generate_id(artist_name)
@@ -966,7 +998,6 @@ class ArtworkImporter:
                 return True
 
             else:
-                # Not an artwork or artist page, but still mark as processed
                 logging.info(f"URL {url} is neither an artwork nor an artist page. Skipping.")
                 return True
 
@@ -984,7 +1015,6 @@ class ArtworkImporter:
         Returns:
             int: Number of successfully imported artworks
         """
-        # List of famous artwork pages on Wikipedia
         famous_artworks = [
             "https://en.wikipedia.org/wiki/Mona_Lisa",
             "https://en.wikipedia.org/wiki/The_Starry_Night",
@@ -1008,22 +1038,18 @@ class ArtworkImporter:
             "https://en.wikipedia.org/wiki/The_Kiss_(Klimt)"
         ]
 
-        # Add these to our queue to kick-start the process
         for url in famous_artworks:
             if url not in self.processed_urls and url not in self.queue:
                 self.queue.append(url)
 
         self.current_sources.append("Famous Artworks")
 
-        # Process the first batch
         count = 0
-
         for url in famous_artworks[:limit]:
             logging.info(f"Importing artwork {count + 1}/{limit}: {url}")
             if self.import_artwork(url):
                 count += 1
 
-            # Wait to avoid overloading servers
             time.sleep(self.delay)
 
         return count
@@ -1039,19 +1065,16 @@ class ArtworkImporter:
         Returns:
             int: Number of successfully imported artworks
         """
-        # Search for the artist on Wikipedia
         search_url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch={artist_name}+artist&srlimit=1"
 
         try:
             response = self.fetch_with_retry(search_url)
-            # response.raise_for_status()
             search_data = response.json()
 
             if 'query' in search_data and 'search' in search_data['query'] and search_data['query']['search']:
                 artist_page_title = search_data['query']['search'][0]['title']
                 artist_url = f"https://en.wikipedia.org/wiki/{artist_page_title.replace(' ', '_')}"
 
-                # Extract artist details
                 artist_details = self.extract_artist_details(artist_url)
                 artist_id = self.create_artist(artist_details)
 
@@ -1059,11 +1082,9 @@ class ArtworkImporter:
                     logging.error(f"Could not create artist: {artist_name}")
                     return 0
 
-                # Search for the artist's artworks
                 artwork_search_url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch={artist_name}+painting+artwork&srlimit={limit}"
 
-                artwork_response = requests.get(artwork_search_url)
-                artwork_response.raise_for_status()
+                artwork_response = self.fetch_with_retry(artwork_search_url)
                 artwork_data = artwork_response.json()
 
                 count = 0
@@ -1077,21 +1098,15 @@ class ArtworkImporter:
 
                         logging.info(f"Importing artwork by {artist_name}: {artwork_title}")
 
-                        # Extract artwork details
                         artwork_details = self.extract_artwork_details(artwork_url)
-
-                        # Set artist info
                         artwork_details['artist'] = artist_details['name']
                         artwork_details['artist_url'] = artist_url
 
-                        # Create artwork
                         if self.create_artwork(artist_id, artwork_details):
                             count += 1
 
-                        # Wait to avoid overloading servers
                         time.sleep(self.delay)
 
-                        # Save checkpoint periodically
                         if count % 5 == 0:
                             self.save_checkpoint()
 
@@ -1121,16 +1136,13 @@ class ArtworkImporter:
         logging.info(f"Starting queue processing with {len(self.queue)} URLs in queue")
 
         while self.queue and (max_iterations is None or iteration < max_iterations):
-            # Process a batch of URLs
             processed_in_batch = 0
             for _ in range(min(batch_size, len(self.queue))):
                 if not self.queue:
                     break
 
-                # Get the next URL from the queue
                 url = self.queue.pop(0)
 
-                # Skip if already processed
                 if url in self.processed_urls:
                     continue
 
@@ -1140,71 +1152,36 @@ class ArtworkImporter:
                     processed_in_batch += 1
                     total_processed += 1
 
-                # Wait to avoid overloading servers
                 time.sleep(self.delay)
 
-            # Save checkpoint after each batch
             self.save_checkpoint()
 
-            # Log progress
             iteration += 1
             logging.info(
                 f"Completed batch {iteration}. Processed {processed_in_batch} artworks in this batch, {total_processed} total. {len(self.queue)} URLs remaining in queue.")
 
-            # If queue is getting low, add some more sources
-            if len(self.queue) < batch_size and len(self.current_sources) < 5:
+            # More conservative queue refilling - only if very low
+            if len(self.queue) < 5 and len(self.current_sources) < 3:
                 self.add_more_sources()
 
         return total_processed
 
     def add_more_sources(self):
-        """Add more sources to the queue when it's running low"""
+        """Add more sources to the queue when it's running low (more conservative)"""
         try:
-            # Add famous artists if not already done
+            # Only add famous artists if not already done
             if "Famous Artists" not in self.current_sources:
                 self.current_sources.append("Famous Artists")
                 famous_artists = [
                     "Leonardo da Vinci", "Vincent van Gogh", "Pablo Picasso",
-                    "Michelangelo", "Claude Monet", "Rembrandt", "Salvador Dali",
-                    "Frida Kahlo", "Andy Warhol", "Georgia O'Keeffe", "Edward Hopper",
-                    "Johannes Vermeer", "Edvard Munch", "Gustav Klimt", "Diego Rivera"
+                    "Michelangelo", "Claude Monet", "Rembrandt"
                 ]
                 for artist in famous_artists:
                     logging.info(f"Adding works of {artist} to queue")
-                    self.import_artist_works(artist, limit=3)
+                    self.import_artist_works(artist, limit=2)  # Reduced from 3
 
-            # Add art movements if not already done
-            if "Art Movements" not in self.current_sources:
-                self.current_sources.append("Art Movements")
-                movements = [
-                    "Impressionism", "Cubism", "Surrealism", "Abstract Expressionism",
-                    "Renaissance Art", "Baroque", "Romanticism", "Post-Impressionism",
-                    "Pop Art", "Expressionism"
-                ]
-                for movement in movements:
-                    category_url = f"https://en.wikipedia.org/wiki/Category:{movement}"
-                    logging.info(f"Adding works from movement: {movement}")
-                    self.add_category_pages_to_queue(category_url, limit=5)
-
-            # Add famous museums if not already done
-            if "Museums" not in self.current_sources:
-                self.current_sources.append("Museums")
-                museums = [
-                    "Louvre", "Metropolitan Museum of Art", "MoMA", "Tate Modern",
-                    "Hermitage Museum", "Uffizi Gallery", "Prado Museum", "Guggenheim"
-                ]
-                for museum in museums:
-                    search_url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch={museum}+artwork+collection&srlimit=5"
-                    try:
-                        response = self.fetch_with_retry(search_url)
-                        search_data = response.json()
-
-                        # ... rest of this section remains the same ...
-                    except Exception as e:
-                        logging.error(f"Error adding museum {museum}: {str(e)}")
-
-                # Save updated sources list
-                self.save_checkpoint()
+            # Save updated sources list
+            self.save_checkpoint()
 
         except Exception as e:
             logging.error(f"Error adding more sources: {str(e)}")

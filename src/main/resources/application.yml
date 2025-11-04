@@ -13,10 +13,10 @@ spring:
       uri: mongodb+srv://utkarshxf:utkarsh123@cluster0.cv4vjxo.mongodb.net/?retryWrites=true&w=majority
 
     neo4j:
-      uri: neo4j+s://eeb6bc24.databases.neo4j.io
+      uri: neo4j+s://8bf30be2.databases.neo4j.io
       authentication:
         username: neo4j
-        password: cfe0IG8pV2fvQHP3cZ1IDBU_kwBKDNNzNgxNGOad8b0
+        password: pzyCFsiP4lGzi4TPoCPjypbugUcAsMicVRFb0ULD3iA
 
   mvc:
     pathmatch:
