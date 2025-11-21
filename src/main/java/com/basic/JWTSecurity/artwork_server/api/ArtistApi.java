@@ -65,15 +65,15 @@ public class ArtistApi {
                 throw new IllegalArgumentException("User ID in request parameter and request body do not match");
             }
         }
-        if(userId1 != null && !userId1.isBlank()){
+        if(userId1 != null){
             userId = userId1;
         }
 
-        if(userId == null || userId.isBlank()){
+        if(userId == null){
             throw new IllegalArgumentException("Artist ID cannot be null or blank");
         }
 
-        String fallbackCountry = requestRecord.nationality() != null && !requestRecord.nationality().isBlank()
+        String fallbackCountry = requestRecord.nationality() != null
                 ? requestRecord.nationality().toLowerCase()
                 : "in";
         try {
@@ -99,10 +99,10 @@ public class ArtistApi {
                     )
             );
         }
-        if(requestRecord.image_url() != null || !requestRecord.image_url().isBlank()){
+        if(requestRecord.image_url() != null){
             profileImage = requestRecord.image_url();
         }
-        if(requestRecord.name() != null || !requestRecord.name().isBlank()){
+        if(requestRecord.name() != null ){
             name = userId ;
         }
 
