@@ -57,11 +57,15 @@ public class SecurityApi {
     public ResponseEntity<?> registerUser(@RequestBody Profile user) {
         try {
             Profile registeredUser = profileService.registerUser(user);
+            if (registeredUser == null) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("message", "User registration failed");
+                map.put("status", false);
+                return new ResponseEntity<>(map, HttpStatus.BAD_REQUEST);
+            }
 
-            Authentication authentication;
-            authentication = authenticationManager
-                        .authenticate(new UsernamePasswordAuthenticationToken(registeredUser.getUsername(), registeredUser.getPassword()));
-
+            Authentication authentication = authenticationManager
+                    .authenticate(new UsernamePasswordAuthenticationToken(registeredUser.getUsername(), registeredUser.getPassword()));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -70,7 +74,9 @@ public class SecurityApi {
                     .map(item -> item.getAuthority())
                     .collect(Collectors.toList());
 
-            JwtResponse response = new JwtResponse(jwtToken , userDetails.getUsername(), roles);
+            JwtResponse response = new JwtResponse(jwtToken, userDetails.getUsername(), roles);
+
+            String country = resolveCountry(registeredUser);
 
             userService.createUser(
                     new UserRegistrationRequestRecord(
@@ -81,7 +87,7 @@ public class SecurityApi {
                             LocalDate.of(2000, 1, 1),
                             "unspecified",
                             "en",
-                            "in"
+                            country
                     )
             );
 
@@ -92,6 +98,47 @@ public class SecurityApi {
             map.put("status", false);
             return new ResponseEntity<>(map, HttpStatus.BAD_REQUEST);
         }
+    }
+
+    private String resolveCountry(Profile user) {
+        // map of calling codes (without +) -> ISO country codes (lowercase)
+        Map<String, String> callingCodeToIso = Map.ofEntries(
+                Map.entry("91", "in"),
+                Map.entry("1", "us"),    // +1 is ambiguous (US/CA); default to us
+                Map.entry("44", "gb"),
+                Map.entry("61", "au"),
+                Map.entry("49", "de"),
+                Map.entry("86", "cn"),
+                Map.entry("81", "jp"),
+                Map.entry("33", "fr"),
+                Map.entry("34", "es"),
+                Map.entry("39", "it"),
+                Map.entry("55", "br"),
+                Map.entry("7", "ru"),
+                Map.entry("27", "za"),
+                Map.entry("65", "sg")
+        );
+
+        // try phone number parsing (E.164 like +911234567890)
+        try {
+            String phone = null;
+            try {
+                phone = user.getPhone();
+            } catch (Exception e) {
+                try {
+                    phone = (String) Profile.class.getMethod("getPhone").invoke(user);
+                } catch (NoSuchMethodException ignored) { }
+            }
+            if (phone != null && phone.startsWith("+")) {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("^\\+(\\d{1,3})").matcher(phone);
+                if (m.find()) {
+                    String code = m.group(1);
+                    return callingCodeToIso.getOrDefault(code, "unspecified");
+                }
+            }
+        } catch (Exception ignored) { }
+
+        return "unspecified";
     }
 
     @PostMapping("/login")

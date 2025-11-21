@@ -26,12 +26,6 @@ public class UserApi {
 
     private  final UserService userService;
 
-//    @PostMapping
-//    public ResponseEntity<UserRegistrationRequestRecord> createNewUser(@RequestBody UserRegistrationRequestRecord requestRecord){
-//        User user = userService.createUser(requestRecord);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(requestRecord);
-//    }
-
     @GetMapping("/getFollowers/{artistId}")
     public ResponseEntity<List<GetUser>> getFollowers(@PathVariable String artistId){
         return null;

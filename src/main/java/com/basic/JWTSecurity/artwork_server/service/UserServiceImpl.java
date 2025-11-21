@@ -144,7 +144,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean isUserIsArtistByUserId(String userId) {
-        return userRepository.isUserIsArtistByUserId(userId);
+        try{
+           return userRepository.isUserIsArtistByUserId(userId);
+        }catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User does not exist");
+        }
     }
-
 }
