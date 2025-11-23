@@ -40,10 +40,10 @@ public class ArtworkServiceImpl implements ArtworkService {
             year = LocalDateTime.now().getYear();
         }
 
-        if(artistId1==null || artistId1.isEmpty()){
+        if(artistId1==null ){
             artistId1=artistId;
         }
-        if(artistId ==null || artistId.isEmpty()){
+        if(artistId ==null ){
             artistId=artistId1;
         }
 
