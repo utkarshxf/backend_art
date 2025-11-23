@@ -44,6 +44,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
     @Query("""
     MATCH (artist:Artist {id: $artistId})
     OPTIONAL MATCH (artist)-[created:CREATED]->(artwork:Artwork)
+    WHERE artwork IS NOT NULL
     OPTIONAL MATCH (user:User {id: $userId})-[like:LIKES]->(artwork)
     RETURN artwork.id AS id,
                     artwork.title AS title,
