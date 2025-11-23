@@ -28,6 +28,28 @@ public class ArtworkServiceImpl implements ArtworkService {
     @Override
     public Artwork create(ArtworkRecord artworkRecord, String artistId) {
 
+        String artistId1 = artworkRecord.artist();
+        Integer year = artworkRecord.releaseYear();
+        String genreId = artworkRecord.genreId();
+
+        if (genreId == null) {
+            genreId = "6311ae17"; // Assign a default genre ID if none is provided
+        }
+
+        if (year == null) {
+            year = LocalDateTime.now().getYear();
+        }
+
+        if(artistId1==null || artistId1.isEmpty()){
+            artistId1=artistId;
+        }
+        if(artistId ==null || artistId.isEmpty()){
+            artistId=artistId1;
+        }
+
+        if(artworkRecord.genreId() == null){
+            throw new RuntimeException("Genre ID must be provided to create an artwork");
+        }
 
         Artwork artwork = Artwork.builder()
                 .title(artworkRecord.title())
@@ -36,7 +58,7 @@ public class ArtworkServiceImpl implements ArtworkService {
                 .storageType(artworkRecord.storageType())
                 .type(artworkRecord.artType())
                 .description(artworkRecord.description())
-                .medium(artworkRecord.medium())  // Changed from madeWith to medium
+                .medium(artworkRecord.medium())
                 .releasedDate(artworkRecord.releasedDate())
                 .dimensions(artworkRecord.dimensions())
                 .artist(artworkRecord.artist())
@@ -49,8 +71,8 @@ public class ArtworkServiceImpl implements ArtworkService {
                 .build();
 
         Artwork saved = repository.save(artwork);
-        yearService.create(artworkRecord.releaseYear());
-        artistService.addArtistAndArtworkRelationship(artistId, artworkRecord.releaseYear(), saved.getId(), artworkRecord.genreId());
+        yearService.create(year);
+        artistService.addArtistAndArtworkRelationship(artistId, year, saved.getId(), genreId);
 
         return saved;
     }
