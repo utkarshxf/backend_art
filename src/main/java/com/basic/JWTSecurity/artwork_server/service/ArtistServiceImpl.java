@@ -2,9 +2,8 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
+import com.basic.JWTSecurity.artwork_server.dto.ArtistStatsResponse;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
-import com.basic.JWTSecurity.artwork_server.model.Artwork;
-import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
@@ -33,7 +32,7 @@ public class ArtistServiceImpl implements  ArtistService{
 
         Artist artist1 = findById(artist.getId());
         if(nonNull(artist1)){
-           throw  new RuntimeException(String.format("Artist with id %s already exists",artist.getId())); // todo add custom exception
+            throw  new RuntimeException(String.format("Artist with id %s already exists",artist.getId())); // todo add custom exception
 
         }
         Artist artist2 = Artist.builder()
@@ -68,9 +67,9 @@ public class ArtistServiceImpl implements  ArtistService{
     public Artist findById(String id) {
 
         ArtistProjection artistProjection = artistRepository.findByIdProjection(id).orElse(null);
-       if(isNull(artistProjection)){
-           return null;
-       }
+        if(isNull(artistProjection)){
+            return null;
+        }
         return Artist.builder().id(artistProjection.getId()).name(artistProjection.getName()).image_url(artistProjection.getImageUrl()).build();
     }
 
@@ -153,4 +152,21 @@ public class ArtistServiceImpl implements  ArtistService{
         return updatedArtist;
     }
 
+
+    @Override
+    public ArtistStatsResponse getArtistStats(String artistId) {
+        long followers = artistRepository.getFollowersCount(artistId);
+        long artworks = artistRepository.getArtworksCount(artistId);
+        long totalLikes = artistRepository.getTotalLikesAcrossArtworks(artistId);
+
+        return ArtistStatsResponse.builder()
+                .artistId(artistId)
+                .followers(followers)
+                .totalArtworks(artworks)
+                .totalLikesOnArtworks(totalLikes)
+                .build();
+    }
+
 }
+
+

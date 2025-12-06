@@ -7,6 +7,7 @@ import com.basic.JWTSecurity.artwork_server.model.Artwork;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
+import com.basic.JWTSecurity.artwork_server.dto.ArtistStatsResponse;
 
 import java.util.List;
 
@@ -29,4 +30,7 @@ public interface ArtistService {
 
 
     Artist updateArtist(ArtistRegistrationRequestRecord requestRecord);
+
+    // New: Artist stats (followers, total likes on artworks, total artworks)
+    ArtistStatsResponse getArtistStats(String artistId);
 }

@@ -1,7 +1,6 @@
 package com.basic.JWTSecurity.artwork_server.repository;
 
-
-import com.basic.JWTSecurity.artwork_server.model.*;
+import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
@@ -38,7 +37,6 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
             "RETURN artist.id AS id, artist.name AS name, artist.image_url AS image_url " +
             "LIMIT $responseSize")
     List<ArtistProjection> getArtist(String artistName, Integer responseSize);
-
 
 
     @Query("""
@@ -105,5 +103,26 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 """)
     GetArtist getArtistByArtworkId(String userId , String ArtworkId);
 
+    // Stats queries
+    @Query("""
+            MATCH (artist:Artist {id: $artistId})
+            OPTIONAL MATCH (:User)-[:FOLLOWS]->(artist)
+            RETURN count(*)
+            """)
+    long getFollowersCount(@Param("artistId") String artistId);
+
+    @Query("""
+            MATCH (artist:Artist {id: $artistId})
+            OPTIONAL MATCH (artist)-[:CREATED]->(:Artwork)
+            RETURN count(*)
+            """)
+    long getArtworksCount(@Param("artistId") String artistId);
+
+    @Query("""
+            MATCH (artist:Artist {id: $artistId})-[:CREATED]->(a:Artwork)
+            OPTIONAL MATCH (:User)-[:LIKES]->(a)
+            RETURN count(*)
+            """)
+    long getTotalLikesAcrossArtworks(@Param("artistId") String artistId);
 
 }

@@ -1,6 +1,7 @@
 package com.basic.JWTSecurity.artwork_server.api;
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
+import com.basic.JWTSecurity.artwork_server.dto.ArtistStatsResponse;
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.User;
@@ -142,6 +143,11 @@ public class ArtistApi {
         Artist updatedArtist = artistService.updateArtist(requestRecord);
 
         return ResponseEntity.ok(requestRecord);
+    }
+
+    @GetMapping("/getArtistStats")
+    public ResponseEntity<ArtistStatsResponse> getArtistByArtistId(@RequestParam String artistId) {
+        return ResponseEntity.status(HttpStatus.OK).body(artistService.getArtistStats(artistId));
     }
 
 }

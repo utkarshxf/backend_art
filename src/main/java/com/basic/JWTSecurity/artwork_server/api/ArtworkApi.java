@@ -2,6 +2,10 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
+import com.basic.JWTSecurity.artwork_server.dto.ArtworkStatsResponse;
+import com.basic.JWTSecurity.artwork_server.dto.LikedUsersPage;
+import com.basic.JWTSecurity.artwork_server.dto.AnalyticsResponse;
+import com.basic.JWTSecurity.artwork_server.dto.StatusUpdateRequest;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import com.basic.JWTSecurity.artwork_server.service.ArtworkService;
@@ -12,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @RestController
 //@PreAuthorize("hasRole('USER')")
@@ -108,6 +113,54 @@ public class ArtworkApi {
     public void userDislikeAnArtwork(@PathVariable String artworkId, @PathVariable String userId) {
         System.out.println("Artist ID: " + artworkId + userId);
         artworkService.userDislikeAnArtwork(artworkId, userId);
+    }
+
+    // 2) Artwork stats: likes and comments
+    @GetMapping("/{artworkId}/stats")
+    public ResponseEntity<ArtworkStatsResponse> getArtworkStats(@PathVariable String artworkId) {
+        long likes = artworkService.getArtworkLikesCount(artworkId);
+        long comments = artworkService.getArtworkCommentsCount(artworkId);
+        return ResponseEntity.ok(new ArtworkStatsResponse(artworkId, likes, comments));
+    }
+
+    // 3) Paginated users who liked artwork
+    @GetMapping("/{artworkId}/likes/users")
+    public ResponseEntity<LikedUsersPage> getUsersWhoLikedArtwork(@PathVariable String artworkId,
+                                                                 @RequestParam(defaultValue = "0") Integer skip,
+                                                                 @RequestParam(defaultValue = "20") Integer limit) {
+        LikedUsersPage page = LikedUsersPage.builder()
+                .artworkId(artworkId)
+                .skip(skip)
+                .limit(limit)
+                .total(artworkService.getUsersWhoLikedArtworkCount(artworkId))
+                .users(artworkService.getUsersWhoLikedArtwork(artworkId, skip, limit))
+                .build();
+        return ResponseEntity.ok(page);
+    }
+
+    // 4) Create a VIEWED relation
+    @PostMapping("/{artworkId}/view/{userId}")
+    public ResponseEntity<Void> userViewedArtwork(@PathVariable String artworkId, @PathVariable String userId) {
+        artworkService.userViewedArtwork(artworkId, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    // 5) Analysis API
+    @GetMapping("/{artworkId}/analysis")
+    public ResponseEntity<AnalyticsResponse> getArtworkAnalysis(@PathVariable String artworkId,
+                                                                @RequestParam(defaultValue = "day") String bucket,
+                                                                @RequestParam(required = false) LocalDateTime from,
+                                                                @RequestParam(required = false) LocalDateTime to) {
+        AnalyticsResponse response = artworkService.getArtworkAnalytics(artworkId, bucket, from, to);
+        return ResponseEntity.ok(response);
+    }
+
+    // 6) Update artwork status
+    @PutMapping("/{artworkId}/status")
+    public ResponseEntity<Void> updateArtworkStatus(@PathVariable String artworkId,
+                                                    @RequestBody StatusUpdateRequest request) {
+        artworkService.updateArtworkStatus(artworkId, request.getStatus());
+        return ResponseEntity.ok().build();
     }
 
 }

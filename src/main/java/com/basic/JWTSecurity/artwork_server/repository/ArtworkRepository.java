@@ -71,6 +71,77 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
             """)
     boolean checkDislikeExists(@Param("artworkId") String artworkId, @Param("userId") String userId);
 
+    // Counts and stats
+    @Query("""
+            MATCH (a:Artwork {id: $artworkId})
+            OPTIONAL MATCH (a)<-[:LIKES]-(:User)
+            RETURN count(*) as likes
+            """)
+    long getArtworkLikesCount(@Param("artworkId") String artworkId);
+
+    @Query("""
+            MATCH (a:Artwork {id: $artworkId})
+            OPTIONAL MATCH (a)<-[:HAS_COMMENT]-(:Comment)
+            RETURN count(*) as comments
+            """)
+    long getArtworkCommentsCount(@Param("artworkId") String artworkId);
+
+    // Users who liked an artwork (paged)
+    @Query("""
+            MATCH (u:User)-[:LIKES]->(a:Artwork {id: $artworkId})
+            RETURN u.id as id, u.name as name, u.profilePicture as profilePicture, u.dob as dob, u.gender as gender, u.language as language, u.countryIso2 as countryIso2
+            SKIP $skip LIMIT $limit
+            """)
+    List<com.basic.JWTSecurity.artwork_server.model.projection.UserProjection> getUsersWhoLikedArtwork(@Param("artworkId") String artworkId,
+                                                                                                        @Param("skip") int skip,
+                                                                                                        @Param("limit") int limit);
+
+    @Query("""
+            MATCH (:User)-[:LIKES]->(a:Artwork {id: $artworkId})
+            RETURN count(*)
+            """)
+    long getUsersWhoLikedArtworkCount(@Param("artworkId") String artworkId);
+
+    // Views
+    @Query("""
+            MATCH (u:User {id:$userId})
+            MATCH (a:Artwork {id:$artworkId})
+            MERGE (u)-[r:VIEWED]->(a)
+            ON CREATE SET r.createdAt = $createdAt
+            ON MATCH SET r.lastSeenAt = $createdAt
+            RETURN r
+            """)
+    void userViewedArtwork(@Param("artworkId") String artworkId, @Param("userId") String userId, @Param("createdAt") java.time.LocalDateTime createdAt);
+
+    // Analytics by bucket for a given relation type
+    @Query("""
+            MATCH (u:User)-[r]->(a:Artwork {id: $artworkId})
+            WHERE type(r) = $relationType AND r.createdAt >= $from AND r.createdAt <= $to
+            WITH r,
+                 CASE $bucket
+                   WHEN 'day' THEN date(r.createdAt)
+                   WHEN 'week' THEN date.truncate('week', r.createdAt)
+                   WHEN 'month' THEN date.truncate('month', r.createdAt)
+                   WHEN 'year' THEN date.truncate('year', r.createdAt)
+                 END AS period
+            RETURN period AS period, count(r) AS count
+            ORDER BY period ASC
+            """)
+    java.util.List<com.basic.JWTSecurity.artwork_server.model.projection.BucketCountProjection> getArtworkAnalyticsBuckets(
+            @Param("artworkId") String artworkId,
+            @Param("relationType") String relationType,
+            @Param("bucket") String bucket,
+            @Param("from") java.time.LocalDateTime from,
+            @Param("to") java.time.LocalDateTime to);
+
+    // Update status
+    @Query("""
+            MATCH (a:Artwork {id:$artworkId})
+            SET a.status = $status
+            RETURN a.id
+            """)
+    String updateArtworkStatus(@Param("artworkId") String artworkId, @Param("status") String status);
+
 
 //    @Query(
 //            "MATCH (user:User {id: $userId}) " +

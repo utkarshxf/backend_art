@@ -84,6 +84,8 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     public void userLikeAnArtwork(String artworkId, String userId) {
+        // Record a view when user likes
+        repository.userViewedArtwork(artworkId, userId, LocalDateTime.now());
         if(repository.checkDislikeExists(artworkId , userId))
             repository.userUnDislikeAArtwork(artworkId,userId);
         if(!repository.checkLikeExists(artworkId , userId))
@@ -92,6 +94,8 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     public void userDislikeAnArtwork(String artworkId, String userId) {
+        // Record a view when user dislikes
+        repository.userViewedArtwork(artworkId, userId, LocalDateTime.now());
         if(!repository.checkLikeExists(artworkId , userId) &&
                 !repository.checkDislikeExists(artworkId , userId))
         repository.userDislikeAnArtwork(artworkId , userId , LocalDateTime.now());
@@ -155,5 +159,56 @@ public class ArtworkServiceImpl implements ArtworkService {
     @Override
     public Optional<GetArtwork> getArtworkById(String userId ,String artworkId) {
         return repository.findByIdProjection(userId , artworkId);
+    }
+
+    // New APIs
+    @Override
+    public long getArtworkLikesCount(String artworkId) {
+        return repository.getArtworkLikesCount(artworkId);
+    }
+
+    @Override
+    public long getArtworkCommentsCount(String artworkId) {
+        return repository.getArtworkCommentsCount(artworkId);
+    }
+
+    @Override
+    public java.util.List<com.basic.JWTSecurity.artwork_server.model.projection.UserProjection> getUsersWhoLikedArtwork(String artworkId, int skip, int limit) {
+        return repository.getUsersWhoLikedArtwork(artworkId, skip, limit);
+    }
+
+    @Override
+    public long getUsersWhoLikedArtworkCount(String artworkId) {
+        return repository.getUsersWhoLikedArtworkCount(artworkId);
+    }
+
+    @Override
+    public void userViewedArtwork(String artworkId, String userId) {
+        repository.userViewedArtwork(artworkId, userId, LocalDateTime.now());
+    }
+
+    @Override
+    public com.basic.JWTSecurity.artwork_server.dto.AnalyticsResponse getArtworkAnalytics(String artworkId, String bucket, LocalDateTime from, LocalDateTime to) {
+        LocalDateTime fromTs = from != null ? from : LocalDateTime.now().minusDays(30);
+        LocalDateTime toTs = to != null ? to : LocalDateTime.now();
+
+        var views = repository.getArtworkAnalyticsBuckets(artworkId, "VIEWED", bucket, fromTs, toTs);
+        var likes = repository.getArtworkAnalyticsBuckets(artworkId, "LIKES", bucket, fromTs, toTs);
+        var dislikes = repository.getArtworkAnalyticsBuckets(artworkId, "DISLIKES", bucket, fromTs, toTs);
+
+        return com.basic.JWTSecurity.artwork_server.dto.AnalyticsResponse.builder()
+                .artworkId(artworkId)
+                .bucket(bucket)
+                .from(fromTs)
+                .to(toTs)
+                .views(views)
+                .likes(likes)
+                .dislikes(dislikes)
+                .build();
+    }
+
+    @Override
+    public void updateArtworkStatus(String artworkId, com.basic.JWTSecurity.artwork_server.model.Status status) {
+        repository.updateArtworkStatus(artworkId, status.name());
     }
 }
