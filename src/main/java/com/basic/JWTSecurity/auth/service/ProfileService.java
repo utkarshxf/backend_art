@@ -14,5 +14,7 @@ public interface ProfileService {
     public Claims checkToken(TokenRequest token);
 
     public Profile changeUserPassword(String phoneNumber, String newPassword);
+
+    public boolean isUsernameAvailable(String username);
 }
 

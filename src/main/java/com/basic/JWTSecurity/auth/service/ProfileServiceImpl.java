@@ -80,6 +80,12 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
                 .parseSignedClaims(token.token)
                 .getPayload();
     }
+
+    @Override
+    public boolean isUsernameAvailable(String username) {
+        return !profileRepository.findByUsername(username).isPresent();
+    }
+
     @Value("${spring.app.jwtSecret}")
     private String secretKey;
     private SecretKey getSignKey() {
