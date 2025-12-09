@@ -53,6 +53,7 @@ public class ArtistServiceImpl implements  ArtistService{
         Artist newArtist =  artistRepository.save(artist2);
         if(newArtist.getId()!=null) {
             userRepository.addArtistAndUserRelationship(newArtist.getId(), newArtist.getId(), LocalDateTime.now());
+            updateUserProfileFromArtist(newArtist.getId(), artist);
         }
         return newArtist;
     }
@@ -149,6 +150,9 @@ public class ArtistServiceImpl implements  ArtistService{
 
         Artist updatedArtist = artistRepository.save(existingArtist);
 
+        // Update associated user profile if user exists
+        updateUserProfileFromRequestRecord(requestRecord.id(), requestRecord);
+
         return updatedArtist;
     }
 
@@ -165,6 +169,72 @@ public class ArtistServiceImpl implements  ArtistService{
                 .totalArtworks(artworks)
                 .totalLikesOnArtworks(totalLikes)
                 .build();
+    }
+
+    /**
+     * Update user profile from artist data
+     * Checks if user exists for the given artist ID and updates name, profile picture, and DOB
+     */
+    private void updateUserProfileFromArtist(String artistId, Artist artist) {
+        try {
+            var userOpt = userRepository.findUserByArtistId(artistId);
+            if (userOpt.isPresent()) {
+                var user = userOpt.get();
+
+                // Update user fields from artist if they are not null
+                if (artist.getName() != null) {
+                    user.setName(artist.getName());
+                }
+                if (artist.getImage_url() != null) {
+                    user.setProfilePicture(artist.getImage_url());
+                }
+                if (artist.getBirth_date() != null) {
+                    try {
+                        user.setDob(java.time.LocalDate.parse(artist.getBirth_date()));
+                    } catch (Exception e) {
+                        log.warn("Failed to parse birth_date: {}", artist.getBirth_date(), e);
+                    }
+                }
+
+                userRepository.save(user);
+                log.info("Updated user profile for artist ID: {}", artistId);
+            }
+        } catch (Exception e) {
+            log.error("Error updating user profile for artist ID: {}", artistId, e);
+        }
+    }
+
+    /**
+     * Update user profile from artist request record
+     * Checks if user exists for the given artist ID and updates name, profile picture, and DOB
+     */
+    private void updateUserProfileFromRequestRecord(String artistId, ArtistRegistrationRequestRecord requestRecord) {
+        try {
+            var userOpt = userRepository.findUserByArtistId(artistId);
+            if (userOpt.isPresent()) {
+                var user = userOpt.get();
+
+                // Update user fields from request record if they are not null
+                if (requestRecord.name() != null) {
+                    user.setName(requestRecord.name());
+                }
+                if (requestRecord.image_url() != null) {
+                    user.setProfilePicture(requestRecord.image_url());
+                }
+                if (requestRecord.birth_date() != null) {
+                    try {
+                        user.setDob(java.time.LocalDate.parse(requestRecord.birth_date()));
+                    } catch (Exception e) {
+                        log.warn("Failed to parse birth_date: {}", requestRecord.birth_date(), e);
+                    }
+                }
+
+                userRepository.save(user);
+                log.info("Updated user profile for artist ID: {}", artistId);
+            }
+        } catch (Exception e) {
+            log.error("Error updating user profile for artist ID: {}", artistId, e);
+        }
     }
 
 }

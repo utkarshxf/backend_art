@@ -49,4 +49,6 @@ public interface UserRepository extends Neo4jRepository<User, String> {
     @Query("MATCH (u:User {id: $userId}) RETURN EXISTS((u)-[:IS_AN]->(:Artist)) as isArtist")
     boolean isUserIsArtistByUserId(String userId);
 
+    @Query("MATCH (user:User)-[:IS_AN]->(artist:Artist {id: $artistId}) RETURN user")
+    Optional<User> findUserByArtistId(@Param("artistId") String artistId);
 }
