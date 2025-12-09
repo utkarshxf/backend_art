@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 public class ProfileServiceImpl implements UserDetailsService, ProfileService {
@@ -83,7 +85,78 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
 
     @Override
     public boolean isUsernameAvailable(String username) {
-        return !profileRepository.findByUsername(username.toLowerCase()).isPresent();
+        return !profileRepository.findByUsername(username).isPresent();
+    }
+
+    @Override
+    public Map<String, Object> validateUsername(String username) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Check if username is null or empty
+        if (username == null || username.trim().isEmpty()) {
+            response.put("isValid", false);
+            response.put("message", "Username cannot be empty");
+            response.put("username", username);
+            response.put("status", true);
+            return response;
+        }
+
+        // Check for spaces
+        if (username.contains(" ")) {
+            response.put("isValid", false);
+            response.put("message", "Username cannot contain spaces");
+            response.put("username", username);
+            response.put("status", true);
+            return response;
+        }
+
+        // Check minimum length (at least 3 characters)
+        if (username.length() < 3) {
+            response.put("isValid", false);
+            response.put("message", "Username must be at least 3 characters long");
+            response.put("username", username);
+            response.put("status", true);
+            return response;
+        }
+
+        // Check maximum length (at most 20 characters)
+        if (username.length() > 20) {
+            response.put("isValid", false);
+            response.put("message", "Username must not exceed 20 characters");
+            response.put("username", username);
+            response.put("status", true);
+            return response;
+        }
+
+        // Check if username contains only alphanumeric characters and underscores
+        if (!username.matches("^[a-zA-Z0-9_]+$")) {
+            response.put("isValid", false);
+            response.put("message", "Username can only contain letters, numbers, and underscores");
+            response.put("username", username);
+            response.put("status", true);
+            return response;
+        }
+
+        // Check if username starts with a letter (not a number or underscore)
+        if (!Character.isLetter(username.charAt(0))) {
+            response.put("isValid", false);
+            response.put("message", "Username must start with a letter");
+            response.put("username", username);
+            response.put("status", true);
+            return response;
+        }
+
+        // Check if username is available in the database
+        boolean isAvailable = isUsernameAvailable(username);
+        response.put("isValid", isAvailable);
+        response.put("username", username);
+        response.put("status", true);
+
+        if (!isAvailable) {
+            response.put("message", "Username is already taken");
+        }
+
+        return response;
     }
 
     @Value("${spring.app.jwtSecret}")

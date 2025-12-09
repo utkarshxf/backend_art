@@ -103,17 +103,15 @@ public class SecurityApi {
     @GetMapping("/isValidUsername")
     public ResponseEntity<?> isValidUsername(@RequestParam String username) {
         try {
-            boolean isValid = profileService.isUsernameAvailable(username);
-            Map<String, Object> response = new HashMap<>();
-            response.put("username", username);
-            response.put("isValid", isValid);
-            response.put("status", true);
+            Map<String, Object> response = profileService.validateUsername(username);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("message", e.getMessage());
+            errorResponse.put("isValid", false);
+            errorResponse.put("message", "Error validating username: " + e.getMessage());
+            errorResponse.put("username", username);
             errorResponse.put("status", false);
-            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

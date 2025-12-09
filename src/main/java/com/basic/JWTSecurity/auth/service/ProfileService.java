@@ -6,6 +6,7 @@ import io.jsonwebtoken.Claims;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import java.util.Map;
 
 public interface ProfileService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
@@ -16,5 +17,7 @@ public interface ProfileService {
     public Profile changeUserPassword(String phoneNumber, String newPassword);
 
     public boolean isUsernameAvailable(String username);
+
+    public Map<String, Object> validateUsername(String username);
 }
 
