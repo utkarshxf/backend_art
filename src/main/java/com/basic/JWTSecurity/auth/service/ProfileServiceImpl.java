@@ -59,7 +59,7 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
 
     @Override
     public Profile registerUser(Profile user) {
-        if (profileRepository.findByUsername(user.getUsername()).isPresent()) {
+        if (profileRepository.findByUsername(user.getUsername().toLowerCase()).isPresent()) {
             throw new RuntimeException("User already exists");
         }
         if (profileRepository.findByPhone(user.getPhone()).isPresent()) {
@@ -83,7 +83,7 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
 
     @Override
     public boolean isUsernameAvailable(String username) {
-        return !profileRepository.findByUsername(username).isPresent();
+        return !profileRepository.findByUsername(username.toLowerCase()).isPresent();
     }
 
     @Value("${spring.app.jwtSecret}")
