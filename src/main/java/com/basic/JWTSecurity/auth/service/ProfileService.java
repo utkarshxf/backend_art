@@ -6,6 +6,7 @@ import io.jsonwebtoken.Claims;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import java.util.List;
 import java.util.Map;
 
 public interface ProfileService {
@@ -19,5 +20,7 @@ public interface ProfileService {
     public boolean isUsernameAvailable(String username);
 
     public Map<String, Object> validateUsername(String username);
+
+    public List<Profile> searchUsersByKeyword(String keyword, Integer limit);
 }
 

@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 
 @Service
 public class ProfileServiceImpl implements UserDetailsService, ProfileService {
@@ -157,6 +158,15 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
         }
 
         return response;
+    }
+
+    @Override
+    public List<Profile> searchUsersByKeyword(String keyword, Integer limit) {
+        if (limit == null || limit <= 0) {
+            limit = 20;
+        }
+        List<Profile> results = profileRepository.searchByUsernameOrName(keyword);
+        return results.stream().limit(limit).toList();
     }
 
     @Value("${spring.app.jwtSecret}")

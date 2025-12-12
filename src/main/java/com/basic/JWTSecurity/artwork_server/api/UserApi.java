@@ -6,6 +6,8 @@ import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProfileProjection;
 import com.basic.JWTSecurity.artwork_server.service.UserService;
+import com.basic.JWTSecurity.auth.model.Profile;
+import com.basic.JWTSecurity.auth.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +26,8 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class UserApi {
 
-    private  final UserService userService;
+    private final UserService userService;
+    private final ProfileService profileService;
 
     @GetMapping("/getFollowers/{artistId}")
     public ResponseEntity<List<GetUser>> getFollowers(@PathVariable String artistId){
@@ -75,5 +78,37 @@ public class UserApi {
     ResponseEntity<?> isUserIsArtistByUserId(@PathVariable String userId){
         boolean result = userService.isUserIsArtistByUserId(userId);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/isValidUsername")
+    public ResponseEntity<?> isValidUsername(@RequestParam String username) {
+        try {
+            Map<String, Object> response = profileService.validateUsername(username);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", false);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/searchUsers")
+    public ResponseEntity<?> searchUsers(
+            @RequestParam String key,
+            @RequestParam(required = false, defaultValue = "20") Integer limit) {
+        try {
+            List<Profile> profiles = profileService.searchUsersByKeyword(key, limit);
+            Map<String, Object> response = new HashMap<>();
+            response.put("users", profiles);
+            response.put("count", profiles.size());
+            response.put("status", true);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", false);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
     }
 }
