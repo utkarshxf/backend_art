@@ -4,14 +4,12 @@ package com.basic.JWTSecurity.artwork_server.api;
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
-import com.basic.JWTSecurity.artwork_server.model.projection.UserProfileProjection;
 import com.basic.JWTSecurity.artwork_server.service.UserService;
 import com.basic.JWTSecurity.auth.model.Profile;
 import com.basic.JWTSecurity.auth.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -98,10 +96,10 @@ public class UserApi {
             @RequestParam String key,
             @RequestParam(required = false, defaultValue = "20") Integer limit) {
         try {
-            List<Profile> profiles = profileService.searchUsersByKeyword(key, limit);
+            List<Map<String, String>> users = profileService.searchUsersByKeywordSimple(key, limit);
             Map<String, Object> response = new HashMap<>();
-            response.put("users", profiles);
-            response.put("count", profiles.size());
+            response.put("users", users);
+            response.put("count", users.size());
             response.put("status", true);
             return ResponseEntity.ok(response);
         } catch (Exception e) {

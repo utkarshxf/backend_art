@@ -169,6 +169,22 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
         return results.stream().limit(limit).toList();
     }
 
+    public List<Map<String, String>> searchUsersByKeywordSimple(String keyword, Integer limit) {
+        if (limit == null || limit <= 0) {
+            limit = 20;
+        }
+        List<Profile> results = profileRepository.searchByUsernameOrName(keyword);
+        return results.stream()
+                .limit(limit)
+                .map(profile -> {
+                    Map<String, String> map = new HashMap<>();
+                    map.put("id", profile.getId());
+                    map.put("username", profile.getUsername());
+                    return map;
+                })
+                .toList();
+    }
+
     @Value("${spring.app.jwtSecret}")
     private String secretKey;
     private SecretKey getSignKey() {
