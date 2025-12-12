@@ -96,7 +96,7 @@ public class UserApi {
             @RequestParam String key,
             @RequestParam(required = false, defaultValue = "20") Integer limit) {
         try {
-            List<Map<String, String>> users = profileService.searchUsersByKeywordSimple(key, limit);
+            List<Map<String, Object>> users = userService.searchUsersByKeyword(key, limit);
             Map<String, Object> response = new HashMap<>();
             response.put("users", users);
             response.put("count", users.size());

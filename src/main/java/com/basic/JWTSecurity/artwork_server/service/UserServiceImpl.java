@@ -22,6 +22,9 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -149,5 +152,34 @@ public class UserServiceImpl implements UserService {
         }catch (Exception e){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User does not exist");
         }
+    }
+
+    @Override
+    public List<Map<String, Object>> searchUsersByKeyword(String keyword, Integer limit) {
+        if (limit == null || limit <= 0) {
+            limit = 20;
+        }
+        // Search profiles to get usernames
+        List<com.basic.JWTSecurity.auth.model.Profile> profiles = profileService.searchUsersByKeyword(keyword, limit);
+
+        return profiles.stream()
+                .map(profile -> {
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("username", profile.getUsername());
+                    userMap.put("id", profile.getId());
+
+                    // Try to get user details from UserRepository
+                    try {
+                        GetUser user = getUserById(profile.getUsername());
+                        userMap.put("name", user.getName());
+                        userMap.put("profile_pic", user.getProfilePicture());
+                    } catch (Exception e) {
+                        userMap.put("name", null);
+                        userMap.put("profile_pic", null);
+                    }
+
+                    return userMap;
+                })
+                .toList();
     }
 }
