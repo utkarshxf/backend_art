@@ -22,14 +22,23 @@ public class Artwork {
     @Id
     @GeneratedValue(generatorClass = UUIDStringGenerator.class)
     private String id;
-    private String description;
-    private String name;
+    private String title;
     private Status status;
-    private String imageUrl;
-    private String madeWith;
+    private String artist;
     private StorageType storageType;
     private LocalDateTime releasedDate;
     private ArtType type;
+    private String medium;
+    private String description;
+    private String dimensions;
+    private String current_location;
+    private String period_style;
+    private String art_movement;
+    private String image_url_compressed;
+    private String image_url;
+    private String license_info;
+    private String source_url;
+
     @Relationship(value = "HAS_COMMENT", direction = Relationship.Direction.INCOMING)
     private List<Comment> comments;
     @Relationship(value = "FEATURED_WITH", direction = Relationship.Direction.INCOMING)

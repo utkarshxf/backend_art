@@ -1,16 +1,23 @@
 package com.basic.JWTSecurity.artwork_server.api;
 
 
+import com.basic.JWTSecurity.artwork_server.dto.TopCreatorsLeaderboardPage;
+import com.basic.JWTSecurity.artwork_server.dto.TopUsersLeaderboardPage;
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
-import com.basic.JWTSecurity.artwork_server.model.projection.UserProfileProjection;
 import com.basic.JWTSecurity.artwork_server.service.UserService;
+import com.basic.JWTSecurity.auth.model.Profile;
+import com.basic.JWTSecurity.auth.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @RestController
 //@PreAuthorize("hasRole('USER')")
@@ -19,12 +26,35 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserApi {
 
-    private  final UserService userService;
+    private final UserService userService;
+    private final ProfileService profileService;
 
-    @PostMapping
-    public ResponseEntity<UserRegistrationRequestRecord> createNewUser(@RequestBody UserRegistrationRequestRecord requestRecord){
-        User user = userService.createUser(requestRecord);
-        return ResponseEntity.status(HttpStatus.CREATED).body(requestRecord);
+    @GetMapping("/getFollowers/{artistId}")
+    public ResponseEntity<List<GetUser>> getFollowers(@PathVariable String artistId){
+        return null;
+    }
+
+    @GetMapping("/getFollowing/{artistId}")
+    public ResponseEntity<List<GetUser>> getFollowing(@PathVariable String artistId){
+        return null;
+    }
+
+
+    @PutMapping("/{userId}")
+    public ResponseEntity<?> updateUser(
+            @PathVariable String userId,
+            @RequestBody UserRegistrationRequestRecord requestRecord
+    ) {
+        if(!Objects.equals(userId, requestRecord.id()))
+        {
+            Map<String, Object> map = new HashMap<>();
+            map.put("message", "user Id does not match");
+            map.put("status", false);
+            return new ResponseEntity<>(map, HttpStatus.BAD_REQUEST);
+        }
+        User updatedUser = userService.updateUser(requestRecord);
+
+        return ResponseEntity.ok(requestRecord);
     }
 
 
@@ -38,9 +68,77 @@ public class UserApi {
         userService.userUnFollowArtist(userId,artistId);
     }
 
-    @GetMapping("/getUserByUserId/{userId}/{currentUserId}")
-    GetUser getUserByUserId(@PathVariable String userId  , @PathVariable String currentUserId){
-        return userService.getUserById(userId , currentUserId);
+    @GetMapping("/getUserByUserId/{userId}")
+    GetUser getUserByUserId(@PathVariable String userId){
+        return userService.getUserById(userId);
     }
 
+
+    @GetMapping("/isUserIsArtistByUserId/{userId}")
+    ResponseEntity<?> isUserIsArtistByUserId(@PathVariable String userId){
+        boolean result = userService.isUserIsArtistByUserId(userId);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/isValidUsername")
+    public ResponseEntity<?> isValidUsername(@RequestParam String username) {
+        try {
+            Map<String, Object> response = profileService.validateUsername(username);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", false);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/searchUsers")
+    public ResponseEntity<?> searchUsers(
+            @RequestParam String key,
+            @RequestParam(required = false, defaultValue = "20") Integer limit) {
+        try {
+            List<Map<String, Object>> users = userService.searchUsersByKeyword(key, limit);
+            Map<String, Object> response = new HashMap<>();
+            response.put("users", users);
+            response.put("count", users.size());
+            response.put("status", true);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", false);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/leaderboard/top-viewers")
+    public ResponseEntity<?> getTopUsersLeaderboard(
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer size) {
+        try {
+            TopUsersLeaderboardPage leaderboard = userService.getTopUsersByViewCount(page, size);
+            return ResponseEntity.ok(leaderboard);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", false);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/leaderboard/top-creators")
+    public ResponseEntity<?> getTopCreatorsLeaderboard(
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer size) {
+        try {
+            TopCreatorsLeaderboardPage leaderboard = userService.getTopCreatorsByLikes(page, size);
+            return ResponseEntity.ok(leaderboard);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", false);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
 }

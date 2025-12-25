@@ -3,13 +3,25 @@ package com.basic.JWTSecurity.auth.service;
 import com.basic.JWTSecurity.auth.model.Profile;
 import com.basic.JWTSecurity.auth.model.TokenRequest;
 import io.jsonwebtoken.Claims;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import java.util.List;
+import java.util.Map;
 
 public interface ProfileService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
     public Profile registerUser(Profile user);
 
     public Claims checkToken(TokenRequest token);
-}
 
+    public Profile changeUserPassword(String phoneNumber, String newPassword);
+
+    public boolean isUsernameAvailable(String username);
+
+    public Map<String, Object> validateUsername(String username);
+
+    public List<Profile> searchUsersByKeyword(String keyword, Integer limit);
+
+    public List<Map<String, String>> searchUsersByKeywordSimple(String keyword, Integer limit);
+}

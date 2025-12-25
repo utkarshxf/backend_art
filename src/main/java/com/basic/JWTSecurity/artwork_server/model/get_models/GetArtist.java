@@ -19,5 +19,15 @@ import java.util.List;
 public class GetArtist {
     private String id;
     private String name;
-    private String profilePicture;
+    private String  birth_date;
+    private String  death_date;
+    private String  nationality;
+    private String  notable_works;
+    private String  art_movement;
+    private String  education;
+    private String  awards;
+    private String  image_url;
+    private String  wikipedia_url;
+    private String  description;
+    private Boolean follow;
 }
