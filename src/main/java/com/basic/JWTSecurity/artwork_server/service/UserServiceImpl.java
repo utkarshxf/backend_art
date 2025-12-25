@@ -1,6 +1,10 @@
 package com.basic.JWTSecurity.artwork_server.service;
 
 
+import com.basic.JWTSecurity.artwork_server.dto.TopCreatorLeaderboardResponse;
+import com.basic.JWTSecurity.artwork_server.dto.TopCreatorsLeaderboardPage;
+import com.basic.JWTSecurity.artwork_server.dto.TopUserLeaderboardResponse;
+import com.basic.JWTSecurity.artwork_server.dto.TopUsersLeaderboardPage;
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.User;
@@ -25,6 +29,8 @@ import java.util.Optional;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @RequiredArgsConstructor
@@ -181,5 +187,95 @@ public class UserServiceImpl implements UserService {
                     return userMap;
                 })
                 .toList();
+    }
+
+    @Override
+    public TopUsersLeaderboardPage getTopUsersByViewCount(Integer page, Integer size) {
+        // Validate and set default values for pagination
+        if (page == null || page < 0) {
+            page = 0;
+        }
+        if (size == null || size <= 0) {
+            size = 10;
+        }
+
+        // Calculate skip value for pagination
+        int skip = page * size;
+
+        // Get top users from repository
+        List<com.basic.JWTSecurity.artwork_server.model.projection.TopUserProjection> topUsers =
+                userRepository.getTopUsersByViewCount(skip, size);
+
+        // Get total count of users who have viewed artworks
+        Long totalUsers = userRepository.getTopUsersCount();
+
+        // Calculate total pages
+        int totalPages = (int) Math.ceil((double) totalUsers / size);
+
+        // Build response with ranking
+        AtomicInteger rankCounter = new AtomicInteger(skip + 1);
+        List<TopUserLeaderboardResponse> userResponses = topUsers.stream()
+                .map(user -> TopUserLeaderboardResponse.builder()
+                        .userId(user.getUserId())
+                        .name(user.getName())
+                        .profilePicture(user.getProfilePicture())
+                        .viewCount(user.getViewCount())
+                        .rank(rankCounter.getAndIncrement())
+                        .build())
+                .collect(Collectors.toList());
+
+        return TopUsersLeaderboardPage.builder()
+                .users(userResponses)
+                .currentPage(page)
+                .totalPages(totalPages)
+                .totalUsers(totalUsers)
+                .pageSize(size)
+                .build();
+    }
+
+    @Override
+    public TopCreatorsLeaderboardPage getTopCreatorsByLikes(Integer page, Integer size) {
+        // Validate and set default values for pagination
+        if (page == null || page < 0) {
+            page = 0;
+        }
+        if (size == null || size <= 0) {
+            size = 10;
+        }
+
+        // Calculate skip value for pagination
+        int skip = page * size;
+
+        // Get top creators from repository
+        List<com.basic.JWTSecurity.artwork_server.model.projection.TopCreatorProjection> topCreators =
+                userRepository.getTopCreatorsByLikes(skip, size);
+
+        // Get total count of creators with likes
+        Long totalCreators = userRepository.getTopCreatorsCount();
+
+        // Calculate total pages
+        int totalPages = (int) Math.ceil((double) totalCreators / size);
+
+        // Build response with ranking
+        AtomicInteger rankCounter = new AtomicInteger(skip + 1);
+        List<TopCreatorLeaderboardResponse> creatorResponses = topCreators.stream()
+                .map(creator -> TopCreatorLeaderboardResponse.builder()
+                        .userId(creator.getUserId())
+                        .name(creator.getName())
+                        .profilePicture(creator.getProfilePicture())
+                        .artistId(creator.getArtistId())
+                        .artistName(creator.getArtistName())
+                        .totalLikes(creator.getTotalLikes())
+                        .rank(rankCounter.getAndIncrement())
+                        .build())
+                .collect(Collectors.toList());
+
+        return TopCreatorsLeaderboardPage.builder()
+                .creators(creatorResponses)
+                .currentPage(page)
+                .totalPages(totalPages)
+                .totalCreators(totalCreators)
+                .pageSize(size)
+                .build();
     }
 }

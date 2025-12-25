@@ -1,6 +1,8 @@
 package com.basic.JWTSecurity.artwork_server.api;
 
 
+import com.basic.JWTSecurity.artwork_server.dto.TopCreatorsLeaderboardPage;
+import com.basic.JWTSecurity.artwork_server.dto.TopUsersLeaderboardPage;
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
@@ -102,6 +104,36 @@ public class UserApi {
             response.put("count", users.size());
             response.put("status", true);
             return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", false);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/leaderboard/top-viewers")
+    public ResponseEntity<?> getTopUsersLeaderboard(
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer size) {
+        try {
+            TopUsersLeaderboardPage leaderboard = userService.getTopUsersByViewCount(page, size);
+            return ResponseEntity.ok(leaderboard);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", false);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/leaderboard/top-creators")
+    public ResponseEntity<?> getTopCreatorsLeaderboard(
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer size) {
+        try {
+            TopCreatorsLeaderboardPage leaderboard = userService.getTopCreatorsByLikes(page, size);
+            return ResponseEntity.ok(leaderboard);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("message", e.getMessage());

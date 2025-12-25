@@ -4,6 +4,7 @@ import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
+import com.basic.JWTSecurity.artwork_server.model.projection.TopArtistProjection;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.data.repository.query.Param;
@@ -124,5 +125,25 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
             RETURN count(*)
             """)
     long getTotalLikesAcrossArtworks(@Param("artistId") String artistId);
+
+    @Query("""
+            MATCH (artist:Artist)-[:CREATED]->(artwork:Artwork)
+            OPTIONAL MATCH (u:User)-[like:LIKES]->(artwork)
+            WITH artist, COUNT(like) as totalLikes
+            WHERE totalLikes > 0
+            ORDER BY totalLikes DESC
+            SKIP $skip LIMIT $limit
+            RETURN artist.id AS artistId, artist.name AS name, artist.image_url AS imageUrl, totalLikes
+            """)
+    List<TopArtistProjection> getTopArtistsByLikes(@Param("skip") Integer skip, @Param("limit") Integer limit);
+
+    @Query("""
+            MATCH (artist:Artist)-[:CREATED]->(artwork:Artwork)
+            OPTIONAL MATCH (:User)-[like:LIKES]->(artwork)
+            WITH artist, COUNT(like) as totalLikes
+            WHERE totalLikes > 0
+            RETURN COUNT(DISTINCT artist) as totalArtists
+            """)
+    Long getTopArtistsCount();
 
 }

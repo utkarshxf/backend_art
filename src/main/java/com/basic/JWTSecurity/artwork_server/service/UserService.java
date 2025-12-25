@@ -1,6 +1,8 @@
 package com.basic.JWTSecurity.artwork_server.service;
 
 
+import com.basic.JWTSecurity.artwork_server.dto.TopCreatorsLeaderboardPage;
+import com.basic.JWTSecurity.artwork_server.dto.TopUsersLeaderboardPage;
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
@@ -23,4 +25,8 @@ public interface UserService {
     boolean isUserIsArtistByUserId(String userId);
 
     List<Map<String, Object>> searchUsersByKeyword(String keyword, Integer limit);
+
+    TopUsersLeaderboardPage getTopUsersByViewCount(Integer page, Integer size);
+
+    TopCreatorsLeaderboardPage getTopCreatorsByLikes(Integer page, Integer size);
 }

@@ -3,10 +3,12 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtistStatsResponse;
+import com.basic.JWTSecurity.artwork_server.dto.TopArtistLeaderboardResponse;
+import com.basic.JWTSecurity.artwork_server.dto.TopArtistsLeaderboardPage;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
-import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
+import com.basic.JWTSecurity.artwork_server.model.projection.*;
 import com.basic.JWTSecurity.artwork_server.repository.ArtistRepository;
 import com.basic.JWTSecurity.artwork_server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -235,6 +239,49 @@ public class ArtistServiceImpl implements  ArtistService{
         } catch (Exception e) {
             log.error("Error updating user profile for artist ID: {}", artistId, e);
         }
+    }
+
+    @Override
+    public TopArtistsLeaderboardPage getTopArtistsByLikes(Integer page, Integer size) {
+        // Validate and set default values for pagination
+        if (page == null || page < 0) {
+            page = 0;
+        }
+        if (size == null || size <= 0) {
+            size = 10;
+        }
+
+        // Calculate skip value for pagination
+        int skip = page * size;
+
+        // Get top artists from repository
+        List<TopArtistProjection> topArtists = artistRepository.getTopArtistsByLikes(skip, size);
+
+        // Get total count of artists with likes
+        Long totalArtists = artistRepository.getTopArtistsCount();
+
+        // Calculate total pages
+        int totalPages = (int) Math.ceil((double) totalArtists / size);
+
+        // Build response with ranking
+        AtomicInteger rankCounter = new AtomicInteger(skip + 1);
+        List<TopArtistLeaderboardResponse> artistResponses = topArtists.stream()
+                .map(artist -> TopArtistLeaderboardResponse.builder()
+                        .artistId(artist.getArtistId())
+                        .name(artist.getName())
+                        .imageUrl(artist.getImageUrl())
+                        .totalLikes(artist.getTotalLikes())
+                        .rank(rankCounter.getAndIncrement())
+                        .build())
+                .collect(Collectors.toList());
+
+        return TopArtistsLeaderboardPage.builder()
+                .artists(artistResponses)
+                .currentPage(page)
+                .totalPages(totalPages)
+                .totalArtists(totalArtists)
+                .pageSize(size)
+                .build();
     }
 
 }

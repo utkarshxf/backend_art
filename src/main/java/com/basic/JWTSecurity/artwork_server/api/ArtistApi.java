@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtistStatsResponse;
+import com.basic.JWTSecurity.artwork_server.dto.TopArtistsLeaderboardPage;
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.User;
@@ -148,6 +149,21 @@ public class ArtistApi {
     @GetMapping("/getArtistStats")
     public ResponseEntity<ArtistStatsResponse> getArtistByArtistId(@RequestParam String artistId) {
         return ResponseEntity.status(HttpStatus.OK).body(artistService.getArtistStats(artistId));
+    }
+
+    @GetMapping("/leaderboard/top-artists")
+    public ResponseEntity<?> getTopArtistsLeaderboard(
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer size) {
+        try {
+            TopArtistsLeaderboardPage leaderboard = artistService.getTopArtistsByLikes(page, size);
+            return ResponseEntity.ok(leaderboard);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", false);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
     }
 
 }

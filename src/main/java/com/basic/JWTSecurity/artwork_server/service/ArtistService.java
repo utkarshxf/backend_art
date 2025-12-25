@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
+import com.basic.JWTSecurity.artwork_server.dto.TopArtistsLeaderboardPage;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
@@ -33,4 +34,7 @@ public interface ArtistService {
 
     // New: Artist stats (followers, total likes on artworks, total artworks)
     ArtistStatsResponse getArtistStats(String artistId);
+
+    // Top artists leaderboard by total likes
+    TopArtistsLeaderboardPage getTopArtistsByLikes(Integer page, Integer size);
 }
