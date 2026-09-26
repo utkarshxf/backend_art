@@ -32,3 +32,8 @@ build/
 /JWTSecurity/data
 ### VS Code ###
 .vscode/
+
+### Environment / secrets ###
+.env
+.env.*
+!.env.example
