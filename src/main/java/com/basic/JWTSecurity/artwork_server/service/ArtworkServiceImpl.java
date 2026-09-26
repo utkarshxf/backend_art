@@ -9,6 +9,7 @@ import com.basic.JWTSecurity.artwork_server.model.projection.ArtworkProjection;
 import com.basic.JWTSecurity.artwork_server.repository.ArtworkRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -27,21 +28,51 @@ public class ArtworkServiceImpl implements ArtworkService {
     @Override
     public Artwork create(ArtworkRecord artworkRecord, String artistId) {
 
+        String artistId1 = artworkRecord.artist();
+        Integer year = artworkRecord.releaseYear();
+        String genreId = artworkRecord.genreId();
+
+        if (genreId == null) {
+            genreId = "6311ae17"; // Assign a default genre ID if none is provided
+        }
+
+        if (year == null) {
+            year = LocalDateTime.now().getYear();
+        }
+
+        if(artistId1==null ){
+            artistId1=artistId;
+        }
+        if(artistId ==null ){
+            artistId=artistId1;
+        }
+
+        if(artworkRecord.genreId() == null){
+            throw new RuntimeException("Genre ID must be provided to create an artwork");
+        }
 
         Artwork artwork = Artwork.builder()
-                .name(artworkRecord.title())
-                .imageUrl(artworkRecord.imageUrl())
+                .title(artworkRecord.title())
+                .image_url(artworkRecord.imageUrl())
+                .image_url_compressed(artworkRecord.imageUrlCompressed())
                 .storageType(artworkRecord.storageType())
                 .type(artworkRecord.artType())
                 .description(artworkRecord.description())
-                .madeWith(artworkRecord.madeWith())
+                .medium(artworkRecord.medium())
                 .releasedDate(artworkRecord.releasedDate())
-                .status(Status.DRAFT)
+                .dimensions(artworkRecord.dimensions())
+                .artist(artworkRecord.artist())
+                .current_location(artworkRecord.currentLocation())
+                .period_style(artworkRecord.periodStyle())
+                .art_movement(artworkRecord.artMovement())
+                .license_info(artworkRecord.licenseInfo())
+                .source_url(artworkRecord.sourceUrl())
+                .status(Status.APPROVED)
                 .build();
 
         Artwork saved = repository.save(artwork);
-        yearService.create(artworkRecord.releaseYear());
-        artistService.addArtistAndArtworkRelationship(artistId, artworkRecord.releaseYear(), saved.getId(), artworkRecord.genreId());
+        yearService.create(year);
+        artistService.addArtistAndArtworkRelationship(artistId, year, saved.getId(), genreId);
 
         return saved;
     }
@@ -53,6 +84,8 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     public void userLikeAnArtwork(String artworkId, String userId) {
+        // Record a view when user likes
+        repository.userViewedArtwork(artworkId, userId, LocalDateTime.now());
         if(repository.checkDislikeExists(artworkId , userId))
             repository.userUnDislikeAArtwork(artworkId,userId);
         if(!repository.checkLikeExists(artworkId , userId))
@@ -61,6 +94,8 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     public void userDislikeAnArtwork(String artworkId, String userId) {
+        // Record a view when user dislikes
+        repository.userViewedArtwork(artworkId, userId, LocalDateTime.now());
         if(!repository.checkLikeExists(artworkId , userId) &&
                 !repository.checkDislikeExists(artworkId , userId))
         repository.userDislikeAnArtwork(artworkId , userId , LocalDateTime.now());
@@ -103,7 +138,77 @@ public class ArtworkServiceImpl implements ArtworkService {
     }
 
     @Override
+    public Optional<List<GetArtwork>> moreFromArtist(
+            String artistId,
+            String currentArtworkId,
+           String userId
+    ) {
+        return repository.moreFromArtist(artistId,currentArtworkId,userId);
+    }
+
+    @Override
+    public Optional<List<GetArtwork>> similarGenreArtworks(
+            String currentArtworkId,
+            String userId
+    ) {
+        return repository.similarGenreArtworks(currentArtworkId,userId);
+    }
+
+
+
+    @Override
     public Optional<GetArtwork> getArtworkById(String userId ,String artworkId) {
         return repository.findByIdProjection(userId , artworkId);
+    }
+
+    // New APIs
+    @Override
+    public long getArtworkLikesCount(String artworkId) {
+        return repository.getArtworkLikesCount(artworkId);
+    }
+
+    @Override
+    public long getArtworkCommentsCount(String artworkId) {
+        return repository.getArtworkCommentsCount(artworkId);
+    }
+
+    @Override
+    public java.util.List<com.basic.JWTSecurity.artwork_server.model.projection.UserProjection> getUsersWhoLikedArtwork(String artworkId, int skip, int limit) {
+        return repository.getUsersWhoLikedArtwork(artworkId, skip, limit);
+    }
+
+    @Override
+    public long getUsersWhoLikedArtworkCount(String artworkId) {
+        return repository.getUsersWhoLikedArtworkCount(artworkId);
+    }
+
+    @Override
+    public void userViewedArtwork(String artworkId, String userId) {
+        repository.userViewedArtwork(artworkId, userId, LocalDateTime.now());
+    }
+
+    @Override
+    public com.basic.JWTSecurity.artwork_server.dto.AnalyticsResponse getArtworkAnalytics(String artworkId, String bucket, LocalDateTime from, LocalDateTime to) {
+        LocalDateTime fromTs = from != null ? from : LocalDateTime.now().minusDays(30);
+        LocalDateTime toTs = to != null ? to : LocalDateTime.now();
+
+        var views = repository.getArtworkAnalyticsBuckets(artworkId, "VIEWED", bucket, fromTs, toTs);
+        var likes = repository.getArtworkAnalyticsBuckets(artworkId, "LIKES", bucket, fromTs, toTs);
+        var dislikes = repository.getArtworkAnalyticsBuckets(artworkId, "DISLIKES", bucket, fromTs, toTs);
+
+        return com.basic.JWTSecurity.artwork_server.dto.AnalyticsResponse.builder()
+                .artworkId(artworkId)
+                .bucket(bucket)
+                .from(fromTs)
+                .to(toTs)
+                .views(views)
+                .likes(likes)
+                .dislikes(dislikes)
+                .build();
+    }
+
+    @Override
+    public void updateArtworkStatus(String artworkId, com.basic.JWTSecurity.artwork_server.model.Status status) {
+        repository.updateArtworkStatus(artworkId, status.name());
     }
 }

@@ -24,7 +24,8 @@ public class FavoritesServiceImpl implements FavoritesService {
 
         Favorites favorites1 = Favorites.builder()
                 .title(favorites.getTitle())
-                .description(favorites.getDescription()).build();
+                .description(favorites.getDescription())
+                .id(favorites.getId()).build();
         Favorites saved = favoritesRepository.save(favorites1);
         favoritesRepository.addFavoritesAndUserRelationship(saved.getId(),userId, LocalDateTime.now());
         return saved;

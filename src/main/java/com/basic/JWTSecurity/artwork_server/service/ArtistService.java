@@ -1,11 +1,14 @@
 package com.basic.JWTSecurity.artwork_server.service;
 
 
+import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
+import com.basic.JWTSecurity.artwork_server.dto.TopArtistsLeaderboardPage;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
+import com.basic.JWTSecurity.artwork_server.dto.ArtistStatsResponse;
 
 import java.util.List;
 
@@ -23,8 +26,15 @@ public interface ArtistService {
 
     List<GetArtwork> getArtworkByUserID(String userId , String artistId);
 
-    List<GetArtist> getArtistByArtistID(String artistId);
+    GetArtist getArtistByArtistID(String currentUserId , String artistId);
+    GetArtist getArtistByArtworkID(String currentUserId , String artworkId);
 
 
+    Artist updateArtist(ArtistRegistrationRequestRecord requestRecord);
 
+    // New: Artist stats (followers, total likes on artworks, total artworks)
+    ArtistStatsResponse getArtistStats(String artistId);
+
+    // Top artists leaderboard by total likes
+    TopArtistsLeaderboardPage getTopArtistsByLikes(Integer page, Integer size);
 }

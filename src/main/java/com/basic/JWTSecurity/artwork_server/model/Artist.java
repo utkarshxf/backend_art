@@ -21,7 +21,19 @@ public class Artist {
     @Id
     private String id;
     private String name;
-    private String profilePicture;
+
+    ////
+    private String  birth_date;
+    private String  death_date;
+    private String  nationality;
+    private String  notable_works;
+    private String  art_movement;
+    private String  education;
+    private String  awards;
+    private String  image_url;
+    private String  wikipedia_url;
+    private String  description;
+    ////
 
     @Relationship(value = "BELONGS_TO_GENRE")
     private Genre genre;
