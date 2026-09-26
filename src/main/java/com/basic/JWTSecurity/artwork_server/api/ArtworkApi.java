@@ -3,6 +3,7 @@ package com.basic.JWTSecurity.artwork_server.api;
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkStatsResponse;
+import com.basic.JWTSecurity.artwork_server.dto.CatalogueCleanupRequests;
 import com.basic.JWTSecurity.artwork_server.dto.LikedUsersPage;
 import com.basic.JWTSecurity.artwork_server.dto.AnalyticsResponse;
 import com.basic.JWTSecurity.artwork_server.dto.StatusUpdateRequest;
@@ -161,6 +162,17 @@ public class ArtworkApi {
                                                     @RequestBody StatusUpdateRequest request) {
         artworkService.updateArtworkStatus(artworkId, request.getStatus());
         return ResponseEntity.ok().build();
+    }
+
+    // Temporary bulk endpoints for the one-off catalogue cleanup; remove once it is done
+    @PutMapping("/admin/bulk-status")
+    public ResponseEntity<Long> updateArtworksStatus(@RequestBody CatalogueCleanupRequests.BulkStatusRequest request) {
+        return ResponseEntity.ok(artworkService.updateArtworksStatus(request.artworkIds(), request.status()));
+    }
+
+    @PutMapping("/admin/bulk-images")
+    public ResponseEntity<Long> updateArtworkImages(@RequestBody List<CatalogueCleanupRequests.ArtworkImageUpdate> updates) {
+        return ResponseEntity.ok(artworkService.updateArtworkImages(updates));
     }
 
 }

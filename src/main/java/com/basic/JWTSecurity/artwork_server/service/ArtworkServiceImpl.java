@@ -211,4 +211,16 @@ public class ArtworkServiceImpl implements ArtworkService {
     public void updateArtworkStatus(String artworkId, com.basic.JWTSecurity.artwork_server.model.Status status) {
         repository.updateArtworkStatus(artworkId, status.name());
     }
+
+    @Override
+    public long updateArtworksStatus(List<String> artworkIds, Status status) {
+        return repository.updateArtworksStatus(artworkIds, status.name());
+    }
+
+    @Override
+    public long updateArtworkImages(List<com.basic.JWTSecurity.artwork_server.dto.CatalogueCleanupRequests.ArtworkImageUpdate> updates) {
+        return repository.updateArtworkImages(updates.stream()
+                .map(u -> java.util.Map.of("id", u.id(), "imageUrl", u.imageUrl(), "imageUrlCompressed", u.imageUrlCompressed()))
+                .toList());
+    }
 }

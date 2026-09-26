@@ -55,4 +55,9 @@ public interface ArtworkService {
 
     void updateArtworkStatus(String artworkId, com.basic.JWTSecurity.artwork_server.model.Status status);
 
+    // Temporary: bulk updates for the one-off catalogue cleanup
+    long updateArtworksStatus(List<String> artworkIds, com.basic.JWTSecurity.artwork_server.model.Status status);
+
+    long updateArtworkImages(List<com.basic.JWTSecurity.artwork_server.dto.CatalogueCleanupRequests.ArtworkImageUpdate> updates);
+
 }
