@@ -142,23 +142,6 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
             """)
     String updateArtworkStatus(@Param("artworkId") String artworkId, @Param("status") String status);
 
-    // Temporary: bulk updates for the one-off catalogue cleanup
-    @Query("""
-            MATCH (a:Artwork)
-            WHERE a.id IN $artworkIds
-            SET a.status = $status
-            RETURN count(a)
-            """)
-    long updateArtworksStatus(@Param("artworkIds") List<String> artworkIds, @Param("status") String status);
-
-    @Query("""
-            UNWIND $updates AS u
-            MATCH (a:Artwork {id: u.id})
-            SET a.image_url = u.imageUrl, a.image_url_compressed = u.imageUrlCompressed
-            RETURN count(a)
-            """)
-    long updateArtworkImages(@Param("updates") List<java.util.Map<String, String>> updates);
-
 
 //    @Query(
 //            "MATCH (user:User {id: $userId}) " +
