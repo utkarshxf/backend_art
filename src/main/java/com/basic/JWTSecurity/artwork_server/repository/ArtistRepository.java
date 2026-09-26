@@ -43,7 +43,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
     @Query("""
     MATCH (artist:Artist {id: $artistId})
     OPTIONAL MATCH (artist)-[created:CREATED]->(artwork:Artwork)
-    WHERE artwork IS NOT NULL
+    WHERE artwork IS NOT NULL AND NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
     OPTIONAL MATCH (user:User {id: $userId})-[like:LIKES]->(artwork)
     RETURN artwork.id AS id,
                     artwork.title AS title,
@@ -114,13 +114,15 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 
     @Query("""
             MATCH (artist:Artist {id: $artistId})
-            OPTIONAL MATCH (artist)-[:CREATED]->(:Artwork)
+            OPTIONAL MATCH (artist)-[:CREATED]->(artwork:Artwork)
+            WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
             RETURN count(*)
             """)
     long getArtworksCount(@Param("artistId") String artistId);
 
     @Query("""
             MATCH (artist:Artist {id: $artistId})-[:CREATED]->(a:Artwork)
+            WHERE NOT coalesce(a.status, '') IN ['DELETED', 'BLOCKED']
             OPTIONAL MATCH (:User)-[:LIKES]->(a)
             RETURN count(*)
             """)
@@ -128,6 +130,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 
     @Query("""
             MATCH (artist:Artist)-[:CREATED]->(artwork:Artwork)
+            WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
             OPTIONAL MATCH (u:User)-[like:LIKES]->(artwork)
             WITH artist, COUNT(like) as totalLikes
             WHERE totalLikes > 0
@@ -139,6 +142,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 
     @Query("""
             MATCH (artist:Artist)-[:CREATED]->(artwork:Artwork)
+            WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
             OPTIONAL MATCH (:User)-[like:LIKES]->(artwork)
             WITH artist, COUNT(like) as totalLikes
             WHERE totalLikes > 0

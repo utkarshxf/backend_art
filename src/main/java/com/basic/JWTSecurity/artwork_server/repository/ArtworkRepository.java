@@ -192,6 +192,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "   RETURN artwork AS recommendArtwork, 0 AS userSimilarity, 2 AS priority " +
                     "} " +
                     "WITH recommendArtwork, userSimilarity, priority " +
+                    "WHERE NOT coalesce(recommendArtwork.status, '') IN ['DELETED', 'BLOCKED'] " +
                     "OPTIONAL MATCH (recommendArtwork)<-[like:LIKES]-(likeUser:User) " +
                     "WITH recommendArtwork, userSimilarity, priority, count(DISTINCT likeUser) AS likes " +
                     "OPTIONAL MATCH (recommendArtwork)<-[:HAS_COMMENT]-(comment:Comment) " +
@@ -228,6 +229,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
 
     @Query("""
                 MATCH (artwork:Artwork)
+                WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
                 OPTIONAL MATCH (artwork)<-[like:LIKES]-(likeUser:User)
                 OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
                 WITH artwork, count(DISTINCT like) AS likes, 
@@ -264,6 +266,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
 
     @Query("""
         MATCH (artwork:Artwork)
+        WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
         OPTIONAL MATCH (artist:Artist)-[created:CREATED]->(artwork)
         OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
         OPTIONAL MATCH (user:User {id: $userId})-[userDislike:DISLIKES]->(artwork)
@@ -299,6 +302,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                 MATCH (user:User {id: $userId})-[:LIKES]->(likedArtwork:Artwork)
                 MATCH (artwork:Artwork)
                 WHERE artwork <> likedArtwork
+                  AND NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
                   AND NOT EXISTS {
                     MATCH (user)-[:LIKES]->(artwork)
                   }
@@ -335,6 +339,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
 
     @Query("""
                 MATCH (artwork:Artwork)
+                WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
                 OPTIONAL MATCH (artwork)<-[like:LIKES]-(user:User)
                 WHERE date(like.createdAt) = date()
                 WITH artwork, count(DISTINCT like) AS todayLikes
@@ -367,6 +372,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
     @Query("""
     MATCH (artist:Artist {id: $artistId})-[:CREATED]->(artwork:Artwork)
     WHERE artwork.id <> $currentArtworkId
+      AND NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
     OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(artwork)
     RETURN 
         artwork.id AS id,
@@ -400,6 +406,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
     MATCH (sourceArtwork:Artwork {id: $artworkId})-[:BELONGS_TO_GENRE]->(genre:Genre)
     MATCH (genre)<-[:BELONGS_TO_GENRE]-(similarArtwork:Artwork)
     WHERE similarArtwork.id <> $artworkId
+      AND NOT coalesce(similarArtwork.status, '') IN ['DELETED', 'BLOCKED']
     WITH DISTINCT similarArtwork, COUNT(genre) AS commonGenres
     OPTIONAL MATCH (user:User {id: $userId})-[userLike:LIKES]->(similarArtwork)
     OPTIONAL MATCH (user:User {id: $userId})-[userDislike:DISLIKES]->(similarArtwork)

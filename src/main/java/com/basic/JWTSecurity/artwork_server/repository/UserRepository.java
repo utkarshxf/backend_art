@@ -72,6 +72,7 @@ public interface UserRepository extends Neo4jRepository<User, String> {
 
     @Query("""
             MATCH (u:User)-[:IS_AN]->(artist:Artist)-[:CREATED]->(artwork:Artwork)
+            WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
             OPTIONAL MATCH (otherUser:User)-[like:LIKES]->(artwork)
             WITH u, artist, COUNT(like) as totalLikes
             WHERE totalLikes > 0
@@ -84,6 +85,7 @@ public interface UserRepository extends Neo4jRepository<User, String> {
 
     @Query("""
             MATCH (u:User)-[:IS_AN]->(artist:Artist)-[:CREATED]->(artwork:Artwork)
+            WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
             OPTIONAL MATCH (:User)-[like:LIKES]->(artwork)
             WITH u, COUNT(like) as totalLikes
             WHERE totalLikes > 0

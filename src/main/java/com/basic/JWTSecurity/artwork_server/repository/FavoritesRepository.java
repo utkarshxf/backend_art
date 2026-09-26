@@ -41,6 +41,7 @@ public interface FavoritesRepository extends Neo4jRepository<Favorites,String> {
 
     @Query("""
             MATCH (favorites:Favorites {id: $favoriteId})-[:CONTAINS]->(artwork:Artwork)
+            WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
 //            OPTIONAL MATCH (user:User)-[userLike:LIKES]->(artwork)
             RETURN 
                 artwork.id AS id,
