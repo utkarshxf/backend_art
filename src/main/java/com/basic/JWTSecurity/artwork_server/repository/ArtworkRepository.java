@@ -74,15 +74,15 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
     // Counts and stats
     @Query("""
             MATCH (a:Artwork {id: $artworkId})
-            OPTIONAL MATCH (a)<-[:LIKES]-(:User)
-            RETURN count(*) as likes
+            OPTIONAL MATCH (a)<-[like:LIKES]-(:User)
+            RETURN count(like) as likes
             """)
     long getArtworkLikesCount(@Param("artworkId") String artworkId);
 
     @Query("""
             MATCH (a:Artwork {id: $artworkId})
-            OPTIONAL MATCH (a)<-[:HAS_COMMENT]-(:Comment)
-            RETURN count(*) as comments
+            OPTIONAL MATCH (a)<-[:HAS_COMMENT]-(comment:Comment)
+            RETURN count(comment) as comments
             """)
     long getArtworkCommentsCount(@Param("artworkId") String artworkId);
 

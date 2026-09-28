@@ -107,8 +107,8 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
     // Stats queries
     @Query("""
             MATCH (artist:Artist {id: $artistId})
-            OPTIONAL MATCH (:User)-[:FOLLOWS]->(artist)
-            RETURN count(*)
+            OPTIONAL MATCH (follower:User)-[:FOLLOWS]->(artist)
+            RETURN count(DISTINCT follower)
             """)
     long getFollowersCount(@Param("artistId") String artistId);
 
@@ -116,15 +116,15 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
             MATCH (artist:Artist {id: $artistId})
             OPTIONAL MATCH (artist)-[:CREATED]->(artwork:Artwork)
             WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
-            RETURN count(*)
+            RETURN count(DISTINCT artwork)
             """)
     long getArtworksCount(@Param("artistId") String artistId);
 
     @Query("""
             MATCH (artist:Artist {id: $artistId})-[:CREATED]->(a:Artwork)
             WHERE NOT coalesce(a.status, '') IN ['DELETED', 'BLOCKED']
-            OPTIONAL MATCH (:User)-[:LIKES]->(a)
-            RETURN count(*)
+            OPTIONAL MATCH (:User)-[like:LIKES]->(a)
+            RETURN count(like)
             """)
     long getTotalLikesAcrossArtworks(@Param("artistId") String artistId);
 
