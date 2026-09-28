@@ -2,9 +2,9 @@ package com.basic.JWTSecurity.auth.api;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.UserRegistrationRequestRecord;
-import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.service.UserService;
 import com.basic.JWTSecurity.auth.model.*;
+import com.basic.JWTSecurity.auth.security.FirebaseTokenVerifier;
 import com.basic.JWTSecurity.auth.service.ProfileService;
 import com.basic.JWTSecurity.auth.security.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,14 +14,17 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController("/security")
@@ -38,6 +41,9 @@ public class SecurityApi {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private FirebaseTokenVerifier firebaseTokenVerifier;
+
     @PostMapping("/check")
     public Boolean isValidToken(@RequestBody TokenRequest token) {
         if (token == null) {
@@ -53,28 +59,68 @@ public class SecurityApi {
         }
     }
 
+    // Phone login, step 1: the app has verified the number with an SMS code (Firebase). Log in if an account uses
+    // this number, otherwise answer registered = false so the app asks for a username and password.
+    @PostMapping("/auth/phone")
+    public ResponseEntity<?> phoneAuth(@RequestBody PhoneAuthRequest request) {
+        String phone;
+        try {
+            phone = firebaseTokenVerifier.verifiedPhone(request.getFirebaseIdToken());
+        } catch (FirebaseTokenVerifier.InvalidTokenException e) {
+            return error(e.getMessage(), HttpStatus.UNAUTHORIZED);
+        }
+        Optional<Profile> profile = profileService.findByPhone(phone);
+        if (profile.isEmpty()) {
+            return ResponseEntity.ok(new PhoneAuthResponse(false, phone, null, null, List.of()));
+        }
+        JwtResponse token = tokenFor(profile.get().getUsername());
+        return ResponseEntity.ok(new PhoneAuthResponse(true, phone, token.getJwtToken(), token.getUsername(), token.getRoles()));
+    }
+
+    // Phone login, step 2 for a new number: create the account for the verified phone number and log in
+    @PostMapping("/auth/phone/signup")
+    public ResponseEntity<?> phoneSignup(@RequestBody PhoneSignupRequest request) {
+        String phone;
+        try {
+            phone = firebaseTokenVerifier.verifiedPhone(request.getFirebaseIdToken());
+        } catch (FirebaseTokenVerifier.InvalidTokenException e) {
+            return error(e.getMessage(), HttpStatus.UNAUTHORIZED);
+        }
+        String username = request.getUsername() == null ? "" : request.getUsername().trim().toLowerCase();
+        Map<String, Object> usernameCheck = profileService.validateUsername(username);
+        if (!Boolean.TRUE.equals(usernameCheck.get("isValid"))) {
+            return error(String.valueOf(usernameCheck.getOrDefault("message", "Username is not available")), HttpStatus.BAD_REQUEST);
+        }
+        if (request.getPassword() == null || request.getPassword().length() < 6) {
+            return error("Password must be at least 6 characters", HttpStatus.BAD_REQUEST);
+        }
+        Profile profile = new Profile();
+        profile.setUsername(username);
+        profile.setPhone(phone);
+        profile.setPassword(request.getPassword());
+        return register(profile);
+    }
+
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@RequestBody Profile user) {
+    public ResponseEntity<?> registerUser(@RequestBody Profile user,
+                                          @RequestHeader(value = "X-Firebase-Id-Token", required = false) String firebaseIdToken) {
+        // The phone number must be proven with an SMS code; the one in the body is not trusted
+        try {
+            user.setPhone(firebaseTokenVerifier.verifiedPhone(firebaseIdToken));
+        } catch (FirebaseTokenVerifier.InvalidTokenException e) {
+            return error(e.getMessage(), HttpStatus.UNAUTHORIZED);
+        }
+        return register(user);
+    }
+
+    private ResponseEntity<?> register(Profile user) {
         try {
             Profile registeredUser = profileService.registerUser(user);
             if (registeredUser == null) {
-                Map<String, Object> map = new HashMap<>();
-                map.put("message", "User registration failed");
-                map.put("status", false);
-                return new ResponseEntity<>(map, HttpStatus.BAD_REQUEST);
+                return error("User registration failed", HttpStatus.BAD_REQUEST);
             }
 
-            Authentication authentication = authenticationManager
-                    .authenticate(new UsernamePasswordAuthenticationToken(registeredUser.getUsername(), registeredUser.getPassword()));
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
-            List<String> roles = userDetails.getAuthorities().stream()
-                    .map(item -> item.getAuthority())
-                    .collect(Collectors.toList());
-
-            JwtResponse response = new JwtResponse(jwtToken, userDetails.getUsername(), roles);
+            JwtResponse response = tokenFor(registeredUser.getUsername());
 
             String country = resolveCountry(registeredUser);
 
@@ -93,11 +139,23 @@ public class SecurityApi {
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("message", e.getMessage());
-            map.put("status", false);
-            return new ResponseEntity<>(map, HttpStatus.BAD_REQUEST);
+            return error(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    private JwtResponse tokenFor(String username) {
+        UserDetails userDetails = profileService.loadUserByUsername(username);
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+        return new JwtResponse(jwtUtils.generateTokenFromUsername(userDetails), userDetails.getUsername(), roles);
+    }
+
+    private static ResponseEntity<Map<String, Object>> error(String message, HttpStatus status) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("message", message);
+        map.put("status", false);
+        return new ResponseEntity<>(map, status);
     }
 
     @GetMapping("/isValidUsername")
@@ -186,8 +244,21 @@ public class SecurityApi {
 
     @PutMapping("/forgetPassword")
     public ResponseEntity<?> forgetPassword(@RequestBody ForgetPasswordRequest forgetPasswordRequest){
+        // Only the owner of the phone number (proven with an SMS code) may reset the password
+        String phone;
+        try {
+            phone = firebaseTokenVerifier.verifiedPhone(forgetPasswordRequest.getFirebaseIdToken());
+        } catch (FirebaseTokenVerifier.InvalidTokenException e) {
+            return error(e.getMessage(), HttpStatus.UNAUTHORIZED);
+        }
+
         Authentication authentication;
-        Profile user =  profileService.changeUserPassword(forgetPasswordRequest.getPhoneNumber() , forgetPasswordRequest.getNewPassword());
+        Profile user;
+        try {
+            user = profileService.changeUserPassword(phone, forgetPasswordRequest.getNewPassword());
+        } catch (UsernameNotFoundException e) {
+            return error("No account uses this phone number", HttpStatus.NOT_FOUND);
+        }
 
         try {
             authentication = authenticationManager

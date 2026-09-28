@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ForgetPasswordRequest {
-    private String phoneNumber;
-    private String newPassword;
-    // Firebase ID token proving the phone number; the phone number above is not trusted on its own
+public class PhoneAuthRequest {
+    // Firebase ID token the app gets after the user entered the SMS code
     private String firebaseIdToken;
 }

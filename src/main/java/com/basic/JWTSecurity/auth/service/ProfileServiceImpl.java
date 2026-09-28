@@ -44,6 +44,11 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
     }
 
     @Override
+    public Optional<Profile> findByPhone(String phone) {
+        return profileRepository.findByPhone(phone);
+    }
+
+    @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         Optional<Profile> userOpt = profileRepository.findByUsername(username);

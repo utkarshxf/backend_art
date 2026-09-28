@@ -34,3 +34,7 @@ spring:
 
 server:
   port: ${PORT:7040}
+
+# Firebase project whose phone-auth ID tokens the backend accepts (not a secret)
+firebase:
+  project-id: ${FIREBASE_PROJECT_ID:loyal-optics-388515}
