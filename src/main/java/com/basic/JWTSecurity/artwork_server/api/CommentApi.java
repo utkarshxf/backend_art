@@ -7,6 +7,7 @@ import com.basic.JWTSecurity.artwork_server.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class CommentApi {
 
     private  final CommentService commentService;
 
+    @PreAuthorize("#userId == authentication.name")
     @PostMapping("/artwork/{artworkId}/user/{userId}")
     public ResponseEntity<Gallery> createNewComment(@RequestBody Comment comment, @PathVariable String artworkId, @PathVariable  String userId){
 
@@ -34,6 +36,7 @@ public class CommentApi {
     }
 
 
+    @PreAuthorize("@owner.ofComment(#id, authentication.name)")
     @DeleteMapping("/{id}")
     public void deleteById( @PathVariable String id){
 

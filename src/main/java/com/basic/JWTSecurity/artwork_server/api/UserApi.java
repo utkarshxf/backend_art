@@ -12,6 +12,7 @@ import com.basic.JWTSecurity.auth.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -40,6 +41,7 @@ public class UserApi {
     }
 
 
+    @PreAuthorize("#userId == authentication.name")
     @PutMapping("/{userId}")
     public ResponseEntity<?> updateUser(
             @PathVariable String userId,
@@ -58,11 +60,13 @@ public class UserApi {
     }
 
 
+    @PreAuthorize("#userId == authentication.name")
     @PutMapping("/{userId}/artist/{artistId}/follow")
     public  void followArtist(@PathVariable String userId,@PathVariable String artistId){
         userService.userFollowArtist(userId,artistId);
     }
 
+    @PreAuthorize("#userId == authentication.name")
     @PutMapping("/{userId}/artist/{artistId}/unfollow")
     public  void unfollowArtist(@PathVariable String userId,@PathVariable String artistId){
         userService.userUnFollowArtist(userId,artistId);

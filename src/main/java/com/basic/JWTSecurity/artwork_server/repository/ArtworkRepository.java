@@ -438,4 +438,8 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
             @Param("userId") String userId
     );
 
+    // An app artist's id is their user id, so this also answers "did this user upload the artwork"
+    @Query("MATCH (:Artist {id: $artistId})-[:CREATED]->(artwork:Artwork {id: $artworkId}) RETURN count(artwork) > 0")
+    boolean isCreatedBy(@Param("artworkId") String artworkId, @Param("artistId") String artistId);
+
 }

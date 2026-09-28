@@ -8,7 +8,9 @@ spring:
 
   app:
     jwtSecret: ${JWT_SECRET}
-    jwtExpirationMs: ${JWT_EXPIRATION_MS:3000000}
+    # Every endpoint except login/sign-up needs a valid JWT and the app has no refresh, so it must outlive a
+    # "stay logged in" session: 30 days (the app logs the user out when it expires)
+    jwtExpirationMs: ${JWT_EXPIRATION_MS:2592000000}
 
   data:
     mongodb:

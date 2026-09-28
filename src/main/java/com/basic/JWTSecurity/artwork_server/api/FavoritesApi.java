@@ -9,6 +9,7 @@ import com.basic.JWTSecurity.artwork_server.service.FavoritesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,16 +23,19 @@ public class FavoritesApi {
 
     private  final FavoritesService favoritesService;
 
+    @PreAuthorize("#userId == authentication.name")
     @PostMapping("/user/{userId}")
     public ResponseEntity<Favorites> createNewAFavorites(@RequestBody Favorites requestRecord, @PathVariable String userId){
         favoritesService.create(requestRecord,userId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @PreAuthorize("@owner.ofFavorites(#id, authentication.name)")
     @PutMapping("/artwork/add-artwork/{id}/{artworkId}")
     public  void addArtworkIntoFavorites(@PathVariable String id, @PathVariable String artworkId){
         favoritesService.addSongIntoFavorites(id,artworkId);
     }
+    @PreAuthorize("@owner.ofFavorites(#id, authentication.name)")
     @PutMapping("/{id}/artwork/{artworkId}/remove-artwork")
     public  void removeArtworkFromFavorites(@PathVariable String id, @PathVariable String artworkId){
         favoritesService.removeArtworkFromFavorites(id,artworkId);

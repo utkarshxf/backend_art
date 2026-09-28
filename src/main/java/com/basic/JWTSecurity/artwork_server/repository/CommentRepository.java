@@ -32,4 +32,7 @@ public interface CommentRepository extends Neo4jRepository<Comment,String> {
             "user.profilePicture as userProfilePicture " +
             "ORDER BY comment.createdAt DESC")
     List<GetComments> getArtworkComments(@Param("artworkId") String artworkId);
+
+    @Query("MATCH (:User {id: $userId})-[:POSTED_COMMENT]->(comment:Comment {id: $commentId}) RETURN count(comment) > 0")
+    boolean isPostedBy(@Param("commentId") String commentId, @Param("userId") String userId);
 }

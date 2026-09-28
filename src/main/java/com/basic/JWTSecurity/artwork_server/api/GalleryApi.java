@@ -7,6 +7,7 @@ import com.basic.JWTSecurity.artwork_server.service.GalleryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class GalleryApi {
 
     private  final GalleryService galleryService;
 
+    @PreAuthorize("#artistId == authentication.name")
     @PostMapping("/artist/{artistId}")
     public ResponseEntity<Gallery> createNewGallery(@RequestBody GalleryProjection requestRecord, @PathVariable String artistId, @RequestParam Integer releasedYear){
 
@@ -32,12 +34,14 @@ public class GalleryApi {
         return galleryService.getAllGallery(GalleryName);
     }
 
+    @PreAuthorize("#userId == authentication.name")
     @PutMapping("/{galleryId}/user/{userId}/like")
     public  void userLikeAnGallery(@PathVariable String galleryId,@PathVariable String userId){
         galleryService.userLikeGallery(galleryId,userId);
     }
 
 
+    @PreAuthorize("#userId == authentication.name")
     @PutMapping("/{galleryId}/user/{userId}/dislike")
     public  void userDisLikeGallery(@PathVariable String galleryId, @PathVariable String userId){
         galleryService.userDikeLikeGallery(galleryId,userId);

@@ -12,6 +12,7 @@ import com.basic.JWTSecurity.artwork_server.service.ArtworkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public class ArtworkApi {
 
     private  final ArtworkService artworkService;
 
+    @PreAuthorize("#artistId == authentication.name")
     @PostMapping("/artist/{artistId}")
     public ResponseEntity<ArtworkRecord> createNewArtwork(@RequestBody ArtworkRecord requestRecord, @PathVariable String artistId){
 
@@ -98,17 +100,20 @@ public class ArtworkApi {
     }
 
 
+    @PreAuthorize("#userId == authentication.name")
     @PutMapping("/user/like/{artworkId}/{userId}")
     public void userLikeAnArtwork(@PathVariable String artworkId, @PathVariable String userId) {
         System.out.println("Artist ID: " + artworkId + userId);
         artworkService.userLikeAnArtwork(artworkId, userId);
     }
 
+    @PreAuthorize("#userId == authentication.name")
     @PutMapping("/user/unlike/{artworkId}/{userId}")
     public void userUnlikeAnArtwork(@PathVariable String artworkId , @PathVariable String userId){
         artworkService.userUnLikeAnArtwork(artworkId, userId);
     }
 
+    @PreAuthorize("#userId == authentication.name")
     @PutMapping("/user/dislike/{artworkId}/{userId}")
     public void userDislikeAnArtwork(@PathVariable String artworkId, @PathVariable String userId) {
         System.out.println("Artist ID: " + artworkId + userId);
@@ -139,6 +144,7 @@ public class ArtworkApi {
     }
 
     // 4) Create a VIEWED relation
+    @PreAuthorize("#userId == authentication.name")
     @PostMapping("/{artworkId}/view/{userId}")
     public ResponseEntity<Void> userViewedArtwork(@PathVariable String artworkId, @PathVariable String userId) {
         artworkService.userViewedArtwork(artworkId, userId);
@@ -156,6 +162,7 @@ public class ArtworkApi {
     }
 
     // 6) Update artwork status
+    @PreAuthorize("@owner.ofArtwork(#artworkId, authentication.name)")
     @PutMapping("/{artworkId}/status")
     public ResponseEntity<Void> updateArtworkStatus(@PathVariable String artworkId,
                                                     @RequestBody StatusUpdateRequest request) {

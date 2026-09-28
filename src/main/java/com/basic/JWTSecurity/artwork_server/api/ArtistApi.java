@@ -15,6 +15,7 @@ import com.basic.JWTSecurity.artwork_server.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -64,6 +65,7 @@ public class ArtistApi {
     }
 
 
+    @PreAuthorize("(#requestRecord.id() ?: #userId) == authentication.name")
     @PostMapping()
     public ResponseEntity<ArtistRegistrationRequestRecord> createNewArtist(
             @RequestParam(required = false) String userId,
@@ -139,6 +141,7 @@ public class ArtistApi {
     }
 
 
+    @PreAuthorize("#artistId == authentication.name")
     @PutMapping("/{artistId}")
     public ResponseEntity<?> updateArtist(
             @PathVariable String artistId,

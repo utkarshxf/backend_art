@@ -65,4 +65,7 @@ public interface FavoritesRepository extends Neo4jRepository<Favorites,String> {
             ORDER BY artwork.name ASC
             """)
     List<GetArtwork> getArtworksByFavoriteId(@Param("favoriteId") String favoriteId);
+
+    @Query("MATCH (:User {id: $userId})-[:CREATED]->(favorites:Favorites {id: $favoritesId}) RETURN count(favorites) > 0")
+    boolean isCreatedBy(@Param("favoritesId") String favoritesId, @Param("userId") String userId);
 }
