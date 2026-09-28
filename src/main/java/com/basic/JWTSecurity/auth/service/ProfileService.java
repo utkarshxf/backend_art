@@ -13,6 +13,8 @@ public interface ProfileService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
     public Profile registerUser(Profile user);
 
+    public void deleteProfile(String id);
+
     public Claims checkToken(TokenRequest token);
 
     public Profile changeUserPassword(String phoneNumber, String newPassword);

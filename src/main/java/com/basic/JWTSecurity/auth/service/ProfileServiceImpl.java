@@ -90,6 +90,12 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
         return user1;
     }
 
+    // only used to roll back a registration whose graph user could not be created
+    @Override
+    public void deleteProfile(String id) {
+        profileRepository.deleteById(id);
+    }
+
     @Override
     public Claims checkToken(TokenRequest token) {
         return Jwts.parser()

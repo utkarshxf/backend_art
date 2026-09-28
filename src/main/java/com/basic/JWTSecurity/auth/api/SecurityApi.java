@@ -8,6 +8,7 @@ import com.basic.JWTSecurity.auth.security.FirebaseTokenVerifier;
 import com.basic.JWTSecurity.auth.service.ProfileService;
 import com.basic.JWTSecurity.auth.security.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -118,22 +119,34 @@ public class SecurityApi {
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@RequestBody Profile user,
                                           @RequestHeader(value = "X-Firebase-Id-Token", required = false) String firebaseIdToken) {
-        // The phone number must be proven with an SMS code; the one in the body is not trusted
+        // Only username and password come from the body. The phone number must be proven with an SMS code, and
+        // id / email / anything else in the body is ignored (it could target another account)
+        Profile profile = new Profile();
+        profile.setUsername(user.getUsername());
+        profile.setPassword(user.getPassword());
         try {
-            user.setPhone(firebaseTokenVerifier.verifiedPhone(firebaseIdToken));
+            profile.setPhone(firebaseTokenVerifier.verifiedPhone(firebaseIdToken));
         } catch (FirebaseTokenVerifier.InvalidTokenException e) {
             return error(e.getMessage(), HttpStatus.UNAUTHORIZED);
         }
-        return register(user);
+        return register(profile);
     }
 
     private ResponseEntity<?> register(Profile user) {
+        Profile registeredUser;
         try {
-            Profile registeredUser = profileService.registerUser(user);
-            if (registeredUser == null) {
-                return error("User registration failed", HttpStatus.BAD_REQUEST);
-            }
+            registeredUser = profileService.registerUser(user);
+        } catch (DuplicateKeyException e) {
+            // two sign-ups raced past the checks in registerUser; the unique index stopped the second one
+            return error("An account with this username, phone number or email already exists", HttpStatus.BAD_REQUEST);
+        } catch (RuntimeException e) {
+            return error(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+        if (registeredUser == null) {
+            return error("User registration failed", HttpStatus.BAD_REQUEST);
+        }
 
+        try {
             JwtResponse response = tokenFor(registeredUser.getUsername());
 
             String country = resolveCountry(registeredUser);
@@ -153,6 +166,10 @@ public class SecurityApi {
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
+            // The graph user could not be created (Neo4j down, or that id is already taken by a user without a
+            // profile). Undo the profile so the stored state matches the error and the person can simply retry,
+            // instead of the new profile silently taking over the existing graph user.
+            profileService.deleteProfile(registeredUser.getId());
             return error(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }

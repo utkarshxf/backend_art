@@ -92,6 +92,10 @@ public class FirebaseTokenVerifier {
     }
 
     private PublicKey publicKey(String kid) {
+        // the key maps are immutable and throw on a null key, which would surface as a 500
+        if (kid == null || kid.isBlank()) {
+            throw new InvalidTokenException("Phone verification is invalid or expired");
+        }
         Map<String, PublicKey> current = keys;
         boolean stale = Instant.now().isAfter(keysExpireAt);
         // an unknown kid usually means Google rotated keys; refetch, but at most once a minute
