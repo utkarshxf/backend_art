@@ -6,13 +6,14 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-// registered = false means the verified phone has no account yet; the app then asks for a username and password
+// registered = false means no account uses the verified phone/email yet; the app then asks for a username and password
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PhoneAuthResponse {
+public class FirebaseAuthResponse {
     private boolean registered;
     private String phone;
+    private String email;
     private String jwtToken;
     private String username;
     private List<String> roles;

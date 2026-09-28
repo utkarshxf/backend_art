@@ -12,6 +12,8 @@ public interface ProfileRepository extends MongoRepository<Profile, String> {
 
     Optional<Profile> findByPhone(String phone);
 
+    Optional<Profile> findByEmail(String email);
+
     @Query("{ $or: [ { 'username': { $regex: ?0, $options: 'i' } }, { 'id': { $regex: ?0, $options: 'i' } } ] }")
     List<Profile> searchByUsernameOrName(String keyword);
 

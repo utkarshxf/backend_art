@@ -59,32 +59,36 @@ public class SecurityApi {
         }
     }
 
-    // Phone login, step 1: the app has verified the number with an SMS code (Firebase). Log in if an account uses
-    // this number, otherwise answer registered = false so the app asks for a username and password.
-    @PostMapping("/auth/phone")
-    public ResponseEntity<?> phoneAuth(@RequestBody PhoneAuthRequest request) {
-        String phone;
+    // Login step 1: the app signed in with Firebase (SMS code or Google). Log in if an account uses the verified
+    // phone number / email, otherwise answer registered = false so the app asks for a username and password.
+    @PostMapping({"/auth/firebase", "/auth/phone"})
+    public ResponseEntity<?> firebaseAuth(@RequestBody FirebaseAuthRequest request) {
+        FirebaseTokenVerifier.VerifiedIdentity identity;
         try {
-            phone = firebaseTokenVerifier.verifiedPhone(request.getFirebaseIdToken());
+            identity = firebaseTokenVerifier.verify(request.getFirebaseIdToken());
         } catch (FirebaseTokenVerifier.InvalidTokenException e) {
             return error(e.getMessage(), HttpStatus.UNAUTHORIZED);
         }
-        Optional<Profile> profile = profileService.findByPhone(phone);
+        Optional<Profile> profile = findAccount(identity);
         if (profile.isEmpty()) {
-            return ResponseEntity.ok(new PhoneAuthResponse(false, phone, null, null, List.of()));
+            return ResponseEntity.ok(new FirebaseAuthResponse(false, identity.phone(), identity.email(), null, null, List.of()));
         }
         JwtResponse token = tokenFor(profile.get().getUsername());
-        return ResponseEntity.ok(new PhoneAuthResponse(true, phone, token.getJwtToken(), token.getUsername(), token.getRoles()));
+        return ResponseEntity.ok(new FirebaseAuthResponse(true, identity.phone(), identity.email(),
+                token.getJwtToken(), token.getUsername(), token.getRoles()));
     }
 
-    // Phone login, step 2 for a new number: create the account for the verified phone number and log in
-    @PostMapping("/auth/phone/signup")
-    public ResponseEntity<?> phoneSignup(@RequestBody PhoneSignupRequest request) {
-        String phone;
+    // Login step 2 for a new phone number / Google account: create the account and log in
+    @PostMapping({"/auth/firebase/signup", "/auth/phone/signup"})
+    public ResponseEntity<?> firebaseSignup(@RequestBody FirebaseSignupRequest request) {
+        FirebaseTokenVerifier.VerifiedIdentity identity;
         try {
-            phone = firebaseTokenVerifier.verifiedPhone(request.getFirebaseIdToken());
+            identity = firebaseTokenVerifier.verify(request.getFirebaseIdToken());
         } catch (FirebaseTokenVerifier.InvalidTokenException e) {
             return error(e.getMessage(), HttpStatus.UNAUTHORIZED);
+        }
+        if (findAccount(identity).isPresent()) {
+            return error("An account already uses this " + (identity.phone() != null ? "phone number" : "email"), HttpStatus.BAD_REQUEST);
         }
         String username = request.getUsername() == null ? "" : request.getUsername().trim().toLowerCase();
         Map<String, Object> usernameCheck = profileService.validateUsername(username);
@@ -96,9 +100,19 @@ public class SecurityApi {
         }
         Profile profile = new Profile();
         profile.setUsername(username);
-        profile.setPhone(phone);
+        profile.setPhone(identity.phone());
+        profile.setEmail(identity.email());
         profile.setPassword(request.getPassword());
         return register(profile);
+    }
+
+    // Phone number first (SMS sign-in), otherwise the verified Google email
+    private Optional<Profile> findAccount(FirebaseTokenVerifier.VerifiedIdentity identity) {
+        if (identity.phone() != null) {
+            Optional<Profile> byPhone = profileService.findByPhone(identity.phone());
+            if (byPhone.isPresent()) return byPhone;
+        }
+        return identity.email() != null ? profileService.findByEmail(identity.email()) : Optional.empty();
     }
 
     @PostMapping("/signup")

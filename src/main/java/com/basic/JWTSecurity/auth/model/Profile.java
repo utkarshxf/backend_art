@@ -21,4 +21,6 @@ public class Profile {
     private List<Address> userAddress = null;
     private List<CartItem> cardItems = null;
     private List<OrderItem> orderItems = null;
+    // set for accounts created with Google sign-in (phone may then be empty)
+    private String email;
 }

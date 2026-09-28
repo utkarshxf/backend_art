@@ -48,8 +48,20 @@ public class FirebaseTokenVerifier {
         this.objectMapper = objectMapper;
     }
 
+    /** Who the token proves the user is: a phone number (SMS sign-in) and/or a verified email (Google sign-in). */
+    public record VerifiedIdentity(String uid, String phone, String email) {}
+
     /** Returns the verified phone number (E.164, e.g. +919876543210) or throws {@link InvalidTokenException}. */
     public String verifiedPhone(String idToken) {
+        String phone = verify(idToken).phone();
+        if (phone == null) {
+            throw new InvalidTokenException("Phone verification is required");
+        }
+        return phone;
+    }
+
+    /** Verifies the token; it must prove a phone number or a verified email, otherwise {@link InvalidTokenException}. */
+    public VerifiedIdentity verify(String idToken) {
         if (idToken == null || idToken.isBlank()) {
             throw new InvalidTokenException("Phone verification is required");
         }
@@ -66,11 +78,17 @@ public class FirebaseTokenVerifier {
         } catch (JwtException | IllegalArgumentException | ClassCastException e) {
             throw new InvalidTokenException("Phone verification is invalid or expired");
         }
-        String phone = claims.get("phone_number", String.class);
-        if (claims.getSubject() == null || claims.getSubject().isBlank() || phone == null || phone.isBlank()) {
+        String phone = blankToNull(claims.get("phone_number", String.class));
+        String email = Boolean.TRUE.equals(claims.get("email_verified", Boolean.class))
+                ? blankToNull(claims.get("email", String.class)) : null;
+        if (claims.getSubject() == null || claims.getSubject().isBlank() || (phone == null && email == null)) {
             throw new InvalidTokenException("Phone verification is invalid or expired");
         }
-        return phone;
+        return new VerifiedIdentity(claims.getSubject(), phone, email == null ? null : email.toLowerCase());
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s;
     }
 
     private PublicKey publicKey(String kid) {

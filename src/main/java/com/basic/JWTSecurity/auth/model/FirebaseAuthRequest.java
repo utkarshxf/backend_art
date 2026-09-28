@@ -7,8 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PhoneSignupRequest {
+public class FirebaseAuthRequest {
+    // Firebase ID token the app gets after phone (SMS code) or Google sign-in
     private String firebaseIdToken;
-    private String username;
-    private String password;
 }

@@ -49,6 +49,11 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
     }
 
     @Override
+    public Optional<Profile> findByEmail(String email) {
+        return profileRepository.findByEmail(email);
+    }
+
+    @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         Optional<Profile> userOpt = profileRepository.findByUsername(username);
@@ -70,8 +75,13 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
         if (profileRepository.findByUsername(user.getUsername().toLowerCase()).isPresent()) {
             throw new RuntimeException("User already exists");
         }
-        if (profileRepository.findByPhone(user.getPhone()).isPresent()) {
+        // A Google account may have no phone (and a phone account no email); only check what is set,
+        // otherwise a null value would match every other account without one
+        if (user.getPhone() != null && profileRepository.findByPhone(user.getPhone()).isPresent()) {
             throw new RuntimeException("Phone number already exists");
+        }
+        if (user.getEmail() != null && profileRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
         }
         String userPassword = user.getPassword();
         user.setPassword(passwordEncoder().encode(user.getPassword()));

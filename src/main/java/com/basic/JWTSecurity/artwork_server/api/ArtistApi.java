@@ -53,6 +53,16 @@ public class ArtistApi {
         return artistService.getArtistByArtworkID(userId , artworkId);
     }
 
+    // Artist profile details, used by the app to show / prefill the artist's own profile (pairs with PUT /{artistId})
+    @GetMapping("/{artistId}")
+    public ResponseEntity<?> getArtistDetails(@PathVariable String artistId) {
+        GetArtist artist = artistService.getArtistByArtistID(null, artistId);
+        if (artist == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Artist not found", "status", false));
+        }
+        return ResponseEntity.ok(artist);
+    }
+
 
     @PostMapping()
     public ResponseEntity<ArtistRegistrationRequestRecord> createNewArtist(

@@ -19,6 +19,8 @@ public interface ProfileService {
 
     public java.util.Optional<Profile> findByPhone(String phone);
 
+    public java.util.Optional<Profile> findByEmail(String email);
+
     public boolean isUsernameAvailable(String username);
 
     public Map<String, Object> validateUsername(String username);
