@@ -48,6 +48,31 @@ public class AccountDeletionService {
     private static final String STORAGE_API = "https://storage.googleapis.com/storage/v1/b/";
     private static final String IDENTITY_API = "https://identitytoolkit.googleapis.com/v1/projects/";
 
+    static final String IMAGES_QUERY = """
+                    MATCH (u:User {id: $username})
+                    OPTIONAL MATCH (u)-[:IS_AN]->(artist:Artist)
+                    OPTIONAL MATCH (artist)-[:CREATED]->(w:Artwork)
+                    RETURN u.profilePicture AS userPicture,
+                           collect(DISTINCT artist.image_url) AS artistPictures,
+                           collect(DISTINCT w.image_url) + collect(DISTINCT w.image_url_compressed) AS artworkImages
+                    """;
+
+    static final String DELETE_QUERY = """
+                    MATCH (u:User {id: $username})
+                    OPTIONAL MATCH (u)-[:IS_AN]->(artist:Artist)
+                    OPTIONAL MATCH (artist)-[:CREATED]->(owned)
+                    WHERE owned:Artwork OR owned:Gallery
+                    WITH u, collect(DISTINCT artist) AS artists, collect(DISTINCT owned) AS owned
+                    WITH u, artists, owned,
+                         reduce(acc = [], w IN owned | acc + [(c:Comment)-[:HAS_COMMENT]->(w) | c]) AS artworkComments,
+                         [(u)-[:POSTED_COMMENT]->(c:Comment) | c] AS ownComments,
+                         [(u)-[:CREATED]->(f:Favorites) | f] AS collections
+                    WITH u, reduce(acc = [], n IN artworkComments + ownComments + collections + owned + artists |
+                                   CASE WHEN n IN acc THEN acc ELSE acc + n END) AS nodes
+                    FOREACH (n IN nodes | DETACH DELETE n)
+                    DETACH DELETE u
+                    """;
+
     private final Driver driver;
     private final ProfileRepository profileRepository;
     private final ChatFirebaseCredentials credentials;
@@ -74,8 +99,13 @@ public class AccountDeletionService {
     }
 
     public void deleteAccount(String username) {
+        // gather first: the graph and the profile are gone after the next two steps
         Optional<Profile> profile = profileRepository.findByUsername(username);
         List<String> images = uploadedImages(username);
+
+        // core deletion first, so a failure here leaves the account fully intact
+        deleteGraph(username);
+        profile.ifPresent(profileRepository::delete);
 
         if (credentials.isConfigured()) {
             deleteChat(username);
@@ -85,24 +115,26 @@ public class AccountDeletionService {
         } else {
             logger.warn("Firebase credentials missing: chat data, images and Firebase accounts of {} were not removed", username);
         }
-
-        deleteGraph(username);
-        profile.ifPresent(profileRepository::delete);
         logger.info("Account {} deleted", username);
+    }
+
+    /** Startup self-check: EXPLAIN (plans, never runs) the deletion queries so a Cypher mistake shows in the log. */
+    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
+    public void checkQueries() {
+        try (Session session = driver.session()) {
+            session.run("EXPLAIN " + IMAGES_QUERY, Values.parameters("username", "")).consume();
+            session.run("EXPLAIN " + DELETE_QUERY, Values.parameters("username", "")).consume();
+            logger.info("Account deletion queries OK");
+        } catch (RuntimeException e) {
+            logger.error("Account deletion queries are invalid: {}", e.getMessage());
+        }
     }
 
     // ------------------------------------------------------------------ graph
 
     private List<String> uploadedImages(String username) {
         try (Session session = driver.session()) {
-            Record record = session.executeRead(tx -> tx.run("""
-                    MATCH (u:User {id: $username})
-                    OPTIONAL MATCH (u)-[:IS_AN]->(artist:Artist)
-                    OPTIONAL MATCH (artist)-[:CREATED]->(w:Artwork)
-                    RETURN u.profilePicture AS userPicture,
-                           collect(DISTINCT artist.image_url) AS artistPictures,
-                           collect(DISTINCT w.image_url) + collect(DISTINCT w.image_url_compressed) AS artworkImages
-                    """, Values.parameters("username", username)).list().stream().findFirst().orElse(null));
+            Record record = session.executeRead(tx -> tx.run(IMAGES_QUERY, Values.parameters("username", username)).list().stream().findFirst().orElse(null));
             if (record == null) {
                 return List.of();
             }
@@ -119,21 +151,7 @@ public class AccountDeletionService {
 
     private void deleteGraph(String username) {
         try (Session session = driver.session()) {
-            session.executeWrite(tx -> tx.run("""
-                    MATCH (u:User {id: $username})
-                    OPTIONAL MATCH (u)-[:IS_AN]->(artist:Artist)
-                    OPTIONAL MATCH (artist)-[:CREATED]->(owned)
-                    WHERE owned:Artwork OR owned:Gallery
-                    WITH u, collect(DISTINCT artist) AS artists, collect(DISTINCT owned) AS owned
-                    WITH u, artists, owned,
-                         reduce(acc = [], w IN owned | acc + [(c:Comment)-[:HAS_COMMENT]->(w) | c]) AS artworkComments,
-                         [(u)-[:POSTED_COMMENT]->(c:Comment) | c] AS ownComments,
-                         [(u)-[:CREATED]->(f:Favorites) | f] AS collections
-                    WITH u, reduce(acc = [], n IN artworkComments + ownComments + collections + owned + artists |
-                                   CASE WHEN n IN acc THEN acc ELSE acc + n END) AS nodes
-                    FOREACH (n IN nodes | DETACH DELETE n)
-                    DETACH DELETE u
-                    """, Values.parameters("username", username)).consume());
+            session.executeWrite(tx -> tx.run(DELETE_QUERY, Values.parameters("username", username)).consume());
         }
     }
 
