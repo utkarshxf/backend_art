@@ -436,6 +436,7 @@ class ChatServiceTest {
         assertEquals("hi", ChatService.preview(Map.of("type", "text", "text", "  hi \n")));
         assertEquals("Sent a photo", ChatService.preview(Map.of("type", "image", "text", "caption")));
         assertEquals("Shared a post", ChatService.preview(Map.of("type", "artwork")));
+        assertEquals("Shared a profile", ChatService.preview(Map.of("type", "profile")));
         assertEquals("❤️", ChatService.preview(Map.of("type", "like")));
         assertEquals("Sent a message", ChatService.preview(Map.of("type", "sticker")));
         String emojis = "😀".repeat(130);

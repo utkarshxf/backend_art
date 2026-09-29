@@ -210,6 +210,8 @@ public class ChatService {
                 return "Sent a photo";
             case "artwork":
                 return "Shared a post";
+            case "profile":
+                return "Shared a profile";
             case "like":
                 return LIKE;
             default:
