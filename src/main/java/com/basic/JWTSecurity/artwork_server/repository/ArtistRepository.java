@@ -22,9 +22,9 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
             "MATCH (year: Year {year: $releasedYear}) " +
             "MATCH (artwork: Artwork {id: $artworkId}) " +
             "MATCH (genre: Genre {id: $genreId}) " +
-            "MERGE (artist)-[:CREATED {createdAt: $createdAt}]->(artwork) "+
-            "MERGE (artwork)-[:BELONGS_TO_GENRE {createdAt: $createdAt}]->(genre) "+
-            "MERGE (artwork)-[:RELEASED_IN {createdAt: $createdAt}]->(year)"
+            "MERGE (artist)-[rel_created:CREATED]->(artwork) ON CREATE SET rel_created.createdAt = $createdAt "+
+            "MERGE (artwork)-[rel_belongs_to_genre:BELONGS_TO_GENRE]->(genre) ON CREATE SET rel_belongs_to_genre.createdAt = $createdAt "+
+            "MERGE (artwork)-[rel_released_in:RELEASED_IN]->(year) ON CREATE SET rel_released_in.createdAt = $createdAt"
     )
     void addArtistAndArtworkRelationship(@Param("artistId") String artistId,
                                          @Param("releasedYear") Integer releasedYear,
@@ -69,7 +69,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 
     @Query("""
     MATCH (artist:Artist {id: $artistId})
-    OPTIONAL MATCH (currentUser:User {id: $currentUserId})-[follow:FOLLOWS]->(artist)
+    WITH artist LIMIT 1
     RETURN artist.id AS id,
            artist.name AS name,
            artist.birth_date AS birth_date,
@@ -82,15 +82,15 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
            artist.image_url AS image_url,
            artist.wikipedia_url AS wikipedia_url,
            artist.description AS description,
-           CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow,
+           EXISTS { MATCH (:User {id: $currentUserId})-[:FOLLOWS]->(artist) } AS follow,
            // blue tick: a real artist, not a profile an Artistry user created for themselves
            NOT EXISTS { MATCH (:User)-[:IS_AN]->(artist) } AS verified
 """)
     GetArtist getArtistById(String currentUserId , String artistId);
 
     @Query("""
-    MATCH (artist:Artist)-[created:CREATED]->(artwork:Artwork {id:$ArtworkId})
-    OPTIONAL MATCH (user:User {id: $userId})-[follow:FOLLOWS]->(artist)
+    MATCH (artist:Artist)-[:CREATED]->(artwork:Artwork {id:$ArtworkId})
+    WITH artist LIMIT 1
     RETURN artist.id AS id,
            artist.name AS name,
            artist.birth_date AS birth_date,
@@ -103,7 +103,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
            artist.image_url AS image_url,
            artist.wikipedia_url AS wikipedia_url,
            artist.description AS description,
-           CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow,
+           EXISTS { MATCH (:User {id: $userId})-[:FOLLOWS]->(artist) } AS follow,
            // blue tick: a real artist, not a profile an Artistry user created for themselves
            NOT EXISTS { MATCH (:User)-[:IS_AN]->(artist) } AS verified
 """)

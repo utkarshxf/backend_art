@@ -22,13 +22,13 @@ public interface UserRepository extends Neo4jRepository<User, String> {
 
     @Query("MATCH (artist:Artist {id: $artistId})" +
             "            MATCH (user:User {id: $userId})" +
-            "            MERGE (user)-[:FOLLOWS {createdAt: $createdAt}]->(artist)")
+            "            MERGE (user)-[rel_follows:FOLLOWS]->(artist) ON CREATE SET rel_follows.createdAt = $createdAt")
     void userFollowArtist(@Param("userId") String userId,
                           @Param("artistId") String artistId,
                           @Param("createdAt") LocalDateTime createdAt);
 
     @Query("MATCH (artist:Artist {id: $artistId}) , (user:User {id: $userId})" +
-            " MERGE (user)-[:IS_AN {createdAt: $createdAt}]->(artist)")
+            " MERGE (user)-[rel_is_an:IS_AN]->(artist) ON CREATE SET rel_is_an.createdAt = $createdAt")
     void addArtistAndUserRelationship(@Param("userId") String userId,
                                       @Param("artistId") String artistId,
                                       @Param("createdAt") LocalDateTime createdAt);

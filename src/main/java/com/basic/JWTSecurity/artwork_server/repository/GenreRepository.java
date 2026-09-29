@@ -14,11 +14,11 @@ public interface GenreRepository extends Neo4jRepository<Genre,String> {
 
 
     @Query("MATCH (genre: Genre {id: $genreId}), (artist: Artist {id: $artistId})" +
-            " MERGE (artist)-[:BELONGS_TO_GENRE {createdAt: $createdAt}]->(genre)")
+            " MERGE (artist)-[rel_belongs_to_genre:BELONGS_TO_GENRE]->(genre) ON CREATE SET rel_belongs_to_genre.createdAt = $createdAt")
     void addArtistToGenre(@Param("genreId") String genreId, @Param("artistId")String artistId,
                           @Param("createdAt")LocalDateTime createdAt);
     @Query("MATCH (genre: Genre {id: $genreId}), (artwork: Artwork {id: $artworkId})" +
-            " MERGE (artwork)-[:BELONGS_TO_GENRE {createdAt: $createdAt}]->(genre)")
+            " MERGE (artwork)-[rel_belongs_to_genre:BELONGS_TO_GENRE]->(genre) ON CREATE SET rel_belongs_to_genre.createdAt = $createdAt")
     void addArtworkToGenre(@Param("genreId") String genreId, @Param("artworkId")String artworkId,
                            @Param("createdAt")LocalDateTime createdAt);
     @Query("MATCH (genre: Genre {id: $genreId})<-[relationship:BELONGS_TO_GENRE]-(artwork: Artwork {id: $artworkId})" +

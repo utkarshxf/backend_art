@@ -14,7 +14,7 @@ public interface GalleryRepository extends Neo4jRepository<Gallery,String> {
 
     @Query("MATCH (user:User {id: $userId})" +
             "            MATCH (gallery:Gallery {id: $galleryId})" +
-            "            MERGE (user)-[:LIKES {createdAt: $createdAt}]->(gallery)")
+            "            MERGE (user)-[rel_likes:LIKES]->(gallery) ON CREATE SET rel_likes.createdAt = $createdAt")
     void userLikesGallery(@Param("userId")String userId,
                           @Param("galleryId") String galleryId,
                           @Param("createdAt") LocalDateTime createdAt);
@@ -27,8 +27,8 @@ public interface GalleryRepository extends Neo4jRepository<Gallery,String> {
 
 
     @Query("MATCH (artist:Artist {id: $artistId}), (gallery:Gallery {id: $galleryId}), (year:Year {year: $year})" +
-            " MERGE (gallery)-[:RELEASED_IN {created: $createdAt}]->(year)" +
-            " MERGE (artist)-[:CREATED {created: $createdAt}]->(gallery)")
+            " MERGE (gallery)-[rel_released_in:RELEASED_IN]->(year) ON CREATE SET rel_released_in.created = $createdAt" +
+            " MERGE (artist)-[rel_created:CREATED]->(gallery) ON CREATE SET rel_created.created = $createdAt")
     void addReleasedYearAndArtist(@Param("artistId")String artistId,
                         @Param("galleryId") String galleryId,
                         @Param("year") Integer year,

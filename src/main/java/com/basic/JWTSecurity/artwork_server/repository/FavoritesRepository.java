@@ -16,14 +16,14 @@ public interface FavoritesRepository extends Neo4jRepository<Favorites,String> {
 
 
     @Query("MATCH (user: User {id: $userId}), (favorites: Favorites {id: $favoritesId})" +
-            " MERGE (user)-[:CREATED {createdAt: $createdAt}]->(favorites)")
+            " MERGE (user)-[rel_created:CREATED]->(favorites) ON CREATE SET rel_created.createdAt = $createdAt")
     void addFavoritesAndUserRelationship(@Param("favoritesId")String favoritesId,
                                          @Param("userId")String userId,
                                          @Param("createdAt") LocalDateTime createdAt);
 
 
     @Query("MATCH (artwork: Artwork {id: $artworkId}), (favorites: Favorites {id: $favoritesId})" +
-            " MERGE (favorites)-[:CONTAINS {createdAt: $createdAt}]->(artwork)")
+            " MERGE (favorites)-[rel_contains:CONTAINS]->(artwork) ON CREATE SET rel_contains.createdAt = $createdAt")
     void addArtworkToFavorites(@Param("favoritesId")String favoritesId,
                                @Param("artworkId")String artworkId,
                                @Param("createdAt") LocalDateTime createdAt);
