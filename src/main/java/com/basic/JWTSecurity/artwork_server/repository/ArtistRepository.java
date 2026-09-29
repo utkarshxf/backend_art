@@ -82,7 +82,9 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
            artist.image_url AS image_url,
            artist.wikipedia_url AS wikipedia_url,
            artist.description AS description,
-           CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow
+           CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow,
+           // blue tick: a real artist, not a profile an Artistry user created for themselves
+           NOT EXISTS { MATCH (:User)-[:IS_AN]->(artist) } AS verified
 """)
     GetArtist getArtistById(String currentUserId , String artistId);
 
@@ -101,7 +103,9 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
            artist.image_url AS image_url,
            artist.wikipedia_url AS wikipedia_url,
            artist.description AS description,
-           CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow
+           CASE WHEN follow IS NOT NULL THEN true ELSE false END AS follow,
+           // blue tick: a real artist, not a profile an Artistry user created for themselves
+           NOT EXISTS { MATCH (:User)-[:IS_AN]->(artist) } AS verified
 """)
     GetArtist getArtistByArtworkId(String userId , String ArtworkId);
 
@@ -137,7 +141,8 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
             WHERE totalLikes > 0
             ORDER BY totalLikes DESC
             SKIP $skip LIMIT $limit
-            RETURN artist.id AS artistId, artist.name AS name, artist.image_url AS imageUrl, totalLikes
+            RETURN artist.id AS artistId, artist.name AS name, artist.image_url AS imageUrl, totalLikes,
+                   NOT EXISTS { MATCH (:User)-[:IS_AN]->(artist) } AS verified
             """)
     List<TopArtistProjection> getTopArtistsByLikes(@Param("skip") Integer skip, @Param("limit") Integer limit);
 

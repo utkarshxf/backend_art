@@ -30,4 +30,6 @@ public class GetArtist {
     private String  wikipedia_url;
     private String  description;
     private Boolean follow;
+    // not linked to an Artistry account (a real artist rather than a user's own artist profile)
+    private Boolean verified;
 }

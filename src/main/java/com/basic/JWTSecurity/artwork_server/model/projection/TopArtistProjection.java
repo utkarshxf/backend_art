@@ -12,5 +12,6 @@ public class TopArtistProjection {
     private String name;
     private String imageUrl;
     private Long totalLikes;
+    private Boolean verified;
 }
 
