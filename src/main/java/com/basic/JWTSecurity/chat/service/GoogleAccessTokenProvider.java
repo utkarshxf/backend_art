@@ -28,7 +28,9 @@ public class GoogleAccessTokenProvider {
 
     static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
     static final String SCOPES =
-            "https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/firebase.messaging";
+            "https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/firebase.messaging"
+                    // account deletion: chat images in Storage and the Firebase sign-in accounts
+                    + " https://www.googleapis.com/auth/devstorage.read_write https://www.googleapis.com/auth/identitytoolkit";
     private static final String JWT_BEARER = "urn:ietf:params:oauth:grant-type:jwt-bearer";
     private static final Duration REFRESH_BEFORE_EXPIRY = Duration.ofMinutes(5);
 

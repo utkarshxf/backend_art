@@ -97,6 +97,76 @@ public class FirestoreRestClient {
         }
     }
 
+    /**
+     * Full resource names of the documents in {@code collectionId} whose array {@code field} contains {@code value}
+     * (ARRAY_CONTAINS query). Failures are a {@link ChatException#upstream()}.
+     */
+    public List<String> queryNamesWhereArrayContains(String collectionId, String field, String value) {
+        ObjectNode body = objectMapper.createObjectNode();
+        ObjectNode query = body.putObject("structuredQuery");
+        query.putArray("from").addObject().put("collectionId", collectionId);
+        query.putObject("select").putArray("fields").addObject().put("fieldPath", "__name__");
+        ObjectNode filter = query.putObject("where").putObject("fieldFilter");
+        filter.putObject("field").put("fieldPath", field);
+        filter.put("op", "ARRAY_CONTAINS");
+        filter.putObject("value").put("stringValue", value);
+        ChatHttpClient.Response response = api.send("POST", BASE_URL + databasePath(true) + "/documents:runQuery", body.toString());
+        if (!response.isSuccess()) {
+            logger.error("Firestore query on {} failed: HTTP {} {}", collectionId, response.status(), errorSummary(response.body()));
+            throw ChatException.upstream();
+        }
+        List<String> names = new java.util.ArrayList<>();
+        for (JsonNode row : readJson(response.body())) {
+            String name = row.path("document").path("name").asText("");
+            if (!name.isEmpty()) {
+                names.add(name);
+            }
+        }
+        return names;
+    }
+
+    /** Full resource names of every document in a collection, e.g. ("conversations", cid, "messages"). */
+    public List<String> listDocumentNames(String... collectionPath) {
+        String base = BASE_URL + databasePath(true) + "/documents/"
+                + Stream.of(collectionPath).map(FirestoreRestClient::encodeSegment).collect(Collectors.joining("/"))
+                + "?pageSize=300&mask.fieldPaths=__name__";
+        List<String> names = new java.util.ArrayList<>();
+        String pageToken = null;
+        do {
+            String url = pageToken == null ? base : base + "&pageToken=" + encodeSegment(pageToken);
+            ChatHttpClient.Response response = api.send("GET", url, null);
+            if (!response.isSuccess()) {
+                logger.error("Firestore list of {} failed: HTTP {} {}", String.join("/", collectionPath), response.status(),
+                        errorSummary(response.body()));
+                throw ChatException.upstream();
+            }
+            JsonNode page = readJson(response.body());
+            page.path("documents").forEach(doc -> names.add(doc.path("name").asText()));
+            pageToken = page.path("nextPageToken").asText(null);
+        } while (pageToken != null && !pageToken.isEmpty());
+        return names;
+    }
+
+    /** Deletes documents by full resource name, in batches of 500 (a missing document is not an error). */
+    public void deleteDocuments(List<String> names) {
+        for (int from = 0; from < names.size(); from += 500) {
+            ObjectNode body = objectMapper.createObjectNode();
+            ArrayNode writes = body.putArray("writes");
+            names.subList(from, Math.min(names.size(), from + 500)).forEach(name -> writes.addObject().put("delete", name));
+            ChatHttpClient.Response response = api.send("POST", BASE_URL + databasePath(true) + "/documents:commit", body.toString());
+            if (!response.isSuccess()) {
+                logger.error("Firestore delete of {} document(s) failed: HTTP {} {}", writes.size(), response.status(),
+                        errorSummary(response.body()));
+                throw ChatException.upstream();
+            }
+        }
+    }
+
+    /** Full resource name of a document path, e.g. ("users", "alice") -> projects/p/databases/(default)/documents/users/alice */
+    public String documentName(String... path) {
+        return databasePath(false) + "/documents/" + String.join("/", path);
+    }
+
     private String databasePath(boolean encoded) {
         String project = credentials.projectId();
         return "projects/" + (encoded ? encodeSegment(project) : project) + "/databases/(default)";
