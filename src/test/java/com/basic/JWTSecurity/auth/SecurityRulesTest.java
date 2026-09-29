@@ -15,6 +15,7 @@ import com.basic.JWTSecurity.auth.security.FirebaseTokenVerifier;
 import com.basic.JWTSecurity.auth.security.JwtUtils;
 import com.basic.JWTSecurity.auth.security.Ownership;
 import com.basic.JWTSecurity.auth.service.ProfileServiceImpl;
+import com.basic.JWTSecurity.chat.service.ChatService;
 import com.basic.JWTSecurity.shopping_server.service.PersonService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -80,6 +81,7 @@ class SecurityRulesTest {
     @MockBean private GenreService genreService;
     @MockBean private PersonService personService;
     @MockBean(name = "owner") private Ownership owner;
+    @MockBean private ChatService chatService;
 
     private String alice;
 
@@ -141,6 +143,8 @@ class SecurityRulesTest {
                 get("/shopping").param("name", "a"),
                 get("/admin/backup"),
                 put("/artwork/user/like/a1/alice"),
+                post("/chat/token"),
+                json(post("/chat/notify"), "{\"conversationId\":\"alice__bob\",\"messageId\":\"m1\"}"),
                 get("/no/such/endpoint"),
         }) {
             mvc.perform(request)

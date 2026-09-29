@@ -40,3 +40,6 @@ server:
 # Firebase project whose phone-auth ID tokens the backend accepts (not a secret)
 firebase:
   project-id: ${FIREBASE_PROJECT_ID:loyal-optics-388515}
+  # Chat (/chat/token, /chat/notify): base64 of a service-account key JSON of that project (SECRET, App Setting only).
+  # Empty = chat is disabled and /chat/** answers 503.
+  service-account-b64: ${FIREBASE_SERVICE_ACCOUNT_B64:}

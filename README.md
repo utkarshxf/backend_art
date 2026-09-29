@@ -927,6 +927,28 @@ The Artly system uses a rich graph database structure in Neo4j to model complex 
   ```
 - **Response**: Same as login
 
+### Chat APIs
+
+Chat messages live in Firestore (project `loyal-optics-388515`); the backend only signs the app into Firebase and
+sends pushes. Both endpoints need the app JWT and act as its subject (the username). They answer
+`503 {"message":"Chat is not configured yet","status":false}` until `FIREBASE_SERVICE_ACCOUNT_B64` (base64 of the
+Firebase service-account key JSON, an App Setting, never committed) is set.
+
+#### Chat sign-in token
+- **Endpoint**: `/chat/token`
+- **Method**: POST (no body)
+- **Response**: `{"token": "<Firebase custom token>", "uid": "<username>"}` for `signInWithCustomToken`
+
+#### Chat push notification
+- **Endpoint**: `/chat/notify`
+- **Method**: POST
+- **Request Body**: `{"conversationId": "alice__bob", "messageId": "<message doc id>"}`, sent after the message
+  write has reached Firestore
+- **Response**: `{"sent": <devices FCM accepted>}`. The caller must be a member of the conversation and the
+  message's sender (403 otherwise, 404 if either document is missing). Nothing is sent (`sent: 0`) when the
+  recipient muted the chat, has no devices, the message was unsent, is older than 15 minutes or was already pushed.
+  Dead FCM tokens are removed from `users/{recipient}/private/devices`.
+
 ### Artwork APIs
 
 #### Get Recommended Artwork
