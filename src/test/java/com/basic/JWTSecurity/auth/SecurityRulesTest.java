@@ -82,6 +82,7 @@ class SecurityRulesTest {
     @MockBean private PersonService personService;
     @MockBean(name = "owner") private Ownership owner;
     @MockBean private ChatService chatService;
+    @MockBean private com.basic.JWTSecurity.artwork_server.service.SearchService searchService;
 
     private String alice;
 
@@ -144,6 +145,7 @@ class SecurityRulesTest {
                 get("/admin/backup"),
                 put("/artwork/user/like/a1/alice"),
                 post("/chat/token"),
+                get("/search").param("q", "starry"),
                 json(post("/chat/notify"), "{\"conversationId\":\"alice__bob\",\"messageId\":\"m1\"}"),
                 get("/no/such/endpoint"),
         }) {
