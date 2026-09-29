@@ -42,8 +42,9 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
 
     @Query("""
     MATCH (artist:Artist {id: $artistId})
-    OPTIONAL MATCH (artist)-[created:CREATED]->(artwork:Artwork)
-    WHERE artwork IS NOT NULL AND NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
+    // MATCH, not OPTIONAL MATCH: an artist without artworks must return no rows, not one empty "Untitled" row
+    MATCH (artist)-[created:CREATED]->(artwork:Artwork)
+    WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
     OPTIONAL MATCH (user:User {id: $userId})-[like:LIKES]->(artwork)
     RETURN artwork.id AS id,
                     artwork.title AS title,
