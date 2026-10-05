@@ -11,10 +11,11 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
 
-/** FCM HTTP v1: one data-only, high-priority message to one registration token. */
+/** FCM HTTP v1: one data-only, high-priority message to one registration token, optionally with a time to live. */
 @Component
 public class FcmClient {
 
@@ -40,7 +41,11 @@ public class FcmClient {
         this.objectMapper = objectMapper;
     }
 
-    public Result send(String token, Map<String, String> data) {
+    /**
+     * {@code ttl}: how long FCM keeps the message for a device that is offline before dropping it (a call must not
+     * ring minutes later); null leaves FCM's default of four weeks.
+     */
+    public Result send(String token, Map<String, String> data, Duration ttl) {
         ObjectNode body = objectMapper.createObjectNode();
         ObjectNode message = body.putObject("message");
         message.put("token", token);
@@ -48,7 +53,11 @@ public class FcmClient {
         // FCM data values must be strings; null is rejected
         data.forEach((key, value) -> dataNode.put(key, value == null ? "" : value));
         // data-only + HIGH so the app's FirebaseMessagingService runs (and builds the notification) even in Doze
-        message.putObject("android").put("priority", "HIGH");
+        ObjectNode android = message.putObject("android").put("priority", "HIGH");
+        if (ttl != null) {
+            // a protobuf Duration in JSON: whole seconds followed by "s"
+            android.put("ttl", Math.max(0, ttl.getSeconds()) + "s");
+        }
 
         String url = "https://fcm.googleapis.com/v1/projects/"
                 + URLEncoder.encode(credentials.projectId(), StandardCharsets.UTF_8) + "/messages:send";

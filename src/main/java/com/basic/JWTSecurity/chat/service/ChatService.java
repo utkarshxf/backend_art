@@ -14,10 +14,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -35,8 +33,6 @@ public class ChatService {
     static final int MAX_UID_LENGTH = 128;
     /** Only fresh messages are pushed, so a caller cannot replay old ones at the peer. */
     static final Duration MAX_MESSAGE_AGE = Duration.ofMinutes(15);
-    /** A user has a handful of devices; this bounds the work (and time) of one request. */
-    static final int MAX_TOKENS = 20;
     static final int PREVIEW_LENGTH = 120;
     private static final int MAX_REMEMBERED = 10_000;
     private static final String LIKE = "❤️";
@@ -45,21 +41,21 @@ public class ChatService {
 
     private final ChatFirebaseCredentials credentials;
     private final FirestoreRestClient firestore;
-    private final FcmClient fcm;
+    private final DevicePusher pusher;
     private final Clock clock;
 
     /** conversationId/messageId already pushed (or being pushed) → when, so each message is pushed once. */
     private final Map<String, Instant> notified = new ConcurrentHashMap<>();
 
     @Autowired
-    public ChatService(ChatFirebaseCredentials credentials, FirestoreRestClient firestore, FcmClient fcm) {
-        this(credentials, firestore, fcm, Clock.systemUTC());
+    public ChatService(ChatFirebaseCredentials credentials, FirestoreRestClient firestore, DevicePusher pusher) {
+        this(credentials, firestore, pusher, Clock.systemUTC());
     }
 
-    ChatService(ChatFirebaseCredentials credentials, FirestoreRestClient firestore, FcmClient fcm, Clock clock) {
+    ChatService(ChatFirebaseCredentials credentials, FirestoreRestClient firestore, DevicePusher pusher, Clock clock) {
         this.credentials = credentials;
         this.firestore = firestore;
-        this.fcm = fcm;
+        this.pusher = pusher;
         this.clock = clock;
     }
 
@@ -117,7 +113,8 @@ public class ChatService {
         if (!caller.equals(message.get("sender"))) {
             throw ChatException.forbidden("You can only send notifications for your own messages");
         }
-        if (Boolean.TRUE.equals(message.get("unsent"))) {
+        // a call's row in the thread is written by the backend (CallService), which sends its own pushes
+        if (Boolean.TRUE.equals(message.get("unsent")) || "call".equals(message.get("type"))) {
             return 0;
         }
         Instant now = clock.instant();
@@ -144,16 +141,8 @@ public class ChatService {
     }
 
     private int push(String sender, String recipient, String conversationId, String messageId, Map<String, Object> message) {
-        List<String> tokens = firestore.getDocument("users", recipient, "private", "devices")
-                .map(devices -> strings(devices.get("tokens")))
-                .orElse(List.of());
-        Set<String> unique = new LinkedHashSet<>();
-        for (String token : tokens) {
-            if (!token.isBlank() && unique.size() < MAX_TOKENS) {
-                unique.add(token);
-            }
-        }
-        if (unique.isEmpty()) {
+        List<String> tokens = pusher.tokens(recipient);
+        if (tokens.isEmpty()) {
             return 0;
         }
 
@@ -162,40 +151,18 @@ public class ChatService {
         data.put("conversationId", conversationId);
         data.put("messageId", messageId);
         data.put("sender", sender);
-        Map<String, Object> profile = senderProfile(sender);
-        String name = profile.get("name") instanceof String s ? s.trim() : "";
-        data.put("senderName", name.isEmpty() ? sender : name);
-        data.put("senderAvatar", profile.get("avatar") instanceof String avatar ? avatar.trim() : "");
+        DevicePusher.Profile profile = pusher.profile(sender);
+        data.put("senderName", profile.name());
+        data.put("senderAvatar", profile.avatar());
         data.put("preview", preview(message));
 
-        int sent = 0;
-        int failed = 0;
-        List<String> dead = new ArrayList<>();
-        for (String token : unique) {
-            switch (fcm.send(token, data)) {
-                case SENT -> sent++;
-                case TOKEN_INVALID -> dead.add(token);
-                case FAILED -> failed++;
-            }
-        }
-        if (!dead.isEmpty()) {
-            firestore.removeFromArray("tokens", dead, "users", recipient, "private", "devices");
-        }
+        DevicePusher.Outcome outcome = pusher.send(recipient, tokens, data, null);
         logger.info("Chat push for {}/{}: sent to {} of {} device(s), removed {} dead token(s)",
-                conversationId, messageId, sent, unique.size(), dead.size());
-        if (sent == 0 && failed > 0) {
+                conversationId, messageId, outcome.sent(), tokens.size(), outcome.removed());
+        if (outcome.sent() == 0 && outcome.failed() > 0) {
             throw ChatException.upstream();
         }
-        return sent;
-    }
-
-    /** users/{sender} for the notification's title and picture; the push still goes out without it. */
-    private Map<String, Object> senderProfile(String sender) {
-        try {
-            return firestore.getDocument("users", sender).orElse(Map.of());
-        } catch (ChatException e) {
-            return Map.of();
-        }
+        return outcome.sent();
     }
 
     /** Same wording the app uses for lastMessage.preview. */
@@ -242,11 +209,7 @@ public class ChatService {
 
     /** A Firestore document id that is safe to put in a REST path. */
     private static void requireDocumentId(String id, String field) {
-        boolean valid = id != null && !id.isBlank() && id.length() <= 300
-                && !id.contains("/") && !id.equals(".") && !id.equals("..")
-                && !(id.startsWith("__") && id.endsWith("__"))
-                && id.chars().noneMatch(Character::isISOControl);
-        if (!valid) {
+        if (!FirestoreRestClient.isDocumentId(id)) {
             throw ChatException.badRequest("Invalid " + field);
         }
     }

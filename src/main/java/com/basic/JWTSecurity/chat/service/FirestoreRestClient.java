@@ -4,6 +4,7 @@ import com.basic.JWTSecurity.chat.config.ChatFirebaseCredentials;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,23 +16,30 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Firestore REST v1 with the service account (bypasses security rules): reads single documents and removes values
- * from an array field. Documents are addressed by their path segments, e.g. {@code ("conversations", cid)}.
+ * Firestore REST v1 with the service account (bypasses security rules): reads single documents, removes values
+ * from an array field, and commits atomic writes with preconditions (calls). Documents are addressed by their path
+ * segments, e.g. {@code ("conversations", cid)}.
  */
 @Component
 public class FirestoreRestClient {
 
     private static final String BASE_URL = "https://firestore.googleapis.com/v1/";
     private static final ObjectMapper ERROR_READER = new ObjectMapper();
+    /** A commit Firestore refused because a precondition did not hold or it collided with another write. */
+    private static final Set<String> CONFLICTS = Set.of("FAILED_PRECONDITION", "ALREADY_EXISTS", "NOT_FOUND", "ABORTED");
+    private static final Pattern PLAIN_FIELD = Pattern.compile("[A-Za-z_][A-Za-z_0-9]*");
 
     private static final Logger logger = LoggerFactory.getLogger(FirestoreRestClient.class);
 
@@ -50,6 +58,15 @@ public class FirestoreRestClient {
      * Any other failure is a {@link ChatException#upstream()}.
      */
     public Optional<Map<String, Object>> getDocument(String... path) {
+        return getSnapshot(path).map(Snapshot::fields);
+    }
+
+    /** A document's decoded fields with the version they were read at. */
+    public record Snapshot(Map<String, Object> fields, String updateTime) {
+    }
+
+    /** {@link #getDocument} plus the document's update time, the precondition of {@link Write#ifUnchangedSince}. */
+    public Optional<Snapshot> getSnapshot(String... path) {
         String url = BASE_URL + databasePath(true) + "/documents/"
                 + Stream.of(path).map(FirestoreRestClient::encodeSegment).collect(Collectors.joining("/"));
         ChatHttpClient.Response response = api.send("GET", url, null);
@@ -62,7 +79,89 @@ public class FirestoreRestClient {
             throw ChatException.upstream();
         }
         JsonNode document = readJson(response.body());
-        return Optional.of(decodeFields(document.path("fields")));
+        return Optional.of(new Snapshot(decodeFields(document.path("fields")), document.path("updateTime").asText("")));
+    }
+
+    /** One write of a {@link #commit}, made by {@link #create} or {@link #update}. */
+    public static final class Write {
+        private final ObjectNode node;
+
+        private Write(ObjectNode node) {
+            this.node = node;
+        }
+
+        /** Refuse the whole commit if the document was written after it was read ({@link Snapshot#updateTime}). */
+        public Write ifUnchangedSince(String updateTime) {
+            node.putObject("currentDocument").put("updateTime", updateTime);
+            return this;
+        }
+
+        /** Adds {@code by} to a number field (a missing field counts as 0); see {@link #fieldPath}. */
+        public Write increment(String fieldPath, long by) {
+            ArrayNode transforms = node.has("updateTransforms")
+                    ? (ArrayNode) node.get("updateTransforms") : node.putArray("updateTransforms");
+            ObjectNode transform = transforms.addObject();
+            transform.put("fieldPath", fieldPath);
+            transform.putObject("increment").put("integerValue", Long.toString(by));
+            return this;
+        }
+    }
+
+    /** Writes a new document; the commit is refused if it already exists. Values: see {@link #encodeValue}. */
+    public Write create(Map<String, Object> fields, String... path) {
+        ObjectNode write = objectMapper.createObjectNode();
+        ObjectNode document = write.putObject("update");
+        document.put("name", documentName(path));
+        document.set("fields", encodeFields(fields));
+        write.putObject("currentDocument").put("exists", false);
+        return new Write(write);
+    }
+
+    /**
+     * Replaces exactly the given top-level fields of an existing document (the others are kept); the commit is
+     * refused if the document does not exist.
+     */
+    public Write update(Map<String, Object> fields, String... path) {
+        ObjectNode write = objectMapper.createObjectNode();
+        ObjectNode document = write.putObject("update");
+        document.put("name", documentName(path));
+        document.set("fields", encodeFields(fields));
+        ArrayNode mask = write.putObject("updateMask").putArray("fieldPaths");
+        fields.keySet().forEach(field -> mask.add(fieldPath(field)));
+        write.putObject("currentDocument").put("exists", true);
+        return new Write(write);
+    }
+
+    /**
+     * Applies the writes atomically. False when a precondition did not hold (a document was created, changed or
+     * deleted meanwhile): nothing was written and the caller should read again and decide anew. Any other failure is
+     * a {@link ChatException#upstream()}.
+     */
+    public boolean commit(List<Write> writes) {
+        ObjectNode body = objectMapper.createObjectNode();
+        ArrayNode array = body.putArray("writes");
+        writes.forEach(write -> array.add(write.node));
+        ChatHttpClient.Response response = api.send("POST", BASE_URL + databasePath(true) + "/documents:commit", body.toString());
+        if (response.isSuccess()) {
+            return true;
+        }
+        if (CONFLICTS.contains(readJson(response.body()).path("error").path("status").asText(""))) {
+            return false;
+        }
+        logger.error("Firestore commit of {} write(s) failed: HTTP {} {}", writes.size(), response.status(),
+                errorSummary(response.body()));
+        throw ChatException.upstream();
+    }
+
+    /**
+     * A field path for update masks and transforms, e.g. {@code fieldPath("unread", username)}: segments that are
+     * not plain identifiers (usernames with dots, dashes, ...) are back-quoted.
+     */
+    public static String fieldPath(String... segments) {
+        return Stream.of(segments)
+                .map(segment -> PLAIN_FIELD.matcher(segment).matches()
+                        ? segment : "`" + segment.replace("\\", "\\\\").replace("`", "\\`") + "`")
+                .collect(Collectors.joining("."));
     }
 
     /**
@@ -162,6 +261,14 @@ public class FirestoreRestClient {
         }
     }
 
+    /** Whether {@code id} can be a document id that is safe to put in a REST path (usernames, conversation and call ids). */
+    public static boolean isDocumentId(String id) {
+        return id != null && !id.isBlank() && id.length() <= 300
+                && !id.contains("/") && !id.equals(".") && !id.equals("..")
+                && !(id.startsWith("__") && id.endsWith("__"))
+                && id.chars().noneMatch(Character::isISOControl);
+    }
+
     /** Full resource name of a document path, e.g. ("users", "alice") -> projects/p/databases/(default)/documents/users/alice */
     public String documentName(String... path) {
         return databasePath(false) + "/documents/" + String.join("/", path);
@@ -198,6 +305,44 @@ public class FirestoreRestClient {
         } catch (IOException e) {
             return body.length() > 300 ? body.substring(0, 300) : body;
         }
+    }
+
+    /** The reverse of {@link #decodeFields}. */
+    static ObjectNode encodeFields(Map<String, ?> fields) {
+        ObjectNode encoded = JsonNodeFactory.instance.objectNode();
+        fields.forEach((name, value) -> encoded.set(name, encodeValue(value)));
+        return encoded;
+    }
+
+    /**
+     * A Java value as a typed Firestore value: String, Boolean, Integer / Long (integerValue), other numbers
+     * (doubleValue), Instant (timestampValue), Map with string keys (mapValue), Collection (arrayValue), null.
+     */
+    static ObjectNode encodeValue(Object value) {
+        ObjectNode node = JsonNodeFactory.instance.objectNode();
+        if (value == null) {
+            node.putNull("nullValue");
+        } else if (value instanceof String string) {
+            node.put("stringValue", string);
+        } else if (value instanceof Boolean bool) {
+            node.put("booleanValue", bool);
+        } else if (value instanceof Integer || value instanceof Long) {
+            // 64-bit integers travel as JSON strings
+            node.put("integerValue", value.toString());
+        } else if (value instanceof Number number) {
+            node.put("doubleValue", number.doubleValue());
+        } else if (value instanceof Instant instant) {
+            node.put("timestampValue", instant.toString());
+        } else if (value instanceof Map<?, ?> map) {
+            ObjectNode fields = node.putObject("mapValue").putObject("fields");
+            map.forEach((name, element) -> fields.set(String.valueOf(name), encodeValue(element)));
+        } else if (value instanceof Collection<?> collection) {
+            ArrayNode values = node.putObject("arrayValue").putArray("values");
+            collection.forEach(element -> values.add(encodeValue(element)));
+        } else {
+            throw new IllegalArgumentException("Not a Firestore value: " + value.getClass().getName());
+        }
+        return node;
     }
 
     /** Decodes a document's {@code fields} object: {@code {"name": {"stringValue": "x"}}} becomes {@code {name=x}}. */

@@ -84,6 +84,7 @@ class SecurityRulesTest {
     @MockBean private ChatService chatService;
     @MockBean private com.basic.JWTSecurity.artwork_server.service.SearchService searchService;
     @MockBean private com.basic.JWTSecurity.account.AccountDeletionService accountDeletionService;
+    @MockBean private com.basic.JWTSecurity.call.service.CallService callService;
 
     private String alice;
 

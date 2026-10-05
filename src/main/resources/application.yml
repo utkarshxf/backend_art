@@ -43,3 +43,10 @@ firebase:
   # Chat (/chat/token, /chat/notify): base64 of a service-account key JSON of that project (SECRET, App Setting only).
   # Empty = chat is disabled and /chat/** answers 503.
   service-account-b64: ${FIREBASE_SERVICE_ACCOUNT_B64:}
+
+# Calls (/chat/call/**) run on Agora RTC. The App ID is public (the app receives it with every token); the App
+# Certificate signs the tokens and is a SECRET (App Setting only). Either one empty = calls are disabled and
+# /chat/call/** answers 503. Calls also need the Firebase service account above.
+agora:
+  app-id: ${AGORA_APP_ID:}
+  app-certificate: ${AGORA_APP_CERTIFICATE:}

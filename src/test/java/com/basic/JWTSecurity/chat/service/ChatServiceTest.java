@@ -98,8 +98,9 @@ class ChatServiceTest {
     private ChatService newService(ChatFirebaseCredentials credentials) {
         GoogleAccessTokenProvider tokens = new GoogleAccessTokenProvider(credentials, http, MAPPER, clock);
         GoogleApiClient api = new GoogleApiClient(tokens, http);
-        return new ChatService(credentials, new FirestoreRestClient(api, credentials, MAPPER),
-                new FcmClient(api, credentials, MAPPER), clock);
+        FirestoreRestClient firestore = new FirestoreRestClient(api, credentials, MAPPER);
+        return new ChatService(credentials, firestore,
+                new DevicePusher(firestore, new FcmClient(api, credentials, MAPPER)), clock);
     }
 
     // ---- POST /chat/token
@@ -386,6 +387,17 @@ class ChatServiceTest {
 
         assertEquals(0, service.notifyRecipient("alice", "alice__bob", "old"));
         assertEquals(0, service.notifyRecipient("alice", "alice__bob", "unsent"));
+        assertTrue(google.requestsTo(FCM_URL).isEmpty());
+    }
+
+    @Test
+    void aCallsRowInTheThreadIsNotPushedAsAMessage() {
+        google.conversation("alice", "bob", Map.of());
+        google.devices("bob", "token-1");
+        // written by the backend when the call ended; the caller cannot turn it into a message notification
+        google.message("alice__bob", "call-1", "alice", "call", "Missed video call", NOW);
+
+        assertEquals(0, service.notifyRecipient("alice", "alice__bob", "call-1"));
         assertTrue(google.requestsTo(FCM_URL).isEmpty());
     }
 

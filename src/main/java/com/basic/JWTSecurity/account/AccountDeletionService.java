@@ -34,8 +34,8 @@ import java.util.Set;
  *   <li>graph: the User, its artist profile with its artworks and galleries (and comments on them), its own
  *       comments and collections; likes, follows and views go with the nodes;</li>
  *   <li>Mongo: the login profile;</li>
- *   <li>chat (Firestore): every conversation the user is in with all its messages, the chat profile and device
- *       tokens, and the chat photos of those conversations in Storage;</li>
+ *   <li>chat (Firestore): every conversation the user is in with all its messages, the records of their calls, the
+ *       chat profile and device tokens, and the chat photos of those conversations in Storage;</li>
  *   <li>Storage: the user's uploaded artwork / profile images;</li>
  *   <li>Firebase Auth: the chat account (uid == username) and the phone / Google sign-in accounts.</li>
  * </ul>
@@ -167,6 +167,8 @@ public class AccountDeletionService {
                 firestore.deleteDocuments(docs);
                 deleteStoragePrefix("chat/" + conversationId + "/");
             }
+            // the records of the calls the user made and received (their rows in the threads went with the messages)
+            firestore.deleteDocuments(firestore.queryNamesWhereArrayContains("calls", "usernames", username));
             firestore.deleteDocuments(List.of(
                     firestore.documentName("users", username, "private", "devices"),
                     firestore.documentName("users", username)));
