@@ -174,7 +174,8 @@ public class ChatService {
                 return text.isEmpty() ? "Sent a message" : truncate(text, PREVIEW_LENGTH);
             }
             case "image":
-                return "Sent a photo";
+                // a sticker travels as an image message flagged as one
+                return Boolean.TRUE.equals(message.get("sticker")) ? "Sent a sticker" : "Sent a photo";
             case "artwork":
                 return "Shared a post";
             case "profile":

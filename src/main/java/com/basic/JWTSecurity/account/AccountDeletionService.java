@@ -35,7 +35,8 @@ import java.util.Set;
  *       comments and collections; likes, follows and views go with the nodes;</li>
  *   <li>Mongo: the login profile;</li>
  *   <li>chat (Firestore): every conversation the user is in with all its messages, the records of their calls, the
- *       chat profile and device tokens, and the chat photos of those conversations in Storage;</li>
+ *       sticker collection, the chat profile and device tokens, and the chat photos of those conversations and the
+ *       sticker images in Storage;</li>
  *   <li>Storage: the user's uploaded artwork / profile images;</li>
  *   <li>Firebase Auth: the chat account (uid == username) and the phone / Google sign-in accounts.</li>
  * </ul>
@@ -169,6 +170,9 @@ public class AccountDeletionService {
             }
             // the records of the calls the user made and received (their rows in the threads went with the messages)
             firestore.deleteDocuments(firestore.queryNamesWhereArrayContains("calls", "usernames", username));
+            // the sticker collection and its images (conversations they were sent in are gone by now)
+            firestore.deleteDocuments(firestore.listDocumentNames("users", username, "stickers"));
+            deleteStoragePrefix("stickers/" + username + "/");
             firestore.deleteDocuments(List.of(
                     firestore.documentName("users", username, "private", "devices"),
                     firestore.documentName("users", username)));

@@ -450,7 +450,10 @@ class ChatServiceTest {
         assertEquals("Shared a post", ChatService.preview(Map.of("type", "artwork")));
         assertEquals("Shared a profile", ChatService.preview(Map.of("type", "profile")));
         assertEquals("❤️", ChatService.preview(Map.of("type", "like")));
-        assertEquals("Sent a message", ChatService.preview(Map.of("type", "sticker")));
+        // a sticker is an image message with the sticker flag
+        assertEquals("Sent a sticker", ChatService.preview(Map.of("type", "image", "sticker", true)));
+        assertEquals("Sent a photo", ChatService.preview(Map.of("type", "image", "sticker", false)));
+        assertEquals("Sent a message", ChatService.preview(Map.of("type", "poll")));
         String emojis = "😀".repeat(130);
         String cut = ChatService.preview(Map.of("type", "text", "text", emojis));
         assertEquals(120, cut.codePointCount(0, cut.length()));
