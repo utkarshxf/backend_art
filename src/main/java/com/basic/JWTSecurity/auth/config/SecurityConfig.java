@@ -6,6 +6,7 @@ import com.basic.JWTSecurity.auth.security.AuthEntryPointJwt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -38,6 +39,8 @@ public class SecurityConfig {
         http.authorizeHttpRequests(authorizeRequests ->
                 authorizeRequests
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // Called by the keep-alive workflow, which has no JWT
+                        .requestMatchers(HttpMethod.GET, "/health").permitAll()
                         // Everything the app calls before it has a JWT: log in, sign up, reset the password,
                         // check a username while creating the account
                         .requestMatchers("/login", "/signup",

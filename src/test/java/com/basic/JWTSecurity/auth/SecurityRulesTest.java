@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -85,6 +86,7 @@ class SecurityRulesTest {
     @MockBean private com.basic.JWTSecurity.artwork_server.service.SearchService searchService;
     @MockBean private com.basic.JWTSecurity.account.AccountDeletionService accountDeletionService;
     @MockBean private com.basic.JWTSecurity.call.service.CallService callService;
+    @MockBean private com.basic.JWTSecurity.artwork_server.service.DatabaseKeepAliveService keepAliveService;
 
     private String alice;
 
@@ -129,6 +131,26 @@ class SecurityRulesTest {
     void publicEndpointsIgnoreAStaleToken() throws Exception {
         mvc.perform(as(expiredToken("alice"), get("/isValidUsername").param("username", "newname")))
                 .andExpect(status().isOk());
+    }
+
+    // the keep-alive workflow calls it without a JWT
+    @Test
+    void healthIsPublic() throws Exception {
+        mvc.perform(get("/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.mongodb").value("UP"))
+                .andExpect(jsonPath("$.neo4j").value("UP"));
+    }
+
+    @Test
+    void healthIs503WhenADatabaseIsDown() throws Exception {
+        doThrow(new RuntimeException("paused")).when(keepAliveService).pingNeo4j();
+        mvc.perform(get("/health"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.status").value("DOWN"))
+                .andExpect(jsonPath("$.mongodb").value("UP"))
+                .andExpect(jsonPath("$.neo4j").value("DOWN"));
     }
 
     // ---- everything else needs a valid JWT

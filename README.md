@@ -1453,18 +1453,23 @@ graph TD
 
 ## Deployment
 
-The application is deployed on DigitalOcean and can be accessed at:
-**🌐 Production URL**: https://hammerhead-app-zgpcv.ondigitalocean.app/
+The application runs on Azure App Service (`artly-backend`); every push to `master` builds and deploys it
+(`.github/workflows/master_artly-backend.yml`).
+**🌐 Production URL**: https://artly-backend.azurewebsites.net/
 
 ### Environment Configuration
 - **Development**: `http://localhost:7040`
-- **Staging**: `https://staging-artly.ondigitalocean.app`
-- **Production**: `https://hammerhead-app-zgpcv.ondigitalocean.app`
+- **Production**: `https://artly-backend.azurewebsites.net`
 
-### Health Checks
-- **API Health**: `/actuator/health`
-- **Database Status**: `/actuator/health/db`
-- **System Metrics**: `/actuator/metrics`
+### Health Checks and Keep-Alive
+- **`GET /health`** (no JWT needed): pings MongoDB and Neo4j and answers `200 {"status":"UP","mongodb":"UP","neo4j":"UP"}`,
+  or `503` with the database that is `DOWN`.
+- **Keep-alive workflow** (`.github/workflows/keep-alive.yml`): calls `/health` every 5 minutes, so the Azure app is
+  never unloaded for being idle (which makes the next request wait ~50 s) and both free-tier databases stay active.
+  A failed run means the backend or a database is down. It only runs from `master`; in a public repository GitHub
+  turns scheduled workflows off after 60 days without a commit, and re-enabling it is one click in the Actions tab.
+- **Neo4j heartbeat**: `DatabaseKeepAliveService` writes a single `:KeepAlive` node a minute after startup and every
+  6 hours, because Neo4j Aura Free pauses an instance after 72 hours without a write.
 
 ## Technology Stack
 

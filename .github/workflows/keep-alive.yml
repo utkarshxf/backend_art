@@ -1,0 +1,27 @@
+# Calls GET /health every 5 minutes so the backend and its databases never go idle:
+# - Azure App Service (without Always On) unloads the app after 20 idle minutes; the next request then waits ~50 s
+# - /health pings MongoDB Atlas and Neo4j Aura, so neither free tier sees an inactive database
+# A failed run (backend or a database down) shows up in the Actions tab and GitHub emails it.
+# Scheduled workflows only run from the default branch (master).
+
+name: Keep backend awake
+
+on:
+  schedule:
+    # Every 5 minutes (GitHub's minimum), offset from :00 when GitHub's schedule queue is busiest
+    - cron: '3-59/5 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: GET /health
+        # A cold start takes ~50 s, so allow 2 minutes per try and retry a failure (503 or no answer) twice
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --max-time 120 --retry 2 --retry-delay 15 --retry-all-errors \
+            https://artly-backend.azurewebsites.net/health
