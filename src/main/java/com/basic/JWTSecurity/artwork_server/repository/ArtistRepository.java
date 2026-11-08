@@ -33,6 +33,14 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
                                          @Param("genreId") String genreId);
 
 
+    // Admin catalogue writes: link an artwork to its artist without the Year/Genre side conditions of
+    // addArtistAndArtworkRelationship, so works with an unknown year can still be linked
+    @Query("MATCH (artist: Artist {id: $artistId}), (artwork: Artwork {id: $artworkId}) " +
+            "MERGE (artist)-[rel_created:CREATED]->(artwork) ON CREATE SET rel_created.createdAt = $createdAt")
+    void linkArtistToArtwork(@Param("artistId") String artistId,
+                             @Param("artworkId") String artworkId,
+                             @Param("createdAt") LocalDateTime createdAt);
+
     @Query("MATCH (artist:Artist) " +
             "WHERE artist.name STARTS WITH $artistName " +
             "RETURN artist.id AS id, artist.name AS name, artist.image_url AS image_url " +

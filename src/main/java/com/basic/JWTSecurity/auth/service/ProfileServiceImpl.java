@@ -53,6 +53,22 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
         return profileRepository.findByEmail(email);
     }
 
+    // Comma-separated app usernames that also get ROLE_ADMIN (Azure app setting app.admin.usernames).
+    // Empty by default: nobody is an admin until the owner names an account.
+    @Value("${app.admin.usernames:}")
+    private String adminUsernames;
+
+    private String[] rolesFor(String username) {
+        if (username != null && adminUsernames != null && !adminUsernames.isBlank()) {
+            for (String admin : adminUsernames.split(",")) {
+                if (username.equalsIgnoreCase(admin.trim())) {
+                    return new String[]{"USER", "ADMIN"};
+                }
+            }
+        }
+        return new String[]{"USER"};
+    }
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
@@ -66,7 +82,7 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
 
         return User.withUsername(profile.getUsername())
                 .password(profile.getPassword())
-                .roles("USER")
+                .roles(rolesFor(profile.getUsername()))
                 .build();
     }
 

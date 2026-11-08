@@ -76,6 +76,7 @@ class SecurityRulesTest {
     @MockBean private UserService userService;
     @MockBean private ArtworkService artworkService;
     @MockBean private ArtistService artistService;
+    @MockBean private com.basic.JWTSecurity.artwork_server.service.AdminService adminService;
     @MockBean private CommentService commentService;
     @MockBean private FavoritesService favoritesService;
     @MockBean private GalleryService galleryService;

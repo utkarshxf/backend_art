@@ -142,6 +142,19 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
             """)
     String updateArtworkStatus(@Param("artworkId") String artworkId, @Param("status") String status);
 
+    // Admin catalogue writes: year and genre links managed directly so an artwork is never forced to have a year
+    @Query("MATCH (artwork: Artwork {id: $artworkId}), (year: Year {year: $year}) " +
+            "MERGE (artwork)-[rel_released_in:RELEASED_IN]->(year) ON CREATE SET rel_released_in.createdAt = $createdAt")
+    void linkReleasedIn(@Param("artworkId") String artworkId,
+                        @Param("year") Integer year,
+                        @Param("createdAt") LocalDateTime createdAt);
+
+    @Query("MATCH (artwork:Artwork {id: $artworkId})-[rel:BELONGS_TO_GENRE]->(:Genre) DELETE rel")
+    void clearGenres(@Param("artworkId") String artworkId);
+
+    @Query("MATCH (artwork:Artwork {id: $artworkId})-[rel:RELEASED_IN]->(:Year) DELETE rel")
+    void clearReleasedIn(@Param("artworkId") String artworkId);
+
 
 //    @Query(
 //            "MATCH (user:User {id: $userId}) " +
