@@ -41,6 +41,8 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // Called by the keep-alive workflow, which has no JWT
                         .requestMatchers(HttpMethod.GET, "/health").permitAll()
+                        // Only the bundled static panel is public. Admin APIs remain role-guarded.
+                        .requestMatchers(HttpMethod.GET, "/admin-ui", "/admin-ui/**").permitAll()
                         // Everything the app calls before it has a JWT: log in, sign up, reset the password,
                         // check a username while creating the account
                         .requestMatchers("/login", "/signup",

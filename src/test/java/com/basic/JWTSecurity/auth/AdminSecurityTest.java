@@ -176,4 +176,46 @@ class AdminSecurityTest {
         mvc.perform(as(alice, json(post("/artwork/artist/bob"), "{\"title\":\"t\",\"genreId\":\"g\"}")))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void bundledUiIsPublicButApisStayPrivate() throws Exception {
+        mvc.perform(get("/admin-ui")).andExpect(status().is3xxRedirection());
+        mvc.perform(get("/admin-ui/login/"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(
+                        org.hamcrest.Matchers.containsString("App username")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string(
+                        "Content-Security-Policy", org.hamcrest.Matchers.containsString("sha256-")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string(
+                        "Cache-Control", "no-cache"));
+        mvc.perform(get("/admin-ui/dashboard/"))
+                .andExpect(status().isOk()); // public shell contains no catalogue data
+        mvc.perform(get("/admin-ui/login"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/admin-ui/missing.js")).andExpect(status().isNotFound());
+        mvc.perform(get("/admin-ui/not-a-route/")).andExpect(status().isNotFound());
+        mvc.perform(post("/admin-ui/login/")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/artist/search?query=Hokusai&responseSize=5"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/admin/artworks/w1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void hashedUiAssetsHaveLongCacheButMissingAssetsNeverReturnHtml() throws Exception {
+        java.nio.file.Path root = java.nio.file.Path.of("src/main/resources/static/admin-ui/_next/static");
+        String relative;
+        try (java.util.stream.Stream<java.nio.file.Path> files = java.nio.file.Files.walk(root)) {
+            java.nio.file.Path asset = files.filter(p -> p.toString().endsWith(".js")).findFirst().orElseThrow();
+            relative = root.relativize(asset).toString().replace('\\', '/');
+        }
+        mvc.perform(get("/admin-ui/_next/static/" + relative))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string(
+                        "Cache-Control", org.hamcrest.Matchers.containsString("immutable")));
+        mvc.perform(get("/admin-ui/_next/static/missing.js"))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/admin-ui/login/").header("Authorization", "Bearer invalid-token"))
+                .andExpect(status().isOk());
+    }
 }
