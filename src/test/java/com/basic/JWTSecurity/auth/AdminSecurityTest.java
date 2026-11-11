@@ -115,6 +115,9 @@ class AdminSecurityTest {
                 json(put("/admin/artworks/w1/status"), "{\"status\":\"BLOCKED\"}"),
                 delete("/admin/artworks/w1"),
                 json(post("/admin/genres"), "{\"name\":\"Ukiyo-e\"}"),
+                get("/admin/stats"),
+                get("/admin/users"),
+                get("/admin/users/u1"),
         }) {
             mvc.perform(request)
                     .andExpect(status().isUnauthorized())
@@ -133,6 +136,9 @@ class AdminSecurityTest {
                 json(put("/admin/artworks/w1/status"), "{\"status\":\"BLOCKED\"}"),
                 delete("/admin/artworks/w1"),
                 json(post("/admin/genres"), "{\"name\":\"Ukiyo-e\"}"),
+                get("/admin/stats"),
+                get("/admin/users"),
+                get("/admin/users/u1"),
         }) {
             mvc.perform(as(alice, request))
                     .andExpect(status().isForbidden())
@@ -146,6 +152,9 @@ class AdminSecurityTest {
         when(adminService.createArtwork(org.mockito.ArgumentMatchers.eq("a1"), org.mockito.ArgumentMatchers.any())).thenReturn("w1");
         when(adminService.createGenre("Ukiyo-e")).thenReturn(java.util.Map.of("id", "g1", "key", "g1", "name", "Ukiyo-e"));
         when(adminService.getArtworkForAudit("w1")).thenReturn(java.util.Map.of("id", "w1", "title", "Wave"));
+        when(adminService.getCatalogueStats()).thenReturn(
+                new com.basic.JWTSecurity.artwork_server.dto.CatalogueStatsRecord(7, 3, 2, 1,
+                        java.util.List.of(new com.basic.JWTSecurity.artwork_server.dto.CatalogueStatsRecord.ArtistArtworkCount("a1", "Hokusai", 5))));
 
         mvc.perform(as(curator, json(post("/admin/artists"), "{\"name\":\"Hokusai\"}")))
                 .andExpect(status().isCreated())
@@ -167,6 +176,40 @@ class AdminSecurityTest {
         mvc.perform(as(curator, json(post("/admin/genres"), "{\"name\":\"Ukiyo-e\"}")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value("g1"));
+        mvc.perform(as(curator, get("/admin/stats")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalArtworks").value(7))
+                .andExpect(jsonPath("$.totalArtists").value(3))
+                .andExpect(jsonPath("$.totalGenres").value(2))
+                .andExpect(jsonPath("$.deletedArtworks").value(1))
+                .andExpect(jsonPath("$.artists[0].name").value("Hokusai"))
+                .andExpect(jsonPath("$.artists[0].artworkCount").value(5));
+
+        when(adminService.listUsers(org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.eq("joined"),
+                org.mockito.ArgumentMatchers.eq("desc"), org.mockito.ArgumentMatchers.isNull()))
+                .thenReturn(java.util.List.of(new com.basic.JWTSecurity.artwork_server.dto.AdminUserSummaryRecord(
+                        "665f0a1b2c3d4e5f6a7b8c9d", "alice", "alice@example.com", "+919999999999",
+                        "2024-06-01T10:15:30Z", false, true, 3, 14, 7, 2)));
+        mvc.perform(as(curator, get("/admin/users")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].username").value("alice"))
+                .andExpect(jsonPath("$[0].joinedAt").value("2024-06-01T10:15:30Z"))
+                .andExpect(jsonPath("$[0].followerCount").value(7));
+
+        when(adminService.getUserDetails("alice")).thenReturn(
+                new com.basic.JWTSecurity.artwork_server.dto.AdminUserDetailsRecord(
+                        "665f0a1b2c3d4e5f6a7b8c9d", "alice", "alice@example.com", "+919999999999",
+                        "2024-06-01T10:15:30Z", false,
+                        "Alice", "pic", "2000-01-01", "unspecified", "en", "in",
+                        true, "a1", "Alice Art", 3, 14, 7, 2,
+                        java.util.List.of(new com.basic.JWTSecurity.artwork_server.dto.AdminUserDetailsRecord.AdminUserArtworkRecord(
+                                "w1", "Wave", "APPROVED", "1887-01-01", null, 9)),
+                        java.util.List.of()));
+        mvc.perform(as(curator, get("/admin/users/alice")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("alice"))
+                .andExpect(jsonPath("$.artistName").value("Alice Art"))
+                .andExpect(jsonPath("$.artworks[0].likeCount").value(9));
     }
 
     // A USER token still cannot mint itself an admin through the public self-service API either:

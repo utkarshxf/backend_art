@@ -3,6 +3,10 @@ package com.basic.JWTSecurity.artwork_server.repository;
 
 import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
+import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserArtworkProjection;
+import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserLikeProjection;
+import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserStatsProjection;
+import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.TopCreatorProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.TopUserProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProjection;
@@ -51,6 +55,36 @@ public interface UserRepository extends Neo4jRepository<User, String> {
 
     @Query("MATCH (u:User {id: $userId}) RETURN EXISTS((u)-[:IS_AN]->(:Artist)) as isArtist")
     boolean isUserIsArtistByUserId(String userId);
+
+    // Admin users list/detail: per-account activity counts. Pattern comprehensions keep each count
+    // independent (no cross-product). LIKES is labelled Artwork because users also LIKE genres/galleries.
+    String ADMIN_USER_STATS = "OPTIONAL MATCH (u)-[:IS_AN]->(artist:Artist) " +
+            "RETURN u.id AS id, artist IS NOT NULL AS isArtist, artist.id AS artistId, artist.name AS artistName, " +
+            "size([(artist)-[:CREATED]->(w:Artwork) WHERE coalesce(w.status, 'APPROVED') <> 'DELETED' | w]) AS artworkCount, " +
+            "size([(u)-[:LIKES]->(:Artwork) | 1]) AS likeCount, " +
+            "size([(:User)-[:FOLLOWS]->(artist) | 1]) AS followerCount, " +
+            "size([(u)-[:POSTED_COMMENT]->(:Comment) | 1]) AS commentCount";
+
+    @Query("MATCH (u:User) " + ADMIN_USER_STATS)
+    List<AdminUserStatsProjection> getAdminUserStats();
+
+    @Query("MATCH (u:User {id: $userId}) " + ADMIN_USER_STATS)
+    Optional<AdminUserStatsProjection> getAdminUserStatsFor(@Param("userId") String userId);
+
+    @Query("MATCH (user:User {id: $userId})-[:IS_AN]->(artist:Artist) " +
+            "RETURN artist.id AS id, artist.name AS name, artist.image_url AS image_url")
+    Optional<ArtistProjection> findArtistByUserId(@Param("userId") String userId);
+
+    @Query("MATCH (:User {id: $userId})-[:IS_AN]->(artist:Artist)-[:CREATED]->(w:Artwork) " +
+            "RETURN w.id AS id, w.title AS title, w.status AS status, toString(w.releasedDate) AS releasedDate, " +
+            "w.image_url_compressed AS imageUrlCompressed, size([(:User)-[:LIKES]->(w) | 1]) AS likeCount " +
+            "ORDER BY likeCount DESC, w.id ASC LIMIT $limit")
+    List<AdminUserArtworkProjection> getAdminUserArtworks(@Param("userId") String userId, @Param("limit") Integer limit);
+
+    @Query("MATCH (u:User {id: $userId})-[like:LIKES]->(w:Artwork) " +
+            "RETURN w.id AS id, w.title AS title, w.artist AS artistId, toString(like.createdAt) AS likedAt " +
+            "ORDER BY like.createdAt DESC LIMIT $limit")
+    List<AdminUserLikeProjection> getAdminUserRecentLikes(@Param("userId") String userId, @Param("limit") Integer limit);
 
     @Query("MATCH (user:User)-[:IS_AN]->(artist:Artist {id: $artistId}) RETURN user")
     Optional<User> findUserByArtistId(@Param("artistId") String artistId);

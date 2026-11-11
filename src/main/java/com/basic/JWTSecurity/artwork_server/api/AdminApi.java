@@ -1,7 +1,10 @@
 package com.basic.JWTSecurity.artwork_server.api;
 
 import com.basic.JWTSecurity.artwork_server.dto.AdminArtistUpsertRecord;
+import com.basic.JWTSecurity.artwork_server.dto.AdminUserDetailsRecord;
+import com.basic.JWTSecurity.artwork_server.dto.AdminUserSummaryRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
+import com.basic.JWTSecurity.artwork_server.dto.CatalogueStatsRecord;
 import com.basic.JWTSecurity.artwork_server.dto.StatusUpdateRequest;
 import com.basic.JWTSecurity.artwork_server.model.Status;
 import com.basic.JWTSecurity.artwork_server.service.AdminService;
@@ -11,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 // Catalogue management surface for the admin panel. Everything here needs ROLE_ADMIN (granted to the usernames
@@ -68,6 +72,25 @@ public class AdminApi {
     public ResponseEntity<Void> deleteArtwork(@PathVariable String artworkId) {
         adminService.updateArtworkStatus(artworkId, Status.DELETED);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<CatalogueStatsRecord> getCatalogueStats() {
+        return ResponseEntity.ok(adminService.getCatalogueStats());
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<AdminUserSummaryRecord>> listUsers(
+            @RequestParam(value = "query", required = false) String query,
+            @RequestParam(value = "sort", defaultValue = "joined") String sort,
+            @RequestParam(value = "order", defaultValue = "desc") String order,
+            @RequestParam(value = "limit", required = false) Integer limit) {
+        return ResponseEntity.ok(adminService.listUsers(query, sort, order, limit));
+    }
+
+    @GetMapping("/users/{username}")
+    public ResponseEntity<AdminUserDetailsRecord> getUserDetails(@PathVariable String username) {
+        return ResponseEntity.ok(adminService.getUserDetails(username));
     }
 
     @PostMapping("/genres")

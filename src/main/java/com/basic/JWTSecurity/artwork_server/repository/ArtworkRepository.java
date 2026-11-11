@@ -155,6 +155,13 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
     @Query("MATCH (artwork:Artwork {id: $artworkId})-[rel:RELEASED_IN]->(:Year) DELETE rel")
     void clearReleasedIn(@Param("artworkId") String artworkId);
 
+    // Admin stats: a missing status means a legacy approved work, so only an explicit DELETED is excluded
+    @Query("MATCH (artwork:Artwork) WHERE coalesce(artwork.status, 'APPROVED') <> 'DELETED' RETURN count(artwork)")
+    long countCatalogueArtworks();
+
+    @Query("MATCH (artwork:Artwork {status: 'DELETED'}) RETURN count(artwork)")
+    long countDeletedArtworks();
+
 
 //    @Query(
 //            "MATCH (user:User {id: $userId}) " +

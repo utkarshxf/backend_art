@@ -1,8 +1,19 @@
 package com.basic.JWTSecurity.artwork_server.service;
 
 import com.basic.JWTSecurity.artwork_server.dto.AdminArtistUpsertRecord;
+import com.basic.JWTSecurity.artwork_server.dto.AdminUserDetailsRecord;
+import com.basic.JWTSecurity.artwork_server.dto.AdminUserSummaryRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
+import com.basic.JWTSecurity.artwork_server.dto.CatalogueStatsRecord;
+import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserStatsProjection;
+import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
+import com.basic.JWTSecurity.artwork_server.model.projection.UserProjection;
+import com.basic.JWTSecurity.artwork_server.repository.UserRepository;
+import com.basic.JWTSecurity.auth.model.Profile;
+import com.basic.JWTSecurity.auth.repository.ProfileRepository;
+import com.basic.JWTSecurity.auth.service.ProfileService;
+import org.bson.types.ObjectId;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
 import com.basic.JWTSecurity.artwork_server.model.Genre;
@@ -21,6 +32,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -34,6 +46,9 @@ public class AdminServiceImpl implements AdminService {
     private final ArtistService artistService;
     private final ArtworkService artworkService;
     private final YearService yearService;
+    private final ProfileRepository profileRepository;
+    private final ProfileService profileService;
+    private final UserRepository userRepository;
 
     // Same id convention as the catalogue importer (md5(text)[:8]) so admin-created records sit naturally
     // alongside the seeded ones
@@ -235,6 +250,122 @@ public class AdminServiceImpl implements AdminService {
         map.put("license_info", artwork.getLicense_info());
         map.put("source_url", artwork.getSource_url());
         return map;
+    }
+
+    // Account creation time lives in the Mongo ObjectId; accounts with a non-ObjectId id have no recoverable date
+    private static String joinedAt(Profile profile) {
+        try {
+            return new ObjectId(profile.getId()).getDate().toInstant().toString();
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return null;
+        }
+    }
+
+    private static long count(Long value) {
+        return value == null ? 0 : value;
+    }
+
+    @Override
+    public List<AdminUserSummaryRecord> listUsers(String query, String sort, String order, Integer limit) {
+        List<Profile> profiles = (query == null || query.isBlank())
+                ? profileRepository.findAll()
+                : profileRepository.searchByUsernameOrName(query.trim());
+        Map<String, AdminUserStatsProjection> stats = new java.util.HashMap<>();
+        for (AdminUserStatsProjection row : userRepository.getAdminUserStats()) {
+            stats.put(row.getId(), row);
+        }
+
+        java.util.Comparator<AdminUserSummaryRecord> comparator = "username".equalsIgnoreCase(sort)
+                ? java.util.Comparator.comparing(AdminUserSummaryRecord::username,
+                        java.util.Comparator.nullsLast(String::compareToIgnoreCase))
+                : java.util.Comparator.comparing(AdminUserSummaryRecord::joinedAt,
+                        java.util.Comparator.nullsLast(String::compareTo));
+        if (!"asc".equalsIgnoreCase(order)) {
+            comparator = comparator.reversed();
+        }
+        int capped = (limit == null || limit <= 0) ? 200 : Math.min(limit, 500);
+
+        return profiles.stream()
+                .map(profile -> {
+                    AdminUserStatsProjection row = stats.get(profile.getUsername());
+                    boolean artist = row != null && Boolean.TRUE.equals(row.getIsArtist());
+                    return new AdminUserSummaryRecord(
+                            profile.getId(),
+                            profile.getUsername(),
+                            profile.getEmail(),
+                            profile.getPhone(),
+                            joinedAt(profile),
+                            profileService.isAdmin(profile.getUsername()),
+                            artist,
+                            row == null ? 0 : count(row.getArtworkCount()),
+                            row == null ? 0 : count(row.getLikeCount()),
+                            row == null ? 0 : count(row.getFollowerCount()),
+                            row == null ? 0 : count(row.getCommentCount()));
+                })
+                .sorted(comparator)
+                .limit(capped)
+                .toList();
+    }
+
+    @Override
+    public AdminUserDetailsRecord getUserDetails(String username) {
+        Profile profile = profileRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + username));
+        UserProjection graph = userRepository.findByIdProjection(username).orElse(null);
+        AdminUserStatsProjection stats = userRepository.getAdminUserStatsFor(username).orElse(null);
+        ArtistProjection artist = userRepository.findArtistByUserId(username).orElse(null);
+        boolean isArtist = artist != null || (stats != null && Boolean.TRUE.equals(stats.getIsArtist()));
+
+        List<AdminUserDetailsRecord.AdminUserArtworkRecord> artworks = isArtist
+                ? userRepository.getAdminUserArtworks(username, 12).stream()
+                        .map(row -> new AdminUserDetailsRecord.AdminUserArtworkRecord(
+                                row.getId(), row.getTitle(), row.getStatus(), row.getReleasedDate(),
+                                row.getImageUrlCompressed(), count(row.getLikeCount())))
+                        .toList()
+                : List.of();
+        List<AdminUserDetailsRecord.AdminUserLikeRecord> recentLikes = graph == null
+                ? List.of()
+                : userRepository.getAdminUserRecentLikes(username, 12).stream()
+                        .map(row -> new AdminUserDetailsRecord.AdminUserLikeRecord(
+                                row.getId(), row.getTitle(), row.getArtistId(), row.getLikedAt()))
+                        .toList();
+
+        return new AdminUserDetailsRecord(
+                profile.getId(),
+                profile.getUsername(),
+                profile.getEmail(),
+                profile.getPhone(),
+                joinedAt(profile),
+                profileService.isAdmin(profile.getUsername()),
+                graph == null ? null : graph.getName(),
+                graph == null ? null : graph.getProfilePicture(),
+                graph == null || graph.getDob() == null ? null : graph.getDob().toString(),
+                graph == null ? null : graph.getGender(),
+                graph == null ? null : graph.getLanguage(),
+                graph == null ? null : graph.getCountryIso2(),
+                isArtist,
+                artist == null ? (stats == null ? null : stats.getArtistId()) : artist.getId(),
+                artist == null ? (stats == null ? null : stats.getArtistName()) : artist.getName(),
+                stats == null ? 0 : count(stats.getArtworkCount()),
+                stats == null ? 0 : count(stats.getLikeCount()),
+                stats == null ? 0 : count(stats.getFollowerCount()),
+                stats == null ? 0 : count(stats.getCommentCount()),
+                artworks,
+                recentLikes);
+    }
+
+    @Override
+    public CatalogueStatsRecord getCatalogueStats() {
+        List<CatalogueStatsRecord.ArtistArtworkCount> artists = artistRepository.countArtworksPerArtist().stream()
+                .map(row -> new CatalogueStatsRecord.ArtistArtworkCount(
+                        row.getId(), row.getName(), row.getArtworkCount() == null ? 0 : row.getArtworkCount()))
+                .toList();
+        return new CatalogueStatsRecord(
+                artworkRepository.countCatalogueArtworks(),
+                artistRepository.count(),
+                genreRepository.count(),
+                artworkRepository.countDeletedArtworks(),
+                artists);
     }
 
     @Override

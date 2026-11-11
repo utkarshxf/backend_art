@@ -1,9 +1,13 @@
 package com.basic.JWTSecurity.artwork_server.service;
 
 import com.basic.JWTSecurity.artwork_server.dto.AdminArtistUpsertRecord;
+import com.basic.JWTSecurity.artwork_server.dto.AdminUserDetailsRecord;
+import com.basic.JWTSecurity.artwork_server.dto.AdminUserSummaryRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
+import com.basic.JWTSecurity.artwork_server.dto.CatalogueStatsRecord;
 import com.basic.JWTSecurity.artwork_server.model.Status;
 
+import java.util.List;
 import java.util.Map;
 
 // Catalogue management for the admin panel. All writes are ROLE_ADMIN only (enforced in AdminApi) and are
@@ -30,4 +34,13 @@ public interface AdminService {
 
     /** Create a genre (id derived from the name like the importer did) or return the existing one. */
     Map<String, String> createGenre(String name);
+
+    /** Catalogue totals: artworks, artists, genres and a per-artist artwork count. */
+    CatalogueStatsRecord getCatalogueStats();
+
+    /** Account list for the users page. sort is "joined" or "username"; order "asc" or "desc". */
+    List<AdminUserSummaryRecord> listUsers(String query, String sort, String order, Integer limit);
+
+    /** One account's profile, join info and activity for the user details page. */
+    AdminUserDetailsRecord getUserDetails(String username);
 }

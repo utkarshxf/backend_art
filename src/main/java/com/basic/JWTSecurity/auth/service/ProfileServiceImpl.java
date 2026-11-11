@@ -58,15 +58,20 @@ public class ProfileServiceImpl implements UserDetailsService, ProfileService {
     @Value("${app.admin.usernames:}")
     private String adminUsernames;
 
-    private String[] rolesFor(String username) {
+    @Override
+    public boolean isAdmin(String username) {
         if (username != null && adminUsernames != null && !adminUsernames.isBlank()) {
             for (String admin : adminUsernames.split(",")) {
                 if (username.equalsIgnoreCase(admin.trim())) {
-                    return new String[]{"USER", "ADMIN"};
+                    return true;
                 }
             }
         }
-        return new String[]{"USER"};
+        return false;
+    }
+
+    private String[] rolesFor(String username) {
+        return isAdmin(username) ? new String[]{"USER", "ADMIN"} : new String[]{"USER"};
     }
 
     @Override

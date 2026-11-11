@@ -27,6 +27,8 @@ public interface ProfileService {
 
     public Map<String, Object> validateUsername(String username);
 
+    public boolean isAdmin(String username);
+
     public List<Profile> searchUsersByKeyword(String keyword, Integer limit);
 
     public List<Map<String, String>> searchUsersByKeywordSimple(String keyword, Integer limit);

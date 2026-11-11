@@ -3,6 +3,7 @@ package com.basic.JWTSecurity.artwork_server.repository;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
+import com.basic.JWTSecurity.artwork_server.model.projection.ArtistArtworkCountProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.TopArtistProjection;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
@@ -46,6 +47,16 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
             "RETURN artist.id AS id, artist.name AS name, artist.image_url AS image_url " +
             "LIMIT $responseSize")
     List<ArtistProjection> getArtist(String artistName, Integer responseSize);
+
+    // Admin stats: artworks linked by the CREATED edge or, for older records, the scalar artist id.
+    // Soft-deleted artworks are excluded; artists with no live works still appear with 0.
+    @Query("MATCH (artist:Artist) " +
+            "OPTIONAL MATCH (artwork:Artwork) " +
+            "WHERE ((artist)-[:CREATED]->(artwork) OR artwork.artist = artist.id) " +
+            "AND coalesce(artwork.status, 'APPROVED') <> 'DELETED' " +
+            "RETURN artist.id AS id, artist.name AS name, count(DISTINCT artwork) AS artworkCount " +
+            "ORDER BY artworkCount DESC, name ASC")
+    List<ArtistArtworkCountProjection> countArtworksPerArtist();
 
 
     @Query("""
