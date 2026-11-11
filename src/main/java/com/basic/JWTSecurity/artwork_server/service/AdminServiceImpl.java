@@ -6,7 +6,8 @@ import com.basic.JWTSecurity.artwork_server.dto.AdminUserSummaryRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
 import com.basic.JWTSecurity.artwork_server.dto.CatalogueStatsRecord;
-import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserStatsProjection;
+import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserArtistProjection;
+import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserCountProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProjection;
 import com.basic.JWTSecurity.artwork_server.repository.UserRepository;
@@ -265,15 +266,28 @@ public class AdminServiceImpl implements AdminService {
         return value == null ? 0 : value;
     }
 
+    private static Map<String, Long> toCountMap(List<AdminUserCountProjection> rows) {
+        Map<String, Long> map = new java.util.HashMap<>();
+        for (AdminUserCountProjection row : rows) {
+            map.put(row.getId(), count(row.getCount()));
+        }
+        return map;
+    }
+
     @Override
     public List<AdminUserSummaryRecord> listUsers(String query, String sort, String order, Integer limit) {
         List<Profile> profiles = (query == null || query.isBlank())
                 ? profileRepository.findAll()
                 : profileRepository.searchByUsernameOrName(query.trim());
-        Map<String, AdminUserStatsProjection> stats = new java.util.HashMap<>();
-        for (AdminUserStatsProjection row : userRepository.getAdminUserStats()) {
-            stats.put(row.getId(), row);
+
+        Map<String, AdminUserArtistProjection> artists = new java.util.HashMap<>();
+        for (AdminUserArtistProjection row : userRepository.getAdminUserArtists()) {
+            artists.put(row.getId(), row);
         }
+        Map<String, Long> artworkCounts = toCountMap(userRepository.getAdminUserArtworkCounts());
+        Map<String, Long> likeCounts = toCountMap(userRepository.getAdminUserLikeCounts());
+        Map<String, Long> followerCounts = toCountMap(userRepository.getAdminUserFollowerCounts());
+        Map<String, Long> commentCounts = toCountMap(userRepository.getAdminUserCommentCounts());
 
         java.util.Comparator<AdminUserSummaryRecord> comparator = "username".equalsIgnoreCase(sort)
                 ? java.util.Comparator.comparing(AdminUserSummaryRecord::username,
@@ -286,22 +300,18 @@ public class AdminServiceImpl implements AdminService {
         int capped = (limit == null || limit <= 0) ? 200 : Math.min(limit, 500);
 
         return profiles.stream()
-                .map(profile -> {
-                    AdminUserStatsProjection row = stats.get(profile.getUsername());
-                    boolean artist = row != null && Boolean.TRUE.equals(row.getIsArtist());
-                    return new AdminUserSummaryRecord(
-                            profile.getId(),
-                            profile.getUsername(),
-                            profile.getEmail(),
-                            profile.getPhone(),
-                            joinedAt(profile),
-                            profileService.isAdmin(profile.getUsername()),
-                            artist,
-                            row == null ? 0 : count(row.getArtworkCount()),
-                            row == null ? 0 : count(row.getLikeCount()),
-                            row == null ? 0 : count(row.getFollowerCount()),
-                            row == null ? 0 : count(row.getCommentCount()));
-                })
+                .map(profile -> new AdminUserSummaryRecord(
+                        profile.getId(),
+                        profile.getUsername(),
+                        profile.getEmail(),
+                        profile.getPhone(),
+                        joinedAt(profile),
+                        profileService.isAdmin(profile.getUsername()),
+                        artists.containsKey(profile.getUsername()),
+                        artworkCounts.getOrDefault(profile.getUsername(), 0L),
+                        likeCounts.getOrDefault(profile.getUsername(), 0L),
+                        followerCounts.getOrDefault(profile.getUsername(), 0L),
+                        commentCounts.getOrDefault(profile.getUsername(), 0L)))
                 .sorted(comparator)
                 .limit(capped)
                 .toList();
@@ -312,9 +322,8 @@ public class AdminServiceImpl implements AdminService {
         Profile profile = profileRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + username));
         UserProjection graph = userRepository.findByIdProjection(username).orElse(null);
-        AdminUserStatsProjection stats = userRepository.getAdminUserStatsFor(username).orElse(null);
         ArtistProjection artist = userRepository.findArtistByUserId(username).orElse(null);
-        boolean isArtist = artist != null || (stats != null && Boolean.TRUE.equals(stats.getIsArtist()));
+        boolean isArtist = artist != null;
 
         List<AdminUserDetailsRecord.AdminUserArtworkRecord> artworks = isArtist
                 ? userRepository.getAdminUserArtworks(username, 12).stream()
@@ -344,12 +353,12 @@ public class AdminServiceImpl implements AdminService {
                 graph == null ? null : graph.getLanguage(),
                 graph == null ? null : graph.getCountryIso2(),
                 isArtist,
-                artist == null ? (stats == null ? null : stats.getArtistId()) : artist.getId(),
-                artist == null ? (stats == null ? null : stats.getArtistName()) : artist.getName(),
-                stats == null ? 0 : count(stats.getArtworkCount()),
-                stats == null ? 0 : count(stats.getLikeCount()),
-                stats == null ? 0 : count(stats.getFollowerCount()),
-                stats == null ? 0 : count(stats.getCommentCount()),
+                artist == null ? null : artist.getId(),
+                artist == null ? null : artist.getName(),
+                userRepository.countArtworksForUser(username),
+                userRepository.countLikesForUser(username),
+                userRepository.countFollowersForUser(username),
+                userRepository.countCommentsForUser(username),
                 artworks,
                 recentLikes);
     }

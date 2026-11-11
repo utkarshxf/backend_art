@@ -3,9 +3,10 @@ package com.basic.JWTSecurity.artwork_server.repository;
 
 import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
+import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserArtistProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserArtworkProjection;
+import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserCountProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserLikeProjection;
-import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserStatsProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.TopCreatorProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.TopUserProjection;
@@ -56,20 +57,40 @@ public interface UserRepository extends Neo4jRepository<User, String> {
     @Query("MATCH (u:User {id: $userId}) RETURN EXISTS((u)-[:IS_AN]->(:Artist)) as isArtist")
     boolean isUserIsArtistByUserId(String userId);
 
-    // Admin users list/detail: per-account activity counts. Pattern comprehensions keep each count
-    // independent (no cross-product). LIKES is labelled Artwork because users also LIKE genres/galleries.
-    String ADMIN_USER_STATS = "OPTIONAL MATCH (u)-[:IS_AN]->(artist:Artist) " +
-            "RETURN u.id AS id, artist IS NOT NULL AS isArtist, artist.id AS artistId, artist.name AS artistName, " +
-            "size([(artist)-[:CREATED]->(w:Artwork) WHERE coalesce(w.status, 'APPROVED') <> 'DELETED' | w]) AS artworkCount, " +
-            "size([(u)-[:LIKES]->(:Artwork) | 1]) AS likeCount, " +
-            "size([(:User)-[:FOLLOWS]->(artist) | 1]) AS followerCount, " +
-            "size([(u)-[:POSTED_COMMENT]->(:Comment) | 1]) AS commentCount";
+    // Admin users list/detail: per-account activity counts as separate plain traversals merged in
+    // Java. A single query with several OPTIONAL MATCHes or pattern comprehensions is either a
+    // cross-product or unsupported on the free-tier graph; these are the simplest shapes that exist.
+    @Query("MATCH (u:User)-[:IS_AN]->(artist:Artist) " +
+            "RETURN u.id AS id, artist.id AS artistId, artist.name AS artistName")
+    List<AdminUserArtistProjection> getAdminUserArtists();
 
-    @Query("MATCH (u:User) " + ADMIN_USER_STATS)
-    List<AdminUserStatsProjection> getAdminUserStats();
+    @Query("MATCH (u:User)-[:IS_AN]->(:Artist)-[:CREATED]->(w:Artwork) " +
+            "WHERE coalesce(w.status, 'APPROVED') <> 'DELETED' " +
+            "RETURN u.id AS id, count(w) AS count")
+    List<AdminUserCountProjection> getAdminUserArtworkCounts();
 
-    @Query("MATCH (u:User {id: $userId}) " + ADMIN_USER_STATS)
-    Optional<AdminUserStatsProjection> getAdminUserStatsFor(@Param("userId") String userId);
+    // LIKES is labelled Artwork because users also LIKE genres and galleries
+    @Query("MATCH (u:User)-[like:LIKES]->(:Artwork) RETURN u.id AS id, count(like) AS count")
+    List<AdminUserCountProjection> getAdminUserLikeCounts();
+
+    @Query("MATCH (u:User)-[:IS_AN]->(:Artist)<-[follow:FOLLOWS]-(:User) RETURN u.id AS id, count(follow) AS count")
+    List<AdminUserCountProjection> getAdminUserFollowerCounts();
+
+    @Query("MATCH (u:User)-[comment:POSTED_COMMENT]->(:Comment) RETURN u.id AS id, count(comment) AS count")
+    List<AdminUserCountProjection> getAdminUserCommentCounts();
+
+    @Query("MATCH (u:User {id: $userId})-[:IS_AN]->(:Artist)-[:CREATED]->(w:Artwork) " +
+            "WHERE coalesce(w.status, 'APPROVED') <> 'DELETED' RETURN count(w)")
+    long countArtworksForUser(@Param("userId") String userId);
+
+    @Query("MATCH (u:User {id: $userId})-[like:LIKES]->(:Artwork) RETURN count(like)")
+    long countLikesForUser(@Param("userId") String userId);
+
+    @Query("MATCH (u:User {id: $userId})-[:IS_AN]->(:Artist)<-[follow:FOLLOWS]-(:User) RETURN count(follow)")
+    long countFollowersForUser(@Param("userId") String userId);
+
+    @Query("MATCH (u:User {id: $userId})-[comment:POSTED_COMMENT]->(:Comment) RETURN count(comment)")
+    long countCommentsForUser(@Param("userId") String userId);
 
     @Query("MATCH (user:User {id: $userId})-[:IS_AN]->(artist:Artist) " +
             "RETURN artist.id AS id, artist.name AS name, artist.image_url AS image_url")
