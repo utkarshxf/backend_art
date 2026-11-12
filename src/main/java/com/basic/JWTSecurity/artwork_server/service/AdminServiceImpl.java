@@ -6,9 +6,6 @@ import com.basic.JWTSecurity.artwork_server.dto.AdminUserSummaryRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
 import com.basic.JWTSecurity.artwork_server.dto.CatalogueStatsRecord;
-import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserArtistProjection;
-import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserCountProjection;
-import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProjection;
 import com.basic.JWTSecurity.artwork_server.repository.UserRepository;
 import com.basic.JWTSecurity.auth.model.Profile;
@@ -262,32 +259,59 @@ public class AdminServiceImpl implements AdminService {
         }
     }
 
-    private static long count(Long value) {
-        return value == null ? 0 : value;
+    private static String str(Map<String, Object> row, String key) {
+        Object value = row.get(key);
+        return value == null ? null : value.toString();
     }
 
-    private static Map<String, Long> toCountMap(List<AdminUserCountProjection> rows) {
+    private static long num(Map<String, Object> row, String key) {
+        Object value = row.get(key);
+        return value instanceof Number number ? number.longValue() : 0L;
+    }
+
+    private static Map<String, Long> toCountMap(List<Map<String, Object>> rows) {
         Map<String, Long> map = new java.util.HashMap<>();
-        for (AdminUserCountProjection row : rows) {
-            map.put(row.getId(), count(row.getCount()));
+        for (Map<String, Object> row : rows) {
+            map.put(str(row, "id"), num(row, "count"));
         }
         return map;
     }
 
+    // Fail-soft for the admin overview endpoints: one broken metric must never 500 the page.
+    // The real exception is logged with its message so it can be fixed from the Azure logs.
+    private <T> T safe(String metric, java.util.function.Supplier<T> call, T fallback) {
+        try {
+            T value = call.get();
+            return value == null ? fallback : value;
+        } catch (RuntimeException e) {
+            log.error("Admin overview metric {} failed: {}", metric, e.toString(), e);
+            return fallback;
+        }
+    }
+
     @Override
     public List<AdminUserSummaryRecord> listUsers(String query, String sort, String order, Integer limit) {
-        List<Profile> profiles = (query == null || query.isBlank())
-                ? profileRepository.findAll()
-                : profileRepository.searchByUsernameOrName(query.trim());
+        List<Profile> profiles = safe("listProfiles",
+                () -> (query == null || query.isBlank())
+                        ? profileRepository.findAll()
+                        : profileRepository.searchByUsernameOrName(query.trim()),
+                List.of());
 
-        Map<String, AdminUserArtistProjection> artists = new java.util.HashMap<>();
-        for (AdminUserArtistProjection row : userRepository.getAdminUserArtists()) {
-            artists.put(row.getId(), row);
-        }
-        Map<String, Long> artworkCounts = toCountMap(userRepository.getAdminUserArtworkCounts());
-        Map<String, Long> likeCounts = toCountMap(userRepository.getAdminUserLikeCounts());
-        Map<String, Long> followerCounts = toCountMap(userRepository.getAdminUserFollowerCounts());
-        Map<String, Long> commentCounts = toCountMap(userRepository.getAdminUserCommentCounts());
+        Map<String, Map<String, Object>> artists = safe("userArtists", () -> {
+            Map<String, Map<String, Object>> map = new java.util.HashMap<>();
+            for (Map<String, Object> row : userRepository.getAdminUserArtists()) {
+                map.put(str(row, "id"), row);
+            }
+            return map;
+        }, Map.of());
+        Map<String, Long> artworkCounts = safe("userArtworkCounts",
+                () -> toCountMap(userRepository.getAdminUserArtworkCounts()), Map.of());
+        Map<String, Long> likeCounts = safe("userLikeCounts",
+                () -> toCountMap(userRepository.getAdminUserLikeCounts()), Map.of());
+        Map<String, Long> followerCounts = safe("userFollowerCounts",
+                () -> toCountMap(userRepository.getAdminUserFollowerCounts()), Map.of());
+        Map<String, Long> commentCounts = safe("userCommentCounts",
+                () -> toCountMap(userRepository.getAdminUserCommentCounts()), Map.of());
 
         java.util.Comparator<AdminUserSummaryRecord> comparator = "username".equalsIgnoreCase(sort)
                 ? java.util.Comparator.comparing(AdminUserSummaryRecord::username,
@@ -319,25 +343,33 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public AdminUserDetailsRecord getUserDetails(String username) {
-        Profile profile = profileRepository.findByUsername(username)
+        Profile profile = safe("findProfile",
+                        () -> profileRepository.findByUsername(username), java.util.Optional.<Profile>empty())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + username));
-        UserProjection graph = userRepository.findByIdProjection(username).orElse(null);
-        ArtistProjection artist = userRepository.findArtistByUserId(username).orElse(null);
+        UserProjection graph = safe("graphProfile",
+                () -> userRepository.findByIdProjection(username).orElse(null), null);
+        Map<String, Object> artist = safe("userArtist",
+                () -> userRepository.findArtistByUserId(username).stream().findFirst().orElse(null), null);
         boolean isArtist = artist != null;
 
         List<AdminUserDetailsRecord.AdminUserArtworkRecord> artworks = isArtist
-                ? userRepository.getAdminUserArtworks(username, 12).stream()
+                ? safe("userArtworks", () -> userRepository.getAdminUserArtworks(username, 12).stream()
                         .map(row -> new AdminUserDetailsRecord.AdminUserArtworkRecord(
-                                row.getId(), row.getTitle(), row.getStatus(), row.getReleasedDate(),
-                                row.getImageUrlCompressed(), count(row.getLikeCount())))
-                        .toList()
+                                str(row, "id"), str(row, "title"), str(row, "status"), str(row, "releasedDate"),
+                                str(row, "imageUrlCompressed"), num(row, "likeCount")))
+                        .toList(), List.of())
                 : List.of();
         List<AdminUserDetailsRecord.AdminUserLikeRecord> recentLikes = graph == null
                 ? List.of()
-                : userRepository.getAdminUserRecentLikes(username, 12).stream()
+                : safe("userRecentLikes", () -> userRepository.getAdminUserRecentLikes(username, 12).stream()
                         .map(row -> new AdminUserDetailsRecord.AdminUserLikeRecord(
-                                row.getId(), row.getTitle(), row.getArtistId(), row.getLikedAt()))
-                        .toList();
+                                str(row, "id"), str(row, "title"), str(row, "artistId"), str(row, "likedAt")))
+                        .toList(), List.of());
+
+        long artworkCount = safe("userArtworkCount", () -> userRepository.countArtworksForUser(username), 0L);
+        long likeCount = safe("userLikeCount", () -> userRepository.countLikesForUser(username), 0L);
+        long followerCount = safe("userFollowerCount", () -> userRepository.countFollowersForUser(username), 0L);
+        long commentCount = safe("userCommentCount", () -> userRepository.countCommentsForUser(username), 0L);
 
         return new AdminUserDetailsRecord(
                 profile.getId(),
@@ -353,28 +385,29 @@ public class AdminServiceImpl implements AdminService {
                 graph == null ? null : graph.getLanguage(),
                 graph == null ? null : graph.getCountryIso2(),
                 isArtist,
-                artist == null ? null : artist.getId(),
-                artist == null ? null : artist.getName(),
-                userRepository.countArtworksForUser(username),
-                userRepository.countLikesForUser(username),
-                userRepository.countFollowersForUser(username),
-                userRepository.countCommentsForUser(username),
+                artist == null ? null : str(artist, "id"),
+                artist == null ? null : str(artist, "name"),
+                artworkCount,
+                likeCount,
+                followerCount,
+                commentCount,
                 artworks,
                 recentLikes);
     }
 
     @Override
     public CatalogueStatsRecord getCatalogueStats() {
-        List<CatalogueStatsRecord.ArtistArtworkCount> artists = artistRepository.countArtworksPerArtist().stream()
-                .map(row -> new CatalogueStatsRecord.ArtistArtworkCount(
-                        row.getId(), row.getName(), row.getArtworkCount() == null ? 0 : row.getArtworkCount()))
-                .toList();
-        return new CatalogueStatsRecord(
-                artworkRepository.countCatalogueArtworks(),
-                artistRepository.count(),
-                genreRepository.count(),
-                artworkRepository.countDeletedArtworks(),
-                artists);
+        long totalArtworks = safe("countCatalogueArtworks", artworkRepository::countCatalogueArtworks, 0L);
+        long totalArtists = safe("countArtists", artistRepository::count, 0L);
+        long totalGenres = safe("countGenres", genreRepository::count, 0L);
+        long deletedArtworks = safe("countDeletedArtworks", artworkRepository::countDeletedArtworks, 0L);
+        List<CatalogueStatsRecord.ArtistArtworkCount> artists = safe("countArtworksPerArtist",
+                () -> artistRepository.countArtworksPerArtist().stream()
+                        .map(row -> new CatalogueStatsRecord.ArtistArtworkCount(
+                                str(row, "id"), str(row, "name"), num(row, "artworkCount")))
+                        .toList(),
+                List.of());
+        return new CatalogueStatsRecord(totalArtworks, totalArtists, totalGenres, deletedArtworks, artists);
     }
 
     @Override

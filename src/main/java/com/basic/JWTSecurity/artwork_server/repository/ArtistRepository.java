@@ -3,7 +3,6 @@ package com.basic.JWTSecurity.artwork_server.repository;
 import com.basic.JWTSecurity.artwork_server.model.Artist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtist;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
-import com.basic.JWTSecurity.artwork_server.model.projection.ArtistArtworkCountProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.TopArtistProjection;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
@@ -12,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ArtistRepository extends Neo4jRepository<Artist,String> {
@@ -56,7 +56,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
             "WHERE coalesce(artwork.status, 'APPROVED') <> 'DELETED' " +
             "RETURN artist.id AS id, artist.name AS name, count(artwork) AS artworkCount " +
             "ORDER BY artworkCount DESC, name ASC")
-    List<ArtistArtworkCountProjection> countArtworksPerArtist();
+    List<Map<String, Object>> countArtworksPerArtist();
 
 
     @Query("""

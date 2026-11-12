@@ -3,11 +3,6 @@ package com.basic.JWTSecurity.artwork_server.repository;
 
 import com.basic.JWTSecurity.artwork_server.model.User;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetUser;
-import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserArtistProjection;
-import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserArtworkProjection;
-import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserCountProjection;
-import com.basic.JWTSecurity.artwork_server.model.projection.AdminUserLikeProjection;
-import com.basic.JWTSecurity.artwork_server.model.projection.ArtistProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.TopCreatorProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.TopUserProjection;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProjection;
@@ -17,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface UserRepository extends Neo4jRepository<User, String> {
@@ -62,50 +58,52 @@ public interface UserRepository extends Neo4jRepository<User, String> {
     // cross-product or unsupported on the free-tier graph; these are the simplest shapes that exist.
     @Query("MATCH (u:User)-[:IS_AN]->(artist:Artist) " +
             "RETURN u.id AS id, artist.id AS artistId, artist.name AS artistName")
-    List<AdminUserArtistProjection> getAdminUserArtists();
+    List<Map<String, Object>> getAdminUserArtists();
 
     @Query("MATCH (u:User)-[:IS_AN]->(:Artist)-[:CREATED]->(w:Artwork) " +
             "WHERE coalesce(w.status, 'APPROVED') <> 'DELETED' " +
             "RETURN u.id AS id, count(w) AS count")
-    List<AdminUserCountProjection> getAdminUserArtworkCounts();
+    List<Map<String, Object>> getAdminUserArtworkCounts();
 
-    // LIKES is labelled Artwork because users also LIKE genres and galleries
-    @Query("MATCH (u:User)-[like:LIKES]->(:Artwork) RETURN u.id AS id, count(like) AS count")
-    List<AdminUserCountProjection> getAdminUserLikeCounts();
+    // LIKES is labelled Artwork because users also LIKE genres and galleries.
+    // Variable is named rel, not like: LIKE is a reserved keyword in newer Cypher versions.
+    @Query("MATCH (u:User)-[rel:LIKES]->(:Artwork) RETURN u.id AS id, count(rel) AS count")
+    List<Map<String, Object>> getAdminUserLikeCounts();
 
-    @Query("MATCH (u:User)-[:IS_AN]->(:Artist)<-[follow:FOLLOWS]-(:User) RETURN u.id AS id, count(follow) AS count")
-    List<AdminUserCountProjection> getAdminUserFollowerCounts();
+    @Query("MATCH (u:User)-[:IS_AN]->(:Artist)<-[rel:FOLLOWS]-(:User) RETURN u.id AS id, count(rel) AS count")
+    List<Map<String, Object>> getAdminUserFollowerCounts();
 
-    @Query("MATCH (u:User)-[comment:POSTED_COMMENT]->(:Comment) RETURN u.id AS id, count(comment) AS count")
-    List<AdminUserCountProjection> getAdminUserCommentCounts();
+    @Query("MATCH (u:User)-[rel:POSTED_COMMENT]->(:Comment) RETURN u.id AS id, count(rel) AS count")
+    List<Map<String, Object>> getAdminUserCommentCounts();
 
     @Query("MATCH (u:User {id: $userId})-[:IS_AN]->(:Artist)-[:CREATED]->(w:Artwork) " +
             "WHERE coalesce(w.status, 'APPROVED') <> 'DELETED' RETURN count(w)")
     long countArtworksForUser(@Param("userId") String userId);
 
-    @Query("MATCH (u:User {id: $userId})-[like:LIKES]->(:Artwork) RETURN count(like)")
+    @Query("MATCH (u:User {id: $userId})-[rel:LIKES]->(:Artwork) RETURN count(rel)")
     long countLikesForUser(@Param("userId") String userId);
 
-    @Query("MATCH (u:User {id: $userId})-[:IS_AN]->(:Artist)<-[follow:FOLLOWS]-(:User) RETURN count(follow)")
+    @Query("MATCH (u:User {id: $userId})-[:IS_AN]->(:Artist)<-[rel:FOLLOWS]-(:User) RETURN count(rel)")
     long countFollowersForUser(@Param("userId") String userId);
 
-    @Query("MATCH (u:User {id: $userId})-[comment:POSTED_COMMENT]->(:Comment) RETURN count(comment)")
+    @Query("MATCH (u:User {id: $userId})-[rel:POSTED_COMMENT]->(:Comment) RETURN count(rel)")
     long countCommentsForUser(@Param("userId") String userId);
 
     @Query("MATCH (user:User {id: $userId})-[:IS_AN]->(artist:Artist) " +
             "RETURN artist.id AS id, artist.name AS name, artist.image_url AS image_url")
-    Optional<ArtistProjection> findArtistByUserId(@Param("userId") String userId);
+    List<Map<String, Object>> findArtistByUserId(@Param("userId") String userId);
 
     @Query("MATCH (:User {id: $userId})-[:IS_AN]->(artist:Artist)-[:CREATED]->(w:Artwork) " +
+            "OPTIONAL MATCH (:User)-[rel:LIKES]->(w) " +
             "RETURN w.id AS id, w.title AS title, w.status AS status, toString(w.releasedDate) AS releasedDate, " +
-            "w.image_url_compressed AS imageUrlCompressed, size([(:User)-[:LIKES]->(w) | 1]) AS likeCount " +
+            "w.image_url_compressed AS imageUrlCompressed, count(rel) AS likeCount " +
             "ORDER BY likeCount DESC, w.id ASC LIMIT $limit")
-    List<AdminUserArtworkProjection> getAdminUserArtworks(@Param("userId") String userId, @Param("limit") Integer limit);
+    List<Map<String, Object>> getAdminUserArtworks(@Param("userId") String userId, @Param("limit") Integer limit);
 
-    @Query("MATCH (u:User {id: $userId})-[like:LIKES]->(w:Artwork) " +
-            "RETURN w.id AS id, w.title AS title, w.artist AS artistId, toString(like.createdAt) AS likedAt " +
-            "ORDER BY like.createdAt DESC LIMIT $limit")
-    List<AdminUserLikeProjection> getAdminUserRecentLikes(@Param("userId") String userId, @Param("limit") Integer limit);
+    @Query("MATCH (u:User {id: $userId})-[rel:LIKES]->(w:Artwork) " +
+            "RETURN w.id AS id, w.title AS title, w.artist AS artistId, toString(rel.createdAt) AS likedAt " +
+            "ORDER BY rel.createdAt DESC LIMIT $limit")
+    List<Map<String, Object>> getAdminUserRecentLikes(@Param("userId") String userId, @Param("limit") Integer limit);
 
     @Query("MATCH (user:User)-[:IS_AN]->(artist:Artist {id: $artistId}) RETURN user")
     Optional<User> findUserByArtistId(@Param("artistId") String artistId);
