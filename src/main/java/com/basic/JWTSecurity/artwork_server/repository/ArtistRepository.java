@@ -11,7 +11,6 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface ArtistRepository extends Neo4jRepository<Artist,String> {
@@ -48,15 +47,7 @@ public interface ArtistRepository extends Neo4jRepository<Artist,String> {
             "LIMIT $responseSize")
     List<ArtistProjection> getArtist(String artistName, Integer responseSize);
 
-    // Admin stats: artworks reached through the CREATED edge only (every ingestion path creates it).
-    // Traversal-based: an OPTIONAL MATCH over all Artwork nodes here was a cartesian product and hung.
-    // Soft-deleted artworks are excluded; artists with no live works still appear with 0.
-    @Query("MATCH (artist:Artist) " +
-            "OPTIONAL MATCH (artist)-[:CREATED]->(artwork:Artwork) " +
-            "WHERE coalesce(artwork.status, 'APPROVED') <> 'DELETED' " +
-            "RETURN artist.id AS id, artist.name AS name, count(artwork) AS artworkCount " +
-            "ORDER BY artworkCount DESC, name ASC")
-    List<Map<String, Object>> countArtworksPerArtist();
+    // Per-artist artwork counts live in AdminGraphQueries (multi-column reads need Neo4jClient here).
 
 
     @Query("""

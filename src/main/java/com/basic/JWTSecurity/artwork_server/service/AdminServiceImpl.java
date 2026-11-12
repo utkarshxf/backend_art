@@ -7,6 +7,7 @@ import com.basic.JWTSecurity.artwork_server.dto.ArtistRegistrationRequestRecord;
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
 import com.basic.JWTSecurity.artwork_server.dto.CatalogueStatsRecord;
 import com.basic.JWTSecurity.artwork_server.model.projection.UserProjection;
+import com.basic.JWTSecurity.artwork_server.repository.AdminGraphQueries;
 import com.basic.JWTSecurity.artwork_server.repository.UserRepository;
 import com.basic.JWTSecurity.auth.model.Profile;
 import com.basic.JWTSecurity.auth.repository.ProfileRepository;
@@ -47,6 +48,7 @@ public class AdminServiceImpl implements AdminService {
     private final ProfileRepository profileRepository;
     private final ProfileService profileService;
     private final UserRepository userRepository;
+    private final AdminGraphQueries adminGraphQueries;
 
     // Same id convention as the catalogue importer (md5(text)[:8]) so admin-created records sit naturally
     // alongside the seeded ones
@@ -269,7 +271,7 @@ public class AdminServiceImpl implements AdminService {
         return value instanceof Number number ? number.longValue() : 0L;
     }
 
-    private static Map<String, Long> toCountMap(List<Map<String, Object>> rows) {
+    private static Map<String, Long> toCountMap(java.util.Collection<Map<String, Object>> rows) {
         Map<String, Long> map = new java.util.HashMap<>();
         for (Map<String, Object> row : rows) {
             map.put(str(row, "id"), num(row, "count"));
@@ -299,19 +301,19 @@ public class AdminServiceImpl implements AdminService {
 
         Map<String, Map<String, Object>> artists = safe("userArtists", () -> {
             Map<String, Map<String, Object>> map = new java.util.HashMap<>();
-            for (Map<String, Object> row : userRepository.getAdminUserArtists()) {
+            for (Map<String, Object> row : adminGraphQueries.userArtists()) {
                 map.put(str(row, "id"), row);
             }
             return map;
         }, Map.of());
         Map<String, Long> artworkCounts = safe("userArtworkCounts",
-                () -> toCountMap(userRepository.getAdminUserArtworkCounts()), Map.of());
+                () -> toCountMap(adminGraphQueries.userArtworkCounts()), Map.of());
         Map<String, Long> likeCounts = safe("userLikeCounts",
-                () -> toCountMap(userRepository.getAdminUserLikeCounts()), Map.of());
+                () -> toCountMap(adminGraphQueries.userLikeCounts()), Map.of());
         Map<String, Long> followerCounts = safe("userFollowerCounts",
-                () -> toCountMap(userRepository.getAdminUserFollowerCounts()), Map.of());
+                () -> toCountMap(adminGraphQueries.userFollowerCounts()), Map.of());
         Map<String, Long> commentCounts = safe("userCommentCounts",
-                () -> toCountMap(userRepository.getAdminUserCommentCounts()), Map.of());
+                () -> toCountMap(adminGraphQueries.userCommentCounts()), Map.of());
 
         java.util.Comparator<AdminUserSummaryRecord> comparator = "username".equalsIgnoreCase(sort)
                 ? java.util.Comparator.comparing(AdminUserSummaryRecord::username,
@@ -349,11 +351,11 @@ public class AdminServiceImpl implements AdminService {
         UserProjection graph = safe("graphProfile",
                 () -> userRepository.findByIdProjection(username).orElse(null), null);
         Map<String, Object> artist = safe("userArtist",
-                () -> userRepository.findArtistByUserId(username).stream().findFirst().orElse(null), null);
+                () -> adminGraphQueries.userArtist(username).stream().findFirst().orElse(null), null);
         boolean isArtist = artist != null;
 
         List<AdminUserDetailsRecord.AdminUserArtworkRecord> artworks = isArtist
-                ? safe("userArtworks", () -> userRepository.getAdminUserArtworks(username, 12).stream()
+                ? safe("userArtworks", () -> adminGraphQueries.userArtworks(username, 12).stream()
                         .map(row -> new AdminUserDetailsRecord.AdminUserArtworkRecord(
                                 str(row, "id"), str(row, "title"), str(row, "status"), str(row, "releasedDate"),
                                 str(row, "imageUrlCompressed"), num(row, "likeCount")))
@@ -361,7 +363,7 @@ public class AdminServiceImpl implements AdminService {
                 : List.of();
         List<AdminUserDetailsRecord.AdminUserLikeRecord> recentLikes = graph == null
                 ? List.of()
-                : safe("userRecentLikes", () -> userRepository.getAdminUserRecentLikes(username, 12).stream()
+                : safe("userRecentLikes", () -> adminGraphQueries.userRecentLikes(username, 12).stream()
                         .map(row -> new AdminUserDetailsRecord.AdminUserLikeRecord(
                                 str(row, "id"), str(row, "title"), str(row, "artistId"), str(row, "likedAt")))
                         .toList(), List.of());
@@ -402,7 +404,7 @@ public class AdminServiceImpl implements AdminService {
         long totalGenres = safe("countGenres", genreRepository::count, 0L);
         long deletedArtworks = safe("countDeletedArtworks", artworkRepository::countDeletedArtworks, 0L);
         List<CatalogueStatsRecord.ArtistArtworkCount> artists = safe("countArtworksPerArtist",
-                () -> artistRepository.countArtworksPerArtist().stream()
+                () -> adminGraphQueries.countArtworksPerArtist().stream()
                         .map(row -> new CatalogueStatsRecord.ArtistArtworkCount(
                                 str(row, "id"), str(row, "name"), num(row, "artworkCount")))
                         .toList(),
