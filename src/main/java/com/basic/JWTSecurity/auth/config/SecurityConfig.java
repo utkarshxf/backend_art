@@ -39,15 +39,20 @@ public class SecurityConfig {
     @Autowired
     private AccessDeniedHandlerJwt accessDeniedHandler;
 
-    // Only the catalogue-admin account may call /admin/**; any other signed-in user gets 403.
-    // Overridable with the ADMIN_USERNAME env var.
+    // Only catalogue-admin accounts may call /admin/**; any other signed-in user gets 403.
+    // Comma-separated usernames via the APP_ADMIN_USERNAMES env var (matches the app setting Azure already had).
     @Bean
     AuthorizationManager<RequestAuthorizationContext> adminAuthorizationManager(
-            @Value("${spring.app.adminUsername:utkarshxf}") String adminUsername) {
+            @Value("${spring.app.adminUsernames:utkarshxf}") String adminUsernames) {
+        java.util.Set<String> admins = new java.util.HashSet<>();
+        for (String name : adminUsernames.split(",")) {
+            String trimmed = name.trim();
+            if (!trimmed.isEmpty()) admins.add(trimmed);
+        }
         return (authentication, context) -> {
             Authentication auth = authentication.get();
             boolean allowed = auth != null && auth.isAuthenticated()
-                    && adminUsername.equals(auth.getName());
+                    && admins.contains(auth.getName());
             return new AuthorizationDecision(allowed);
         };
     }
