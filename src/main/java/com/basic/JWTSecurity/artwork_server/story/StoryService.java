@@ -32,7 +32,14 @@ public class StoryService {
     // Language code (app setting) -> language name (prompt). Unknown codes are passed through as-is.
     private static final Map<String, String> LANGUAGE_NAMES = Map.of(
             "en", "English",
-            "hi", "Hindi"
+            "hi", "Hindi",
+            "tr", "Turkish",
+            "fa", "Persian",
+            "ar", "Arabic",
+            "id", "Indonesian",
+            "pl", "Polish",
+            "hu", "Hungarian",
+            "el", "Greek"
     );
 
     private final ArtworkRepository artworkRepository;
