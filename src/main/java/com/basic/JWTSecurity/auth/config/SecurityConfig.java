@@ -82,6 +82,9 @@ public class SecurityConfig {
                                 "/artist/*", "/artist/getArtistByArtistId", "/artist/getArtistStats",
                                 "/artist/getArtworkByArtistId", "/artist/search",
                                 "/comments/artwork/*", "/search", "/gallery",
+                                // Leaderboards are public aggregate projections; guests see them on Search
+                                "/users/leaderboard/top-viewers", "/users/leaderboard/top-creators",
+                                "/artist/leaderboard/top-artists",
                                 "/story/*", "/story/*/audio").permitAll()
                         // Everything the app calls before it has a JWT: log in, sign up, reset the password,
                         // check a username while creating the account
