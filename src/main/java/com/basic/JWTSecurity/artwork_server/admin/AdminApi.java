@@ -137,9 +137,29 @@ public class AdminApi {
     }
 
     @GetMapping("/artworks/{artworkId}")
-    public Artwork getArtwork(@PathVariable String artworkId) {
-        return artworkRepository.findById(artworkId)
+    public Map<String, Object> getArtwork(@PathVariable String artworkId) {
+        Artwork artwork = artworkRepository.findById(artworkId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "artwork not found"));
+        // Exactly the fields the catalogue lane's saved responses carry - no relationship fields.
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("id", artwork.getId());
+        response.put("title", artwork.getTitle());
+        response.put("status", artwork.getStatus());
+        response.put("artist", artwork.getArtist());
+        response.put("storageType", artwork.getStorageType());
+        response.put("type", artwork.getType());
+        response.put("releasedDate", artwork.getReleasedDate());
+        response.put("medium", artwork.getMedium());
+        response.put("description", artwork.getDescription());
+        response.put("dimensions", artwork.getDimensions());
+        response.put("current_location", artwork.getCurrent_location());
+        response.put("period_style", artwork.getPeriod_style());
+        response.put("art_movement", artwork.getArt_movement());
+        response.put("image_url", artwork.getImage_url());
+        response.put("image_url_compressed", artwork.getImage_url_compressed());
+        response.put("license_info", artwork.getLicense_info());
+        response.put("source_url", artwork.getSource_url());
+        return response;
     }
 
     @PutMapping("/artworks/{artworkId}")
