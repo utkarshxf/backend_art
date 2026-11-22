@@ -78,6 +78,8 @@ public class AdminApi {
             String title,
             String imageUrl,
             String imageUrlCompressed,
+            String licenseInfo,
+            String sourceUrl,
             String status) {
     }
 
@@ -177,6 +179,12 @@ public class AdminApi {
         }
         if (request.imageUrlCompressed() != null) {
             artwork.setImage_url_compressed(request.imageUrlCompressed());
+        }
+        if (request.licenseInfo() != null) {
+            artwork.setLicense_info(request.licenseInfo());
+        }
+        if (request.sourceUrl() != null) {
+            artwork.setSource_url(request.sourceUrl());
         }
         artworkRepository.save(artwork);
         return Map.of();
