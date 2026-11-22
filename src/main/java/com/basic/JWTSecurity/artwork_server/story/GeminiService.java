@@ -36,7 +36,7 @@ public class GeminiService {
     @Value("${gemini.api-key:}")
     private String apiKey;
 
-    @Value("${gemini.translate-model:gemini-2.5-flash-lite}")
+    @Value("${gemini.translate-model:gemini-3.1-flash-lite}")
     private String translateModel;
 
     @Value("${gemini.tts-model:gemini-2.5-flash-preview-tts}")
