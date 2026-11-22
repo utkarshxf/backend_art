@@ -4,16 +4,21 @@ import com.basic.JWTSecurity.auth.security.AccessDeniedHandlerJwt;
 import com.basic.JWTSecurity.auth.security.AuthTokenFilter;
 import com.basic.JWTSecurity.auth.security.AuthEntryPointJwt;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import static org.springframework.security.config.Customizer.withDefaults;
@@ -34,11 +39,26 @@ public class SecurityConfig {
     @Autowired
     private AccessDeniedHandlerJwt accessDeniedHandler;
 
+    // Only the catalogue-admin account may call /admin/**; any other signed-in user gets 403.
+    // Overridable with the ADMIN_USERNAME env var.
     @Bean
-    SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+    AuthorizationManager<RequestAuthorizationContext> adminAuthorizationManager(
+            @Value("${spring.app.adminUsername:utkarshxf}") String adminUsername) {
+        return (authentication, context) -> {
+            Authentication auth = authentication.get();
+            boolean allowed = auth != null && auth.isAuthenticated()
+                    && adminUsername.equals(auth.getName());
+            return new AuthorizationDecision(allowed);
+        };
+    }
+
+    @Bean
+    SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http,
+                                                   AuthorizationManager<RequestAuthorizationContext> adminAuthorizationManager) throws Exception {
         http.authorizeHttpRequests(authorizeRequests ->
                 authorizeRequests
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/admin/**").access(adminAuthorizationManager)
                         // Called by the keep-alive workflow, which has no JWT
                         .requestMatchers(HttpMethod.GET, "/health").permitAll()
                         // Everything the app calls before it has a JWT: log in, sign up, reset the password,
