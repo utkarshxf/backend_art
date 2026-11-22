@@ -182,12 +182,14 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "   MATCH (user)-[:LIKES]->(artwork:Artwork)<-[:LIKES]-(otherUser:User)-[:LIKES]->(recommendArtwork:Artwork) " +
                     "   WHERE NOT (user)-[:LIKES]->(recommendArtwork) " +
                     "   AND NOT (user)-[:DISLIKES]->(recommendArtwork) " +
+                    "   AND NOT (user)-[:VIEWED]->(recommendArtwork) " +
                     "   WITH DISTINCT recommendArtwork, count(DISTINCT otherUser) AS userSimilarity " +
                     "   RETURN recommendArtwork, userSimilarity, 1 AS priority " +
                     "   UNION " +
                     "   MATCH (artwork:Artwork) " +
                     "   WHERE NOT (:User {id: $userId})-[:LIKES]->(artwork) " +
                     "   AND NOT (:User {id: $userId})-[:DISLIKES]->(artwork) " +
+                    "   AND NOT (:User {id: $userId})-[:VIEWED]->(artwork) " +
                     "   AND NOT ((:User {id: $userId})-[:LIKES]->(:Artwork)<-[:LIKES]-(:User)-[:LIKES]->(artwork)) " +
                     "   RETURN artwork AS recommendArtwork, 0 AS userSimilarity, 2 AS priority " +
                     "} " +
