@@ -43,7 +43,19 @@ public class StoryService {
     @Value("${gemini.default-voice:Kore}")
     private String defaultVoice;
 
+    // Regions Gemini free-tier terms exclude from being served by an API client (EEA + UK + CH).
+    // A missing/unknown region is treated as restricted: no Gemini call, the app uses on-device TTS.
+    private static final java.util.Set<String> GEMINI_RESTRICTED_REGIONS = java.util.Set.of(
+            "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IS", "IE",
+            "IT", "LV", "LI", "LT", "LU", "MT", "NL", "NO", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
+            "GB", "CH"
+    );
+
     public StoryText getStoryText(String artworkId, String language) {
+        return getStoryText(artworkId, language, null);
+    }
+
+    public StoryText getStoryText(String artworkId, String language, String region) {
         Artwork artwork = findArtwork(artworkId);
         String lang = normalizeLanguage(language);
         String source = artwork.getDescription().trim();
@@ -56,11 +68,15 @@ public class StoryService {
 
         return translationRepository.findFirstByArtworkIdAndLanguageAndSourceHash(artworkId, lang, sourceHash)
                 .map(t -> new StoryText(artworkId, lang, t.getText()))
-                .orElseGet(() -> translateAndCache(artworkId, lang, source, sourceHash));
+                .orElseGet(() -> translateAndCache(artworkId, lang, source, sourceHash, region));
     }
 
     public StoryAudio getStoryAudio(String artworkId, String language, String voice) {
-        StoryText storyText = getStoryText(artworkId, language);
+        return getStoryAudio(artworkId, language, voice, null);
+    }
+
+    public StoryAudio getStoryAudio(String artworkId, String language, String voice, String region) {
+        StoryText storyText = getStoryText(artworkId, language, region);
         if (storyText.text().length() > MAX_TTS_CHARS) {
             throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Story is too long to read aloud");
         }
@@ -69,11 +85,12 @@ public class StoryService {
         String sourceHash = sha256(storyText.text());
 
         return audioRepository.findFirstByArtworkIdAndLanguageAndVoiceAndSourceHash(artworkId, lang, selectedVoice, sourceHash)
-                .orElseGet(() -> synthesizeAndCache(artworkId, lang, selectedVoice, storyText.text(), sourceHash));
+                .orElseGet(() -> synthesizeAndCache(artworkId, lang, selectedVoice, storyText.text(), sourceHash, region));
     }
 
-    private StoryText translateAndCache(String artworkId, String lang, String source, String sourceHash) {
+    private StoryText translateAndCache(String artworkId, String lang, String source, String sourceHash, String region) {
         requireGemini();
+        requireRegionAllowed(region);
         String translated = geminiService.translate(source, LANGUAGE_NAMES.getOrDefault(lang, lang));
         StoryTranslation saved = translationRepository.save(StoryTranslation.builder()
                 .artworkId(artworkId)
@@ -85,8 +102,9 @@ public class StoryService {
         return new StoryText(artworkId, lang, saved.getText());
     }
 
-    private StoryAudio synthesizeAndCache(String artworkId, String lang, String voice, String text, String sourceHash) {
+    private StoryAudio synthesizeAndCache(String artworkId, String lang, String voice, String text, String sourceHash, String region) {
         requireGemini();
+        requireRegionAllowed(region);
         byte[] pcm = geminiService.synthesize(text, voice);
         byte[] wav = wrapPcmInWav(pcm);
         return audioRepository.save(StoryAudio.builder()
@@ -98,6 +116,15 @@ public class StoryService {
                 .contentType("audio/wav")
                 .createdAt(Instant.now())
                 .build());
+    }
+
+    // Serving already-cached content never touches Gemini, so only generation is gated here.
+    private void requireRegionAllowed(String region) {
+        if (region == null || region.isBlank()
+                || GEMINI_RESTRICTED_REGIONS.contains(region.trim().toUpperCase(java.util.Locale.ROOT))) {
+            // Same 503 the app already handles: it reads the story aloud with on-device TTS instead
+            throw new GeminiService.GeminiQuotaException();
+        }
     }
 
     private void requireGemini() {

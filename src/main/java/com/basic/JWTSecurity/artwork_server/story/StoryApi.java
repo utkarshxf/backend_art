@@ -29,8 +29,9 @@ public class StoryApi {
 
     @GetMapping("/{artworkId}")
     public ResponseEntity<Map<String, String>> getStoryText(@PathVariable String artworkId,
-                                                            @RequestParam(defaultValue = "en") String lang) {
-        StoryService.StoryText storyText = storyService.getStoryText(artworkId, lang);
+                                                            @RequestParam(defaultValue = "en") String lang,
+                                                            @RequestParam(required = false) String region) {
+        StoryService.StoryText storyText = storyService.getStoryText(artworkId, lang, region);
         return ResponseEntity.ok(Map.of(
                 "artworkId", storyText.artworkId(),
                 "language", storyText.language(),
@@ -41,8 +42,9 @@ public class StoryApi {
     @GetMapping("/{artworkId}/audio")
     public ResponseEntity<byte[]> getStoryAudio(@PathVariable String artworkId,
                                                 @RequestParam(defaultValue = "en") String lang,
-                                                @RequestParam(required = false) String voice) {
-        StoryAudio audio = storyService.getStoryAudio(artworkId, lang, voice);
+                                                @RequestParam(required = false) String voice,
+                                                @RequestParam(required = false) String region) {
+        StoryAudio audio = storyService.getStoryAudio(artworkId, lang, voice, region);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, audio.getContentType())
                 // Audio for one artwork + language + voice never changes; let the app cache it aggressively
