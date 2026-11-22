@@ -50,3 +50,13 @@ firebase:
 agora:
   app-id: ${AGORA_APP_ID:}
   app-certificate: ${AGORA_APP_CERTIFICATE:}
+
+# Reels story read-aloud: Gemini (Google AI Studio free tier) translates artwork stories and synthesizes
+# speech; results are cached in MongoDB so each artwork + language + voice is generated once. The key is a
+# SECRET (App Setting only). Empty = story translation/audio disabled, /story/** answers 503 and the app
+# falls back to on-device TTS. Only public artwork story text is ever sent to Gemini - never user data.
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  translate-model: ${GEMINI_TRANSLATE_MODEL:gemini-2.5-flash-lite}
+  tts-model: ${GEMINI_TTS_MODEL:gemini-2.5-flash-preview-tts}
+  default-voice: ${GEMINI_TTS_VOICE:Kore}
