@@ -114,7 +114,13 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     public Optional<List<GetArtwork>> recommendArtwork(String userId, Integer skip, Integer limit) {
-        return repository.recommendArtwork(userId,skip,limit);
+        Optional<List<GetArtwork>> recommendations = repository.recommendArtwork(userId, skip, limit);
+        // Guests and users without a graph node/signal get an empty personalized list;
+        // serve popular artworks instead of an empty feed
+        if (recommendations.isEmpty() || recommendations.get().isEmpty()) {
+            return repository.popularArtwork(userId, skip, limit);
+        }
+        return recommendations;
     }
 
     @Override
@@ -129,7 +135,12 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     public Optional<List<GetArtwork>> recommendedArtworkForToday(String userId, Integer skip, Integer limit) {
-        return repository.recommendedArtworkForToday(userId,skip,limit);
+        Optional<List<GetArtwork>> recommendations = repository.recommendedArtworkForToday(userId, skip, limit);
+        // Same guest fallback as recommendArtwork: never an empty feed for unknown users
+        if (recommendations.isEmpty() || recommendations.get().isEmpty()) {
+            return repository.popularArtwork(userId, skip, limit);
+        }
+        return recommendations;
     }
 
     @Override
