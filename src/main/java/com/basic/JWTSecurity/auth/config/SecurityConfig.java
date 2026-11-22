@@ -36,6 +36,11 @@ public class SecurityConfig {
         return new AuthTokenFilter();
     }
 
+    @Bean
+    public com.basic.JWTSecurity.auth.security.AnonymousRateLimitFilter anonymousRateLimitFilter() {
+        return new com.basic.JWTSecurity.auth.security.AnonymousRateLimitFilter();
+    }
+
     @Autowired
     private AccessDeniedHandlerJwt accessDeniedHandler;
 
@@ -66,6 +71,18 @@ public class SecurityConfig {
                         .requestMatchers("/admin/**").access(adminAuthorizationManager)
                         // Called by the keep-alive workflow, which has no JWT
                         .requestMatchers(HttpMethod.GET, "/health").permitAll()
+                        // Guest browsing: read-only catalogue endpoints work without a JWT.
+                        // Every write (like/comment/follow/upload) stays authenticated.
+                        .requestMatchers(HttpMethod.GET,
+                                "/artwork", "/artwork/popular", "/artwork/new-arrivals",
+                                "/artwork/recommended-today", "/artwork/today-biggest-hit",
+                                "/artwork/similarGenreArtworks", "/artwork/moreFromArtist",
+                                "/artwork/recommend", "/artwork/*/*", "/artwork/*/stats",
+                                "/genres", "/genres/all",
+                                "/artist/*", "/artist/getArtistByArtistId", "/artist/getArtistStats",
+                                "/artist/getArtworkByArtistId", "/artist/search",
+                                "/comments/artwork/*", "/search", "/gallery",
+                                "/story/*", "/story/*/audio").permitAll()
                         // Everything the app calls before it has a JWT: log in, sign up, reset the password,
                         // check a username while creating the account
                         .requestMatchers("/login", "/signup",
@@ -90,6 +107,8 @@ public class SecurityConfig {
                 )
         );
         http.csrf(csrf -> csrf.disable());
+        http.addFilterBefore(anonymousRateLimitFilter(),
+                UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(authenticationJwtTokenFilter(),
                 UsernamePasswordAuthenticationFilter.class);
 

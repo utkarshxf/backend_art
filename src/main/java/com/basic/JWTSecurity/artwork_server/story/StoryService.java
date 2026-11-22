@@ -56,6 +56,11 @@ public class StoryService {
     }
 
     public StoryText getStoryText(String artworkId, String language, String region) {
+        return getStoryText(artworkId, language, region, false);
+    }
+
+    // guest=true: serve only what is already cached; guests never trigger Gemini generation.
+    public StoryText getStoryText(String artworkId, String language, String region, boolean guest) {
         Artwork artwork = findArtwork(artworkId);
         String lang = normalizeLanguage(language);
         String source = artwork.getDescription().trim();
@@ -68,7 +73,13 @@ public class StoryService {
 
         return translationRepository.findFirstByArtworkIdAndLanguageAndSourceHash(artworkId, lang, sourceHash)
                 .map(t -> new StoryText(artworkId, lang, t.getText()))
-                .orElseGet(() -> translateAndCache(artworkId, lang, source, sourceHash, region));
+                .orElseGet(() -> {
+                    if (guest) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "Sign up to translate stories into this language");
+                    }
+                    return translateAndCache(artworkId, lang, source, sourceHash, region);
+                });
     }
 
     public StoryAudio getStoryAudio(String artworkId, String language, String voice) {
@@ -76,7 +87,12 @@ public class StoryService {
     }
 
     public StoryAudio getStoryAudio(String artworkId, String language, String voice, String region) {
-        StoryText storyText = getStoryText(artworkId, language, region);
+        return getStoryAudio(artworkId, language, voice, region, false);
+    }
+
+    // guest=true: serve only already-cached audio; guests never trigger Gemini generation.
+    public StoryAudio getStoryAudio(String artworkId, String language, String voice, String region, boolean guest) {
+        StoryText storyText = getStoryText(artworkId, language, region, guest);
         if (storyText.text().length() > MAX_TTS_CHARS) {
             throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Story is too long to read aloud");
         }
@@ -85,7 +101,13 @@ public class StoryService {
         String sourceHash = sha256(storyText.text());
 
         return audioRepository.findFirstByArtworkIdAndLanguageAndVoiceAndSourceHash(artworkId, lang, selectedVoice, sourceHash)
-                .orElseGet(() -> synthesizeAndCache(artworkId, lang, selectedVoice, storyText.text(), sourceHash, region));
+                .orElseGet(() -> {
+                    if (guest) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "Sign up to listen to this story");
+                    }
+                    return synthesizeAndCache(artworkId, lang, selectedVoice, storyText.text(), sourceHash, region);
+                });
     }
 
     private StoryText translateAndCache(String artworkId, String lang, String source, String sourceHash, String region) {

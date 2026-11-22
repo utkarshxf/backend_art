@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
@@ -31,7 +34,7 @@ public class StoryApi {
     public ResponseEntity<Map<String, String>> getStoryText(@PathVariable String artworkId,
                                                             @RequestParam(defaultValue = "en") String lang,
                                                             @RequestParam(required = false) String region) {
-        StoryService.StoryText storyText = storyService.getStoryText(artworkId, lang, region);
+        StoryService.StoryText storyText = storyService.getStoryText(artworkId, lang, region, isGuest());
         return ResponseEntity.ok(Map.of(
                 "artworkId", storyText.artworkId(),
                 "language", storyText.language(),
@@ -44,12 +47,18 @@ public class StoryApi {
                                                 @RequestParam(defaultValue = "en") String lang,
                                                 @RequestParam(required = false) String voice,
                                                 @RequestParam(required = false) String region) {
-        StoryAudio audio = storyService.getStoryAudio(artworkId, lang, voice, region);
+        StoryAudio audio = storyService.getStoryAudio(artworkId, lang, voice, region, isGuest());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, audio.getContentType())
                 // Audio for one artwork + language + voice never changes; let the app cache it aggressively
                 .header(HttpHeaders.CACHE_CONTROL, "public, max-age=31536000, immutable")
                 .body(audio.getData());
+    }
+
+    // No valid JWT on the request: the caller browses as a guest and gets cached content only.
+    private boolean isGuest() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken;
     }
 
     // Quota exhausted (429 from Gemini): tell the app to fall back to on-device TTS and try again later
