@@ -2,12 +2,13 @@ name: Build and Push Docker Images
 
 # Triggers the workflow on push or pull request to the master branch
 on:
-  push:
-    branches:
-      - master
+  # Push trigger removed 2026-11-23: master_artly-backend.yml already builds and
+  # deploys on push to master, so this workflow double-ran every push. Kept for
+  # pull requests and manual runs only.
   pull_request:
     branches:
       - master
+  workflow_dispatch:
 
 # Define environment variables and permissions
 env:

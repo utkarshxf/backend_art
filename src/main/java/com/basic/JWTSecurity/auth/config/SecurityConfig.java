@@ -85,7 +85,8 @@ public class SecurityConfig {
                                 // Leaderboards are public aggregate projections; guests see them on Search
                                 "/users/leaderboard/top-viewers", "/users/leaderboard/top-creators",
                                 "/artist/leaderboard/top-artists",
-                                "/story/*", "/story/*/audio").permitAll()
+                                "/story/*", "/story/*/audio",
+                                "/geo/country").permitAll()
                         // Everything the app calls before it has a JWT: log in, sign up, reset the password,
                         // check a username while creating the account
                         .requestMatchers("/login", "/signup",

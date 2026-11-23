@@ -37,9 +37,10 @@ public class ArtworkApi {
     }
 
     @GetMapping("/recommend")
-    public ResponseEntity<?> recommendArtwork(@RequestParam String userId, @RequestParam Integer skip, @RequestParam Integer limit)
+    public ResponseEntity<?> recommendArtwork(@RequestParam String userId, @RequestParam Integer skip, @RequestParam Integer limit,
+                                              @RequestParam(required = false) String country)
     {
-        Optional<List<GetArtwork>> artworks = artworkService.recommendArtwork(userId,skip,limit);
+        Optional<List<GetArtwork>> artworks = artworkService.recommendArtwork(userId,skip,limit,country);
         return new ResponseEntity<>(artworks,HttpStatus.OK);
     }
 
@@ -47,8 +48,9 @@ public class ArtworkApi {
     public ResponseEntity<?> popularArtwork(
             @RequestParam String userId,
             @RequestParam Integer skip,
-            @RequestParam Integer limit) {
-        Optional<List<GetArtwork>> artworks = artworkService.popularArtwork(userId, skip, limit);
+            @RequestParam Integer limit,
+            @RequestParam(required = false) String country) {
+        Optional<List<GetArtwork>> artworks = artworkService.popularArtwork(userId, skip, limit, country);
         return new ResponseEntity<>(artworks, HttpStatus.OK);
     }
 

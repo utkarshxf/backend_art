@@ -1,0 +1,193 @@
+package com.basic.JWTSecurity.artwork_server.geo;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Static country data for the geo-aware feed (v2.8.4).
+ *
+ * Feed ranking is tier-first (product decision 2026-11-23): an artwork's artist
+ * feed_country equal to the viewer's country is tier 0, a neighbouring country
+ * is tier 1, everything else (including unknown/excluded) is tier 2. Within a
+ * tier the existing taste ranking applies. Tier values below are the tunable
+ * weights: adjust GEO_TIER_* to re-balance without touching the query.
+ */
+public final class GeoCountries {
+
+    public static final int GEO_TIER_OWN = 0;
+    public static final int GEO_TIER_NEIGHBOUR = 1;
+    public static final int GEO_TIER_REST = 2;
+
+    private GeoCountries() {}
+
+    /** Land borders plus short fixed-link/strait adjacency, ISO 3166-1 alpha-2. */
+    private static final Map<String, List<String>> NEIGHBOURS = Map.ofEntries(
+            Map.entry("IN", List.of("PK","AF","CN","NP","BT","MM","BD","LK")),
+            Map.entry("US", List.of("CA","MX")),
+            Map.entry("IT", List.of("FR","CH","AT","SI","SM","VA")),
+            Map.entry("FR", List.of("BE","LU","DE","CH","IT","MC","ES","AD","GB")),
+            Map.entry("GB", List.of("IE","FR")),
+            Map.entry("ES", List.of("PT","FR","AD","MA")),
+            Map.entry("DE", List.of("DK","NL","BE","LU","FR","CH","AT","PL","CZ")),
+            Map.entry("NL", List.of("BE","DE")),
+            Map.entry("BE", List.of("NL","DE","LU","FR")),
+            Map.entry("CH", List.of("DE","FR","IT","AT","LI")),
+            Map.entry("AT", List.of("DE","CZ","SK","HU","SI","IT","CH","LI")),
+            Map.entry("GR", List.of("AL","MK","BG","TR")),
+            Map.entry("PT", List.of("ES")),
+            Map.entry("IE", List.of("GB")),
+            Map.entry("DK", List.of("DE","SE")),
+            Map.entry("SE", List.of("NO","FI","DK")),
+            Map.entry("NO", List.of("SE","FI","RU")),
+            Map.entry("FI", List.of("NO","SE","RU")),
+            Map.entry("PL", List.of("DE","CZ","SK","UA","BY","LT","RU")),
+            Map.entry("CZ", List.of("DE","PL","SK","AT")),
+            Map.entry("SK", List.of("PL","UA","HU","AT","CZ")),
+            Map.entry("HU", List.of("RO","UA","SK","AT","SI","HR","RS")),
+            Map.entry("RO", List.of("HU","UA","MD","BG","RS")),
+            Map.entry("UA", List.of("PL","SK","HU","RO","MD","BY","RU")),
+            Map.entry("BY", List.of("PL","LT","LV","RU","UA")),
+            Map.entry("RU", List.of("NO","FI","EE","LV","LT","PL","BY","UA","GE","AZ","KZ","CN","MN","KP")),
+            Map.entry("EE", List.of("RU","LV")),
+            Map.entry("LV", List.of("EE","RU","BY","LT")),
+            Map.entry("LT", List.of("LV","BY","PL","RU")),
+            Map.entry("TR", List.of("GR","BG","GE","AM","AZ","IR","IQ","SY")),
+            Map.entry("IL", List.of("EG","JO","LB","SY","PS")),
+            Map.entry("PS", List.of("IL","EG","JO")),
+            Map.entry("CN", List.of("RU","MN","KP","VN","LA","MM","IN","BT","NP","PK","AF","TJ","KG","KZ")),
+            Map.entry("JP", List.of("KR")),
+            Map.entry("KR", List.of("KP")),
+            Map.entry("KP", List.of("KR","CN","RU")),
+            Map.entry("ZA", List.of("NA","BW","ZW","MZ","SZ","LS")),
+            Map.entry("EG", List.of("LY","SD","IL","PS")),
+            Map.entry("MA", List.of("DZ","ES")),
+            Map.entry("DZ", List.of("MA","TN","LY","NE","ML","MR")),
+            Map.entry("TN", List.of("DZ","LY")),
+            Map.entry("LY", List.of("TN","DZ","NE","TD","SD","EG")),
+            Map.entry("NG", List.of("BJ","NE","TD","CM")),
+            Map.entry("GH", List.of("CI","BF","TG")),
+            Map.entry("KE", List.of("ET","SO","TZ","UG","SS")),
+            Map.entry("ET", List.of("SD","SS","KE","SO","DJ","ER")),
+            Map.entry("CA", List.of("US")),
+            Map.entry("MX", List.of("US","BZ","GT")),
+            Map.entry("BR", List.of("GF","SR","GY","VE","CO","PE","BO","PY","AR","UY")),
+            Map.entry("AR", List.of("CL","BO","PY","BR","UY")),
+            Map.entry("CL", List.of("PE","BO","AR")),
+            Map.entry("CO", List.of("PA","EC","PE","BR","VE")),
+            Map.entry("PE", List.of("EC","CO","BR","BO","CL")),
+            Map.entry("VE", List.of("CO","BR","GY")),
+            Map.entry("ID", List.of("MY","PG","TL")),
+            Map.entry("MY", List.of("TH","ID","BN","SG")),
+            Map.entry("TH", List.of("MM","LA","KH","MY")),
+            Map.entry("VN", List.of("CN","LA","KH")),
+            Map.entry("IR", List.of("TR","AZ","AM","TM","AF","PK","IQ")),
+            Map.entry("IQ", List.of("TR","IR","SY","JO","SA","KW")),
+            Map.entry("SA", List.of("JO","IQ","KW","QA","AE","OM","YE")),
+            Map.entry("AE", List.of("SA","OM")),
+            Map.entry("SY", List.of("TR","IQ","JO","IL","LB")),
+            Map.entry("LB", List.of("SY","IL")),
+            Map.entry("JO", List.of("SY","IQ","SA","IL","PS")),
+            Map.entry("KZ", List.of("RU","CN","KG","UZ","TM")),
+            Map.entry("KG", List.of("KZ","CN","TJ","UZ")),
+            Map.entry("TJ", List.of("KG","UZ","CN","AF")),
+            Map.entry("AF", List.of("TJ","CN","PK","IR","TM","UZ","IN")),
+            Map.entry("PK", List.of("IN","AF","IR","CN")),
+            Map.entry("BD", List.of("IN","MM")),
+            Map.entry("NP", List.of("IN","CN")),
+            Map.entry("BT", List.of("IN","CN")),
+            Map.entry("MM", List.of("IN","BD","CN","LA","TH")),
+            Map.entry("LK", List.of("IN")),
+            Map.entry("MN", List.of("RU","CN")),
+            Map.entry("GE", List.of("RU","TR","AM","AZ")),
+            Map.entry("AM", List.of("GE","TR","AZ","IR")),
+            Map.entry("AZ", List.of("RU","GE","TR","IR","AM")),
+            Map.entry("MD", List.of("RO","UA")),
+            Map.entry("BG", List.of("RO","RS","MK","GR","TR")),
+            Map.entry("MK", List.of("RS","BG","GR","AL")),
+            Map.entry("AL", List.of("MK","GR","ME")),
+            Map.entry("RS", List.of("HU","RO","BG","MK","HR","BA","ME")),
+            Map.entry("HR", List.of("HU","SI","RS","BA","ME")),
+            Map.entry("SI", List.of("AT","HU","HR","IT")),
+            Map.entry("BA", List.of("HR","RS","ME")),
+            Map.entry("ME", List.of("RS","BA","AL","HR")),
+            Map.entry("LU", List.of("BE","DE","FR")),
+            Map.entry("MC", List.of("FR")),
+            Map.entry("AD", List.of("ES","FR")),
+            Map.entry("SM", List.of("IT")),
+            Map.entry("VA", List.of("IT")),
+            Map.entry("LI", List.of("CH","AT")),
+            Map.entry("PA", List.of("CO","CR")),
+            Map.entry("CR", List.of("PA","NI")),
+            Map.entry("GT", List.of("MX","BZ","SV","HN")),
+            Map.entry("BZ", List.of("MX","GT")),
+            Map.entry("HN", List.of("GT","SV","NI")),
+            Map.entry("SV", List.of("GT","HN")),
+            Map.entry("NI", List.of("HN","CR")),
+            Map.entry("HT", List.of("DO")),
+            Map.entry("DO", List.of("HT")),
+            Map.entry("BF", List.of("CI","GH","TG","ML","NE","BJ")),
+            Map.entry("BJ", List.of("BF","NG","NE","TG")),
+            Map.entry("NE", List.of("DZ","LY","TD","NG","BJ","BF","ML")),
+            Map.entry("TD", List.of("LY","SD","CF","NE","NG","CM")),
+            Map.entry("ML", List.of("DZ","NE","BF","CI","SN","MR")),
+            Map.entry("SN", List.of("MR","ML","GM")),
+            Map.entry("GM", List.of("SN")),
+            Map.entry("CI", List.of("ML","BF","GH","LR","GN")),
+            Map.entry("LR", List.of("CI","GN","SL")),
+            Map.entry("GN", List.of("SN","ML","CI","LR","SL","GW")),
+            Map.entry("GW", List.of("SN","GN")),
+            Map.entry("SL", List.of("GN","LR")),
+            Map.entry("TG", List.of("BF","GH","BJ")),
+            Map.entry("BW", List.of("ZA","NA","ZW","ZM")),
+            Map.entry("NA", List.of("ZA","BW","ZM","AO")),
+            Map.entry("ZW", List.of("ZA","BW","ZM","MZ")),
+            Map.entry("MZ", List.of("ZA","SZ","ZW","ZM","MW","TZ")),
+            Map.entry("AO", List.of("NA","ZM","CD","CG")),
+            Map.entry("CD", List.of("AO","ZM","TZ","BI","RW","UG","SS","CF","CG")),
+            Map.entry("UG", List.of("CD","KE","TZ","RW","SS")),
+            Map.entry("TZ", List.of("CD","UG","KE","MZ","MW","ZM","RW","BI")),
+            Map.entry("RW", List.of("CD","UG","TZ","BI")),
+            Map.entry("BI", List.of("CD","RW","TZ")),
+            Map.entry("MW", List.of("MZ","ZM","TZ")),
+            Map.entry("ZM", List.of("AO","CD","TZ","MW","MZ","ZW","BW","NA")),
+            Map.entry("SZ", List.of("ZA","MZ")),
+            Map.entry("LS", List.of("ZA")),
+            Map.entry("SS", List.of("SD","ET","KE","UG","CD","CF")),
+            Map.entry("SD", List.of("EG","LY","TD","CF","SS","ET","ER")),
+            Map.entry("ER", List.of("SD","ET","DJ")),
+            Map.entry("DJ", List.of("ER","ET","SO")),
+            Map.entry("SO", List.of("DJ","ET","KE")),
+            Map.entry("MR", List.of("DZ","SN","ML")),
+            Map.entry("PG", List.of("ID","AU")),
+            Map.entry("AU", List.of("PG")),
+            Map.entry("TL", List.of("ID")),
+            Map.entry("BN", List.of("MY")),
+            Map.entry("KH", List.of("TH","LA","VN")),
+            Map.entry("LA", List.of("MM","CN","VN","TH","KH")),
+            Map.entry("UZ", List.of("KZ","KG","TJ","AF","TM")),
+            Map.entry("TM", List.of("KZ","UZ","AF","IR")),
+            Map.entry("EC", List.of("CO","PE")),
+            Map.entry("BO", List.of("PE","BR","PY","AR","CL")),
+            Map.entry("PY", List.of("BR","AR","BO")),
+            Map.entry("UY", List.of("BR","AR")),
+            Map.entry("GY", List.of("VE","BR","SR")),
+            Map.entry("SR", List.of("GY","BR","GF")),
+            Map.entry("GF", List.of("SR","BR")),
+            Map.entry("SG", List.of("MY")),
+            Map.entry("QA", List.of("SA")),
+            Map.entry("KW", List.of("IQ","SA")),
+            Map.entry("OM", List.of("AE","SA","YE")),
+            Map.entry("YE", List.of("SA","OM")),
+            Map.entry("CF", List.of("TD","SD","SS","CD","CG","CM"))
+    );
+
+    /** Neighbouring ISO2 codes for a country, empty list for unknown/island countries. */
+    public static List<String> neighboursOf(String iso2) {
+        if (iso2 == null) return List.of();
+        return NEIGHBOURS.getOrDefault(iso2.trim().toUpperCase(java.util.Locale.ROOT), List.of());
+    }
+
+    public static boolean isIso2(String value) {
+        return value != null && value.matches("^[A-Z]{2}$");
+    }
+}

@@ -26,4 +26,36 @@ public interface AdminRepository extends Neo4jRepository<Artwork, String> {
     void linkArtistToGenre(@Param("artistId") String artistId,
                            @Param("genreId") String genreId,
                            @Param("createdAt") LocalDateTime createdAt);
+
+    // Targeted partial artist update: a plain Cypher SET instead of the SDN
+    // entity load+save. The entity round-trip 500s on some richly-connected
+    // nodes (e.g. Rodin, De Blaas); this updates only the supplied fields.
+    @Query("MATCH (artist:Artist {id: $artistId}) RETURN count(artist) > 0")
+    boolean artistExists(@Param("artistId") String artistId);
+
+    @Query("MATCH (artist:Artist {id: $artistId}) " +
+            "SET artist.name = coalesce($name, artist.name), " +
+            "artist.birth_date = coalesce($birthDate, artist.birth_date), " +
+            "artist.death_date = coalesce($deathDate, artist.death_date), " +
+            "artist.nationality = coalesce($nationality, artist.nationality), " +
+            "artist.art_movement = coalesce($artMovement, artist.art_movement), " +
+            "artist.notable_works = coalesce($notableWorks, artist.notable_works), " +
+            "artist.wikipedia_url = coalesce($wikipediaUrl, artist.wikipedia_url), " +
+            "artist.description = coalesce($description, artist.description)")
+    void updateArtistFields(@Param("artistId") String artistId,
+                            @Param("name") String name,
+                            @Param("birthDate") String birthDate,
+                            @Param("deathDate") String deathDate,
+                            @Param("nationality") String nationality,
+                            @Param("artMovement") String artMovement,
+                            @Param("notableWorks") String notableWorks,
+                            @Param("wikipediaUrl") String wikipediaUrl,
+                            @Param("description") String description);
+
+    // Geo feed bulk write (v2.8.4): feed_country ISO2 (null clears) + feed_exclude flag.
+    @Query("UNWIND $entries AS e " +
+            "MATCH (artist:Artist {id: e.artistId}) " +
+            "SET artist.feed_country = e.feedCountry, artist.feed_exclude = coalesce(e.feedExclude, false) " +
+            "RETURN count(artist)")
+    long setFeedCountries(@Param("entries") java.util.List<java.util.Map<String, Object>> entries);
 }

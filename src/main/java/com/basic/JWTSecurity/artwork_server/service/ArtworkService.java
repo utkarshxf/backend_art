@@ -20,9 +20,9 @@ public interface ArtworkService {
     void userUnLikeAnArtwork(String artworkId, String userId);
     void userDislikeAnArtwork(String artworkId, String userId);
     void userUnDislikeAnArtwork(String artworkId, String userId);
-    Optional<List<GetArtwork>> recommendArtwork(String userId, Integer skip, Integer limit);
+    Optional<List<GetArtwork>> recommendArtwork(String userId, Integer skip, Integer limit, String country);
 
-    Optional<List<GetArtwork>> popularArtwork(String userId, Integer skip, Integer limit);
+    Optional<List<GetArtwork>> popularArtwork(String userId, Integer skip, Integer limit, String country);
     Optional<List<GetArtwork>> newArrivalArtwork(String userId, Integer skip, Integer limit);
 
     Optional<List<GetArtwork>> recommendedArtworkForToday(String userId, Integer skip, Integer limit);

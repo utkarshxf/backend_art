@@ -146,36 +146,51 @@ public class AdminApi {
     @PutMapping("/artists/{artistId}")
     public Map<String, String> updateArtist(@PathVariable String artistId,
                                             @RequestBody AdminArtistRequest request) {
-        Artist artist = artistRepository.findById(artistId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "artist not found"));
-        // Partial update: replace only the fields supplied; every omitted field is preserved.
-        // image_url is deliberately excluded - the image lane owns it.
-        if (request.name() != null) {
-            artist.setName(request.name());
+        // Targeted Cypher partial update instead of the SDN entity load+save,
+        // which 500s on some richly-connected artist nodes (e.g. Rodin, De Blaas).
+        // Same contract as before: only supplied fields change, omitted fields are
+        // preserved, image_url is deliberately excluded - the image lane owns it.
+        if (!adminRepository.artistExists(artistId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "artist not found");
         }
-        if (request.birthDate() != null) {
-            artist.setBirth_date(request.birthDate());
-        }
-        if (request.deathDate() != null) {
-            artist.setDeath_date(request.deathDate());
-        }
-        if (request.nationality() != null) {
-            artist.setNationality(request.nationality());
-        }
-        if (request.artMovement() != null) {
-            artist.setArt_movement(request.artMovement());
-        }
-        if (request.notableWorks() != null) {
-            artist.setNotable_works(request.notableWorks());
-        }
-        if (request.wikipediaUrl() != null) {
-            artist.setWikipedia_url(request.wikipediaUrl());
-        }
-        if (request.description() != null) {
-            artist.setDescription(request.description());
-        }
-        artistRepository.save(artist);
+        adminRepository.updateArtistFields(artistId,
+                request.name(),
+                request.birthDate(),
+                request.deathDate(),
+                request.nationality(),
+                request.artMovement(),
+                request.notableWorks(),
+                request.wikipediaUrl(),
+                request.description());
         return Map.of();
+    }
+
+    @PostMapping("/artists/feed-countries")
+    public Map<String, Object> setFeedCountries(@RequestBody java.util.List<FeedCountryEntry> entries) {
+        // Bulk geo-feed write (v2.8.4). Validated ISO2 codes or null; excluded
+        // collectives/workshops carry feedExclude=true.
+        java.util.List<java.util.Map<String, Object>> rows = new java.util.ArrayList<>();
+        for (FeedCountryEntry e : entries) {
+            String country = e.feedCountry();
+            if (country != null) {
+                country = country.trim().toUpperCase(java.util.Locale.ROOT);
+                if (!country.matches("^[A-Z]{2}$")) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "invalid feedCountry for artist " + e.artistId());
+                }
+            }
+            java.util.Map<String, Object> row = new java.util.HashMap<>();
+            row.put("artistId", e.artistId());
+            row.put("feedCountry", country);
+            row.put("feedExclude", Boolean.TRUE.equals(e.feedExclude()));
+            rows.add(row);
+        }
+        long updated = adminRepository.setFeedCountries(rows);
+        return Map.of("updated", updated);
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record FeedCountryEntry(String artistId, String feedCountry, Boolean feedExclude) {
     }
 
     @GetMapping("/artworks/{artworkId}")

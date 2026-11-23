@@ -1499,6 +1499,13 @@ The application runs on Azure App Service (`artly-backend`); every push to `mast
 - Update API documentation
 - Ensure all tests pass before submitting PR
 
+## Geo data attribution
+
+The optional country-aware feed ranking uses the DB-IP Lite country database,
+bundled at `src/main/resources/geo/dbip-country-lite.mmdb`:
+IP geolocation by [DB-IP](https://db-ip.com), licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.

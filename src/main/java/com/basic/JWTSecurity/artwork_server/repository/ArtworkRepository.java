@@ -220,13 +220,21 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "recommendArtwork.license_info AS license_info, " +
                     "recommendArtwork.source_url AS source_url, " +
                     "false AS liked " +
-                    "ORDER BY priority, userSimilarity DESC, likes DESC " +
+                    "ORDER BY CASE " +
+                    "WHEN $country IS NULL OR $country = '' THEN 2 " +
+                    "WHEN artist.feed_exclude = true THEN 2 " +
+                    "WHEN artist.feed_country IS NULL THEN 2 " +
+                    "WHEN artist.feed_country = $country THEN 0 " +
+                    "WHEN artist.feed_country IN $neighbours THEN 1 " +
+                    "ELSE 2 END, priority, userSimilarity DESC, likes DESC " +
                     "SKIP $skip LIMIT $limit"
     )
     Optional<List<GetArtwork>> recommendArtwork(
             @Param("userId") String userId,
             @Param("skip") Integer skip,
-            @Param("limit") Integer limit
+            @Param("limit") Integer limit,
+            @Param("country") String country,
+            @Param("neighbours") List<String> neighbours
     );
 
     @Query("""
@@ -238,6 +246,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                      CASE WHEN userLike IS NOT NULL THEN true ELSE false END AS liked
                 OPTIONAL MATCH (artwork)<-[:HAS_COMMENT]-(comment:Comment)
                 WITH artwork, likes, liked, count(DISTINCT comment) AS comments
+                OPTIONAL MATCH (artwork)<-[:CREATED]-(popArtist:Artist)
                 RETURN 
                     artwork.id AS id,
                     artwork.title AS title,
@@ -257,13 +266,21 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     artwork.license_info AS license_info,
                     artwork.source_url AS source_url,
                     liked
-                ORDER BY likes DESC, comments DESC
+                ORDER BY CASE
+                    WHEN $country IS NULL OR $country = '' THEN 2
+                    WHEN popArtist.feed_exclude = true THEN 2
+                    WHEN popArtist.feed_country IS NULL THEN 2
+                    WHEN popArtist.feed_country = $country THEN 0
+                    WHEN popArtist.feed_country IN $neighbours THEN 1
+                    ELSE 2 END, likes DESC, comments DESC
                 SKIP $skip LIMIT $limit
             """)
     Optional<List<GetArtwork>> popularArtwork(
             @Param("userId") String userId,
             @Param("skip") Integer skip,
-            @Param("limit") Integer limit
+            @Param("limit") Integer limit,
+            @Param("country") String country,
+            @Param("neighbours") List<String> neighbours
     );
 
     @Query("""

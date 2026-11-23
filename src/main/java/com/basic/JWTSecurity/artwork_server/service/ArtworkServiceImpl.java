@@ -2,6 +2,7 @@ package com.basic.JWTSecurity.artwork_server.service;
 
 
 import com.basic.JWTSecurity.artwork_server.dto.ArtworkRecord;
+import com.basic.JWTSecurity.artwork_server.geo.GeoCountries;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
 import com.basic.JWTSecurity.artwork_server.model.Status;
 import com.basic.JWTSecurity.artwork_server.model.get_models.GetArtwork;
@@ -113,19 +114,29 @@ public class ArtworkServiceImpl implements ArtworkService {
     }
 
     @Override
-    public Optional<List<GetArtwork>> recommendArtwork(String userId, Integer skip, Integer limit) {
-        Optional<List<GetArtwork>> recommendations = repository.recommendArtwork(userId, skip, limit);
+    public Optional<List<GetArtwork>> recommendArtwork(String userId, Integer skip, Integer limit, String country) {
+        String iso2 = normalizeCountry(country);
+        List<String> neighbours = GeoCountries.neighboursOf(iso2);
+        Optional<List<GetArtwork>> recommendations = repository.recommendArtwork(userId, skip, limit, iso2, neighbours);
         // Guests and users without a graph node/signal get an empty personalized list;
         // serve popular artworks instead of an empty feed
         if (recommendations.isEmpty() || recommendations.get().isEmpty()) {
-            return repository.popularArtwork(userId, skip, limit);
+            return repository.popularArtwork(userId, skip, limit, iso2, neighbours);
         }
         return recommendations;
     }
 
+    private String normalizeCountry(String country) {
+        if (!GeoCountries.isIso2(country == null ? null : country.trim().toUpperCase(java.util.Locale.ROOT))) {
+            return null;
+        }
+        return country.trim().toUpperCase(java.util.Locale.ROOT);
+    }
+
     @Override
-    public Optional<List<GetArtwork>> popularArtwork(String userId, Integer skip, Integer limit) {
-        return repository.popularArtwork(userId,skip,limit);
+    public Optional<List<GetArtwork>> popularArtwork(String userId, Integer skip, Integer limit, String country) {
+        String iso2 = normalizeCountry(country);
+        return repository.popularArtwork(userId, skip, limit, iso2, GeoCountries.neighboursOf(iso2));
     }
 
     @Override
@@ -138,7 +149,7 @@ public class ArtworkServiceImpl implements ArtworkService {
         Optional<List<GetArtwork>> recommendations = repository.recommendedArtworkForToday(userId, skip, limit);
         // Same guest fallback as recommendArtwork: never an empty feed for unknown users
         if (recommendations.isEmpty() || recommendations.get().isEmpty()) {
-            return repository.popularArtwork(userId, skip, limit);
+            return repository.popularArtwork(userId, skip, limit, null, java.util.Collections.emptyList());
         }
         return recommendations;
     }
