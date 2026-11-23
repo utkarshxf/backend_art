@@ -80,6 +80,10 @@ public class AdminApi {
             String imageUrlCompressed,
             String licenseInfo,
             String sourceUrl,
+            String description,
+            String medium,
+            String dimensions,
+            String currentLocation,
             String status) {
     }
 
@@ -138,6 +142,42 @@ public class AdminApi {
         return Map.of("id", saved.getId());
     }
 
+
+    @PutMapping("/artists/{artistId}")
+    public Map<String, String> updateArtist(@PathVariable String artistId,
+                                            @RequestBody AdminArtistRequest request) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "artist not found"));
+        // Partial update: replace only the fields supplied; every omitted field is preserved.
+        // image_url is deliberately excluded - the image lane owns it.
+        if (request.name() != null) {
+            artist.setName(request.name());
+        }
+        if (request.birthDate() != null) {
+            artist.setBirth_date(request.birthDate());
+        }
+        if (request.deathDate() != null) {
+            artist.setDeath_date(request.deathDate());
+        }
+        if (request.nationality() != null) {
+            artist.setNationality(request.nationality());
+        }
+        if (request.artMovement() != null) {
+            artist.setArt_movement(request.artMovement());
+        }
+        if (request.notableWorks() != null) {
+            artist.setNotable_works(request.notableWorks());
+        }
+        if (request.wikipediaUrl() != null) {
+            artist.setWikipedia_url(request.wikipediaUrl());
+        }
+        if (request.description() != null) {
+            artist.setDescription(request.description());
+        }
+        artistRepository.save(artist);
+        return Map.of();
+    }
+
     @GetMapping("/artworks/{artworkId}")
     public Map<String, Object> getArtwork(@PathVariable String artworkId) {
         Artwork artwork = artworkRepository.findById(artworkId)
@@ -185,6 +225,18 @@ public class AdminApi {
         }
         if (request.sourceUrl() != null) {
             artwork.setSource_url(request.sourceUrl());
+        }
+        if (request.description() != null) {
+            artwork.setDescription(request.description());
+        }
+        if (request.medium() != null) {
+            artwork.setMedium(request.medium());
+        }
+        if (request.dimensions() != null) {
+            artwork.setDimensions(request.dimensions());
+        }
+        if (request.currentLocation() != null) {
+            artwork.setCurrent_location(request.currentLocation());
         }
         artworkRepository.save(artwork);
         return Map.of();
