@@ -3,6 +3,7 @@ package com.basic.JWTSecurity.artwork_server.story;
 import com.basic.JWTSecurity.artwork_server.model.Artwork;
 import com.basic.JWTSecurity.artwork_server.repository.ArtworkRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import java.util.Map;
 // story simply generates fresh entries; stale ones age out with the old text.
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class StoryService {
 
     // Gemini TTS accepts long input, but a story should stay listenable and cheap; longer texts are rejected
@@ -46,6 +48,7 @@ public class StoryService {
     private final StoryTranslationRepository translationRepository;
     private final StoryAudioRepository audioRepository;
     private final GeminiService geminiService;
+    private final AzureSpeechService azureSpeechService;
 
     @Value("${gemini.default-voice:Kore}")
     private String defaultVoice;
@@ -132,10 +135,23 @@ public class StoryService {
     }
 
     private StoryAudio synthesizeAndCache(String artworkId, String lang, String voice, String text, String sourceHash, String region) {
-        requireGemini();
         requireRegionAllowed(region);
-        byte[] pcm = geminiService.synthesize(text, voice);
-        byte[] wav = wrapPcmInWav(pcm);
+        // Azure Speech (free F0 tier) is the primary narration voice; Gemini TTS is the fallback.
+        byte[] wav = null;
+        if (azureSpeechService.isEnabled()) {
+            try {
+                wav = azureSpeechService.synthesize(text, lang);
+            } catch (AzureSpeechService.AzureQuotaException quota) {
+                log.warn("Azure Speech quota used up; falling back to Gemini TTS for {}", lang);
+            } catch (AzureSpeechService.AzureSpeechException failure) {
+                log.warn("Azure Speech failed ({}); falling back to Gemini TTS for {}", failure.getMessage(), lang);
+            }
+        }
+        if (wav == null) {
+            requireGemini();
+            byte[] pcm = geminiService.synthesize(text, voice);
+            wav = wrapPcmInWav(pcm);
+        }
         return audioRepository.save(StoryAudio.builder()
                 .artworkId(artworkId)
                 .language(lang)
