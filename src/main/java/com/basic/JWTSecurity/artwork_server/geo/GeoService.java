@@ -1,7 +1,7 @@
 package com.basic.JWTSecurity.artwork_server.geo;
 
-import com.maxmind.db.Reader;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.model.CountryResponse;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
@@ -21,12 +21,12 @@ import java.util.Optional;
 @Service
 public class GeoService {
 
-    private final Reader reader;
+    private final DatabaseReader reader;
 
     public GeoService() {
-        Reader r;
+        DatabaseReader r;
         try (InputStream in = new ClassPathResource("geo/dbip-country-lite.mmdb").getInputStream()) {
-            r = new Reader(in);
+            r = new DatabaseReader.Builder(in).build();
             log.info("GeoService: DB-IP country database loaded");
         } catch (Exception e) {
             log.error("GeoService: failed to load geo database, country detection disabled", e);
@@ -44,13 +44,10 @@ public class GeoService {
                     || address.isLinkLocalAddress() || address.isMulticastAddress()) {
                 return Optional.empty();
             }
-            JsonNode result = reader.get(address, JsonNode.class);
-            if (result == null) return Optional.empty();
-            JsonNode iso = result.path("country").path("iso_code");
-            if (iso.isTextual() && GeoCountries.isIso2(iso.asText())) {
-                return Optional.of(iso.asText());
-            }
-            return Optional.empty();
+            Optional<CountryResponse> response = reader.tryCountry(address);
+            return response
+                    .map(r -> r.getCountry().getIsoCode())
+                    .filter(GeoCountries::isIso2);
         } catch (Exception e) {
             return Optional.empty();
         }
