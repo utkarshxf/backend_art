@@ -117,7 +117,16 @@ public class ArtworkServiceImpl implements ArtworkService {
     public Optional<List<GetArtwork>> recommendArtwork(String userId, Integer skip, Integer limit, String country) {
         String iso2 = normalizeCountry(country);
         List<String> neighbours = GeoCountries.neighboursOf(iso2);
-        Optional<List<GetArtwork>> recommendations = repository.recommendArtwork(userId, skip, limit, iso2, neighbours);
+        Optional<List<GetArtwork>> recommendations;
+        try {
+            recommendations = repository.recommendArtwork(userId, skip, limit, iso2, neighbours);
+        } catch (RuntimeException e) {
+            // The geo-tiered personalized query must never take the feed down: retry without geo,
+            // which is the pre-2.8.4 query shape that is known to work for signed-in users.
+            org.slf4j.LoggerFactory.getLogger(ArtworkServiceImpl.class)
+                    .error("recommendArtwork with country={} failed, retrying without geo: {}", iso2, e.toString());
+            recommendations = repository.recommendArtwork(userId, skip, limit, null, java.util.Collections.emptyList());
+        }
         // Guests and users without a graph node/signal get an empty personalized list;
         // serve popular artworks instead of an empty feed
         if (recommendations.isEmpty() || recommendations.get().isEmpty()) {
