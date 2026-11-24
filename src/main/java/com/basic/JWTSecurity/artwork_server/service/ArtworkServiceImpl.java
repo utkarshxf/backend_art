@@ -113,9 +113,6 @@ public class ArtworkServiceImpl implements ArtworkService {
         repository.userUnDislikeAArtwork(artworkId , userId);
     }
 
-    /** Diagnostic only: last reason the geo personalized query fell back (exposed as a response header). */
-    public static final java.util.concurrent.atomic.AtomicReference<String> LAST_GEO_ERROR = new java.util.concurrent.atomic.AtomicReference<>();
-
     @Override
     public Optional<List<GetArtwork>> recommendArtwork(String userId, Integer skip, Integer limit, String country) {
         String iso2 = normalizeCountry(country);
@@ -126,8 +123,6 @@ public class ArtworkServiceImpl implements ArtworkService {
         } catch (RuntimeException e) {
             // The geo-tiered personalized query must never take the feed down: retry without geo,
             // which is the pre-2.8.4 query shape that is known to work for signed-in users.
-            String why = String.valueOf(e.getMessage());
-            LAST_GEO_ERROR.set(e.getClass().getSimpleName() + ": " + (why.length() > 300 ? why.substring(0, 300) : why));
             org.slf4j.LoggerFactory.getLogger(ArtworkServiceImpl.class)
                     .error("recommendArtwork with country={} failed, retrying without geo: {}", iso2, e.toString());
             recommendations = repository.recommendArtwork(userId, skip, limit, null, java.util.Collections.emptyList());
