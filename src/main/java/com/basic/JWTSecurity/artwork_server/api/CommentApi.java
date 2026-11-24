@@ -10,7 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 //@PreAuthorize("hasRole('USER')")
@@ -20,6 +22,7 @@ import java.util.List;
 public class CommentApi {
 
     private  final CommentService commentService;
+    private final com.basic.JWTSecurity.safety.SafetyService safety;
 
     @PreAuthorize("#userId == authentication.name")
     @PostMapping("/artwork/{artworkId}/user/{userId}")
@@ -30,8 +33,12 @@ public class CommentApi {
     }
 
     @GetMapping("/artwork/{artworkId}")
-    public ResponseEntity<List<GetComments>> getComments(@PathVariable  String artworkId){
+    public ResponseEntity<List<GetComments>> getComments(@PathVariable  String artworkId, Principal principal){
         List<GetComments> comments = commentService.getArtworkComments(artworkId);
+        // comments by people the caller blocked (or who blocked them), and reported comments, stay out
+        Set<String> hiddenUsers = safety.hiddenUsers(principal == null ? null : principal.getName());
+        Set<String> hiddenComments = safety.hiddenContent("comment", comments.stream().map(GetComments::getId).toList());
+        comments = comments.stream().filter(c -> !hiddenUsers.contains(c.getUserId()) && !hiddenComments.contains(c.getId())).toList();
         return new ResponseEntity<>(comments,HttpStatus.OK);
     }
 

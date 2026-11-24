@@ -86,7 +86,7 @@ public class SecurityConfig {
                                 "/users/leaderboard/top-viewers", "/users/leaderboard/top-creators",
                                 "/artist/leaderboard/top-artists",
                                 "/story/*", "/story/*/audio",
-                                "/geo/country").permitAll()
+                                "/geo/country", "/community-rules").permitAll()
                         // Everything the app calls before it has a JWT: log in, sign up, reset the password,
                         // check a username while creating the account
                         .requestMatchers("/login", "/signup",

@@ -121,6 +121,12 @@ public class CallService {
     /** caller -> calls started in the current minute. */
     private final Map<String, Window> starts = new ConcurrentHashMap<>();
     private final Object[] startLocks = new Object[64];
+    private com.basic.JWTSecurity.safety.SafetyService safety;
+
+    @Autowired(required = false)
+    void setSafety(com.basic.JWTSecurity.safety.SafetyService safety) {
+        this.safety = safety;
+    }
 
     @Autowired
     public CallService(AgoraTokens agora, ChatFirebaseCredentials credentials, FirestoreRestClient firestore,
@@ -189,6 +195,9 @@ public class CallService {
         }
         if (callee.equals(caller)) {
             throw ChatException.badRequest("You can't call yourself");
+        }
+        if (safety != null && safety.eitherBlocked(caller, callee)) {
+            throw ChatException.forbidden("You can't call this person");
         }
 
         synchronized (startLocks[Math.floorMod(caller.hashCode(), startLocks.length)]) {

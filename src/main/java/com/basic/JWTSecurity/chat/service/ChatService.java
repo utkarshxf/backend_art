@@ -27,6 +27,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class ChatService {
 
+    private com.basic.JWTSecurity.safety.SafetyService safety;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setSafety(com.basic.JWTSecurity.safety.SafetyService safety) {
+        this.safety = safety;
+    }
+
     static final String FIREBASE_AUDIENCE =
             "https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit";
     /** Firebase Auth limit for a uid. */
@@ -107,6 +114,9 @@ public class ChatService {
             throw ChatException.badRequest("Invalid conversation");
         }
         String recipient = usernames.get(0).equals(caller) ? usernames.get(1) : usernames.get(0);
+        if (safety != null && safety.eitherBlocked(caller, recipient)) {
+            return 0; // no push between people where one blocked the other
+        }
 
         Map<String, Object> message = firestore.getDocument("conversations", conversationId, "messages", messageId)
                 .orElseThrow(() -> ChatException.notFound("Message not found"));
