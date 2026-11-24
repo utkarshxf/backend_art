@@ -463,4 +463,132 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
     @Query("MATCH (:Artist {id: $artistId})-[:CREATED]->(artwork:Artwork {id: $artworkId}) RETURN count(artwork) > 0")
     boolean isCreatedBy(@Param("artworkId") String artworkId, @Param("artistId") String artistId);
 
+
+    /** v2.8.7 ranking: own country first; a thin home tier (under 50 works) is spread through the feed (about 1 in 6) instead of a burst at the top. */
+    @Query("""
+                MATCH (user:User {id: $userId})
+                CALL {
+                   WITH user
+                   MATCH (user)-[:LIKES]->(a0:Artwork)<-[:LIKES]-(otherUser:User)-[:LIKES]->(recommendArtwork:Artwork)
+                   WHERE NOT (user)-[:LIKES]->(recommendArtwork)
+                   AND NOT (user)-[:DISLIKES]->(recommendArtwork)
+                   AND NOT (user)-[:VIEWED]->(recommendArtwork)
+                   WITH DISTINCT recommendArtwork, count(DISTINCT otherUser) AS userSimilarity
+                   RETURN recommendArtwork, userSimilarity, 1 AS priority
+                   UNION
+                   MATCH (a1:Artwork)
+                   WHERE NOT (:User {id: $userId})-[:LIKES]->(a1)
+                   AND NOT (:User {id: $userId})-[:DISLIKES]->(a1)
+                   AND NOT (:User {id: $userId})-[:VIEWED]->(a1)
+                   AND NOT ((:User {id: $userId})-[:LIKES]->(:Artwork)<-[:LIKES]-(:User)-[:LIKES]->(a1))
+                   RETURN a1 AS recommendArtwork, 0 AS userSimilarity, 2 AS priority
+                }
+                WITH recommendArtwork, userSimilarity, priority
+                WHERE NOT coalesce(recommendArtwork.status, '') IN ['DELETED', 'BLOCKED']
+                OPTIONAL MATCH (recommendArtwork)<-[:LIKES]-(likeUser:User)
+                WITH recommendArtwork, userSimilarity, priority, count(DISTINCT likeUser) AS likes
+                OPTIONAL MATCH (recommendArtwork)<-[:CREATED]-(artist:Artist)
+                WITH recommendArtwork AS artwork, userSimilarity, priority, likes, CASE
+                WHEN $country IS NULL OR $country = '' THEN 2
+                WHEN coalesce(artist.feed_exclude, false) = true THEN 2
+                WHEN artist.feed_country IS NULL THEN 2
+                WHEN artist.feed_country = $country THEN 0
+                WHEN artist.feed_country IN $neighbours THEN 1
+                ELSE 2 END AS geoTier
+                ORDER BY priority, userSimilarity DESC, likes DESC
+                WITH collect({a: artwork, t: geoTier}) AS rows
+                WITH [r IN rows WHERE r.t = 0] AS home, [r IN rows WHERE r.t = 1] + [r IN rows WHERE r.t = 2] AS others
+                WITH home, others, size(home) < 50 AS sparse
+                WITH [i IN range(0, size(home) - 1) | {a: home[i].a, k: CASE WHEN sparse THEN i * 6.0 ELSE i * 1.0 END}] +
+                     [j IN range(0, size(others) - 1) | {a: others[j].a, k: CASE WHEN sparse THEN j * 1.2 + 0.5 ELSE 1000000.0 + j END}] AS keyed
+                UNWIND keyed AS kr
+                WITH kr.a AS artwork, kr.k AS sortKey
+                ORDER BY sortKey
+                SKIP $skip LIMIT $limit
+                OPTIONAL MATCH (u:User {id: $userId})-[ul:LIKES]->(artwork)
+                WITH artwork, sortKey, CASE WHEN ul IS NOT NULL THEN true ELSE false END AS liked
+                ORDER BY sortKey
+                RETURN
+            artwork.id AS id,
+            artwork.title AS title,
+            artwork.description AS description,
+            artwork.status AS status,
+            artwork.storageType AS storageType,
+            artwork.releasedDate AS releasedDate,
+            artwork.type AS type,
+            artwork.medium AS medium,
+            artwork.dimensions AS dimensions,
+            artwork.artist AS artist,
+            artwork.current_location AS current_location,
+            artwork.period_style AS period_style,
+            artwork.art_movement AS art_movement,
+            artwork.image_url_compressed AS image_url_compressed,
+            artwork.image_url AS image_url,
+            artwork.license_info AS license_info,
+            artwork.source_url AS source_url,
+            liked
+            """)
+    Optional<List<GetArtwork>> recommendArtworkSpread(
+            @Param("userId") String userId,
+            @Param("skip") Integer skip,
+            @Param("limit") Integer limit,
+            @Param("country") String country,
+            @Param("neighbours") List<String> neighbours
+    );
+
+    @Query("""
+                MATCH (artwork:Artwork)
+                WHERE NOT coalesce(artwork.status, '') IN ['DELETED', 'BLOCKED']
+                OPTIONAL MATCH (artwork)<-[like:LIKES]-(:User)
+                WITH artwork, count(DISTINCT like) AS likes
+                OPTIONAL MATCH (artwork)<-[:HAS_COMMENT]-(comment:Comment)
+                WITH artwork, likes, count(DISTINCT comment) AS comments
+                OPTIONAL MATCH (artwork)<-[:CREATED]-(artist:Artist)
+                WITH artwork, likes, comments, CASE
+                WHEN $country IS NULL OR $country = '' THEN 2
+                WHEN coalesce(artist.feed_exclude, false) = true THEN 2
+                WHEN artist.feed_country IS NULL THEN 2
+                WHEN artist.feed_country = $country THEN 0
+                WHEN artist.feed_country IN $neighbours THEN 1
+                ELSE 2 END AS geoTier
+                ORDER BY likes DESC, comments DESC
+                WITH collect({a: artwork, t: geoTier}) AS rows
+                WITH [r IN rows WHERE r.t = 0] AS home, [r IN rows WHERE r.t = 1] + [r IN rows WHERE r.t = 2] AS others
+                WITH home, others, size(home) < 50 AS sparse
+                WITH [i IN range(0, size(home) - 1) | {a: home[i].a, k: CASE WHEN sparse THEN i * 6.0 ELSE i * 1.0 END}] +
+                     [j IN range(0, size(others) - 1) | {a: others[j].a, k: CASE WHEN sparse THEN j * 1.2 + 0.5 ELSE 1000000.0 + j END}] AS keyed
+                UNWIND keyed AS kr
+                WITH kr.a AS artwork, kr.k AS sortKey
+                ORDER BY sortKey
+                SKIP $skip LIMIT $limit
+                OPTIONAL MATCH (u:User {id: $userId})-[ul:LIKES]->(artwork)
+                WITH artwork, sortKey, CASE WHEN ul IS NOT NULL THEN true ELSE false END AS liked
+                ORDER BY sortKey
+                RETURN
+            artwork.id AS id,
+            artwork.title AS title,
+            artwork.description AS description,
+            artwork.status AS status,
+            artwork.storageType AS storageType,
+            artwork.releasedDate AS releasedDate,
+            artwork.type AS type,
+            artwork.medium AS medium,
+            artwork.dimensions AS dimensions,
+            artwork.artist AS artist,
+            artwork.current_location AS current_location,
+            artwork.period_style AS period_style,
+            artwork.art_movement AS art_movement,
+            artwork.image_url_compressed AS image_url_compressed,
+            artwork.image_url AS image_url,
+            artwork.license_info AS license_info,
+            artwork.source_url AS source_url,
+            liked
+            """)
+    Optional<List<GetArtwork>> popularArtworkSpread(
+            @Param("userId") String userId,
+            @Param("skip") Integer skip,
+            @Param("limit") Integer limit,
+            @Param("country") String country,
+            @Param("neighbours") List<String> neighbours
+    );
 }

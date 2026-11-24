@@ -22,7 +22,8 @@ public final class GeoCountries {
 
     /** Land borders plus short fixed-link/strait adjacency, ISO 3166-1 alpha-2. */
     private static final Map<String, List<String>> NEIGHBOURS = Map.ofEntries(
-            Map.entry("IN", List.of("PK","AF","CN","NP","BT","MM","BD","LK")),
+            // South Asia first; China/East Asia fall into the general tier (v2.8.7 product direction).
+            Map.entry("IN", List.of("PK","BD","NP","LK","BT","AF","MM")),
             Map.entry("US", List.of("CA","MX")),
             Map.entry("IT", List.of("FR","CH","AT","SI","SM","VA")),
             Map.entry("FR", List.of("BE","LU","DE","CH","IT","MC","ES","AD","GB")),

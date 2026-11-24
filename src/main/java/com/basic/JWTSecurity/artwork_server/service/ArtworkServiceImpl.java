@@ -119,7 +119,13 @@ public class ArtworkServiceImpl implements ArtworkService {
         List<String> neighbours = GeoCountries.neighboursOf(iso2);
         Optional<List<GetArtwork>> recommendations;
         try {
-            recommendations = repository.recommendArtwork(userId, skip, limit, iso2, neighbours);
+            try {
+                recommendations = repository.recommendArtworkSpread(userId, skip, limit, iso2, neighbours);
+            } catch (RuntimeException spreadError) {
+                org.slf4j.LoggerFactory.getLogger(ArtworkServiceImpl.class)
+                        .error("recommendArtworkSpread failed, using tiered query: {}", spreadError.toString());
+                recommendations = repository.recommendArtwork(userId, skip, limit, iso2, neighbours);
+            }
         } catch (RuntimeException e) {
             // The geo-tiered personalized query must never take the feed down: retry without geo,
             // which is the pre-2.8.4 query shape that is known to work for signed-in users.
@@ -130,7 +136,7 @@ public class ArtworkServiceImpl implements ArtworkService {
         // Guests and users without a graph node/signal get an empty personalized list;
         // serve popular artworks instead of an empty feed
         if (recommendations.isEmpty() || recommendations.get().isEmpty()) {
-            return repository.popularArtwork(userId, skip, limit, iso2, neighbours);
+            return popularArtwork(userId, skip, limit, iso2);
         }
         return recommendations;
     }
@@ -145,7 +151,14 @@ public class ArtworkServiceImpl implements ArtworkService {
     @Override
     public Optional<List<GetArtwork>> popularArtwork(String userId, Integer skip, Integer limit, String country) {
         String iso2 = normalizeCountry(country);
-        return repository.popularArtwork(userId, skip, limit, iso2, GeoCountries.neighboursOf(iso2));
+        List<String> neighbours = GeoCountries.neighboursOf(iso2);
+        try {
+            return repository.popularArtworkSpread(userId, skip, limit, iso2, neighbours);
+        } catch (RuntimeException e) {
+            org.slf4j.LoggerFactory.getLogger(ArtworkServiceImpl.class)
+                    .error("popularArtworkSpread failed, using tiered query: {}", e.toString());
+            return repository.popularArtwork(userId, skip, limit, iso2, neighbours);
+        }
     }
 
     @Override
