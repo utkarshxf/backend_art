@@ -28,6 +28,9 @@ public class ArtworkApi {
 
     private  final ArtworkService artworkService;
 
+    @org.springframework.beans.factory.annotation.Value("${spring.app.adminUsernames:utkarshxf}")
+    private String adminUsernames;
+
     @PreAuthorize("#artistId == authentication.name")
     @PostMapping("/artist/{artistId}")
     public ResponseEntity<ArtworkRecord> createNewArtwork(@RequestBody ArtworkRecord requestRecord, @PathVariable String artistId){
@@ -40,8 +43,18 @@ public class ArtworkApi {
     public ResponseEntity<?> recommendArtwork(@RequestParam String userId, @RequestParam Integer skip, @RequestParam Integer limit,
                                               @RequestParam(required = false) String country)
     {
+        com.basic.JWTSecurity.artwork_server.service.ArtworkServiceImpl.LAST_GEO_ERROR.set(null);
         Optional<List<GetArtwork>> artworks = artworkService.recommendArtwork(userId,skip,limit,country);
-        return new ResponseEntity<>(artworks,HttpStatus.OK);
+        String geoErr = com.basic.JWTSecurity.artwork_server.service.ArtworkServiceImpl.LAST_GEO_ERROR.get();
+        ResponseEntity.BodyBuilder ok = ResponseEntity.ok();
+        ok.header("X-Geo-Mode", geoErr == null ? "geo" : "fallback");
+        // DB error text only for catalogue-admin callers (never to ordinary clients).
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.isAuthenticated() && auth.getName() != null
+                && java.util.Arrays.stream(adminUsernames.split(",")).map(String::trim).anyMatch(auth.getName()::equals);
+        if (geoErr != null && isAdmin) ok.header("X-Geo-Error", geoErr.replaceAll("[^\\x20-\\x7E]", " "));
+        return ok.body(artworks);
     }
 
     @GetMapping("/popular")

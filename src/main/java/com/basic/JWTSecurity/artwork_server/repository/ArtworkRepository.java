@@ -201,6 +201,14 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "WITH recommendArtwork, userSimilarity, priority, likes, count(DISTINCT comment) AS noOfComments " +
                     "OPTIONAL MATCH (recommendArtwork)<-[:CREATED]-(artist:Artist) " +
                     "OPTIONAL MATCH (recommendArtwork)-[:BELONGS_TO_GENRE]->(artworkGenre:Genre) " +
+                    "WITH recommendArtwork, userSimilarity, priority, likes, " +
+                    "CASE " +
+                    "WHEN $country IS NULL OR $country = '' THEN 2 " +
+                    "WHEN coalesce(artist.feed_exclude, false) = true THEN 2 " +
+                    "WHEN artist.feed_country IS NULL THEN 2 " +
+                    "WHEN artist.feed_country = $country THEN 0 " +
+                    "WHEN artist.feed_country IN $neighbours THEN 1 " +
+                    "ELSE 2 END AS geoTier " +
                     "RETURN " +
                     "recommendArtwork.id AS id, " +
                     "recommendArtwork.title AS title, " +
@@ -220,13 +228,7 @@ public interface ArtworkRepository extends Neo4jRepository<Artwork, String> {
                     "recommendArtwork.license_info AS license_info, " +
                     "recommendArtwork.source_url AS source_url, " +
                     "false AS liked " +
-                    "ORDER BY CASE " +
-                    "WHEN $country IS NULL OR $country = '' THEN 2 " +
-                    "WHEN artist.feed_exclude = true THEN 2 " +
-                    "WHEN artist.feed_country IS NULL THEN 2 " +
-                    "WHEN artist.feed_country = $country THEN 0 " +
-                    "WHEN artist.feed_country IN $neighbours THEN 1 " +
-                    "ELSE 2 END, priority, userSimilarity DESC, likes DESC " +
+                    "ORDER BY geoTier, priority, userSimilarity DESC, likes DESC " +
                     "SKIP $skip LIMIT $limit"
     )
     Optional<List<GetArtwork>> recommendArtwork(
