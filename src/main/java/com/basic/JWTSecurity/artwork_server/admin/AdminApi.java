@@ -54,6 +54,8 @@ public class AdminApi {
             @JsonProperty("image_url") String imageUrl,
             @JsonProperty("wikipedia_url") String wikipediaUrl,
             String description,
+            String education,
+            String awards,
             String genreId) {
     }
 
@@ -161,7 +163,9 @@ public class AdminApi {
                 request.artMovement(),
                 request.notableWorks(),
                 request.wikipediaUrl(),
-                request.description());
+                request.description(),
+                request.education(),
+                request.awards());
         return Map.of();
     }
 

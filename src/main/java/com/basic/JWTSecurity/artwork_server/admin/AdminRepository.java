@@ -41,7 +41,9 @@ public interface AdminRepository extends Neo4jRepository<Artwork, String> {
             "artist.art_movement = coalesce($artMovement, artist.art_movement), " +
             "artist.notable_works = coalesce($notableWorks, artist.notable_works), " +
             "artist.wikipedia_url = coalesce($wikipediaUrl, artist.wikipedia_url), " +
-            "artist.description = coalesce($description, artist.description)")
+            "artist.description = coalesce($description, artist.description), " +
+            "artist.education = coalesce($education, artist.education), " +
+            "artist.awards = coalesce($awards, artist.awards)")
     void updateArtistFields(@Param("artistId") String artistId,
                             @Param("name") String name,
                             @Param("birthDate") String birthDate,
@@ -50,7 +52,9 @@ public interface AdminRepository extends Neo4jRepository<Artwork, String> {
                             @Param("artMovement") String artMovement,
                             @Param("notableWorks") String notableWorks,
                             @Param("wikipediaUrl") String wikipediaUrl,
-                            @Param("description") String description);
+                            @Param("description") String description,
+                            @Param("education") String education,
+                            @Param("awards") String awards);
 
     // Geo feed bulk write (v2.8.4): feed_country ISO2 (null clears) + feed_exclude flag.
     @Query("UNWIND $entries AS e " +
